@@ -1,9 +1,10 @@
 /**
- * Zustand store for caching GTFS data in localStorage
+ * Zustand store for caching GTFS data in IndexedDB
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { indexedDBStorage } from './indexedDBStorage';
 
 interface CacheEntry {
   data: unknown;
@@ -22,46 +23,33 @@ interface DataCacheState {
   getCacheStats: () => { entryCount: number; sizeBytes: number };
 }
 
-// Custom storage that handles quota exceeded errors gracefully
-const createSafeLocalStorage = () => {
-  return {
-    getItem: (name: string) => {
-      try {
-        return localStorage.getItem(name);
-      } catch (e) {
-        console.warn('Failed to read from localStorage:', e);
-        return null;
-      }
-    },
-    setItem: (name: string, value: string) => {
-      try {
-        localStorage.setItem(name, value);
-      } catch (e) {
-        if (e instanceof Error && e.name === 'QuotaExceededError') {
-          // Storage quota exceeded - try to make room by clearing old cache
-          console.warn('Storage quota exceeded, clearing cache to make room');
-          try {
-            localStorage.removeItem(name);
-            // Try again with fresh start
-            localStorage.setItem(name, value);
-          } catch (e2) {
-            // Still failed - give up and continue without caching
-            console.warn('Failed to cache data even after clearing:', e2);
-          }
-        } else {
-          console.warn('Failed to write to localStorage:', e);
-        }
-      }
-    },
-    removeItem: (name: string) => {
-      try {
-        localStorage.removeItem(name);
-      } catch (e) {
-        console.warn('Failed to remove from localStorage:', e);
-      }
-    },
-  };
+/**
+ * One-time migration from localStorage to IndexedDB
+ * This ensures existing users don't lose their cached data
+ */
+const migrateFromLocalStorage = async () => {
+  const STORAGE_KEY = 'gtfs-data-cache';
+  
+  try {
+    const localStorageData = localStorage.getItem(STORAGE_KEY);
+    if (localStorageData) {
+      console.log('Migrating cache from localStorage to IndexedDB...');
+      
+      // Write to IndexedDB
+      await indexedDBStorage.setItem?.(STORAGE_KEY, localStorageData);
+      
+      // Remove from localStorage to save space
+      localStorage.removeItem(STORAGE_KEY);
+      
+      console.log('Cache migration completed successfully');
+    }
+  } catch (error) {
+    console.warn('Failed to migrate cache from localStorage:', error);
+  }
 };
+
+// Run migration on module load (only runs once per session)
+migrateFromLocalStorage();
 
 export const useDataCacheStore = create<DataCacheState>()(
   persist(
@@ -113,7 +101,7 @@ export const useDataCacheStore = create<DataCacheState>()(
     }),
     {
       name: 'gtfs-data-cache',
-      storage: createJSONStorage(() => createSafeLocalStorage()),
+      storage: createJSONStorage(() => indexedDBStorage),
     }
   )
 );

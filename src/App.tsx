@@ -25,7 +25,7 @@ function App() {
   const [selectedRouteType, setSelectedRouteType] = useState<number | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [_sidebarOpen, _setSidebarOpen] = useState(false); // Unused, prefixed for future use
   const [showAllVehicles, setShowAllVehicles] = useState(false);
 
   // Load initial data
