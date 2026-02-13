@@ -5,16 +5,18 @@
 import { MapContainer, TileLayer } from 'react-leaflet';
 import type { Stop } from '../../utils/gtfs';
 import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
-import { StopMarkers } from './StopMarkers';
+import { ZoomBasedStops } from './ZoomBasedStops';
 import { RouteShape } from './RouteShape';
 import { VehicleMarkers } from './VehicleMarkers';
 import { AllVehicleMarkers } from './AllVehicleMarkers';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
 const DEFAULT_ZOOM = 13;
 
 interface MapViewProps {
-  stops: Stop[];
+  parentStations: Stop[];
+  platformStops: Stop[];
   selectedRouteId: string | null;
   selectedStopId: string | null;
   routeShapes: Record<string, [number, number][]>;
@@ -26,8 +28,24 @@ interface MapViewProps {
   allVehicles?: AllVehiclePosition[];
 }
 
+const TILE_PROVIDERS = {
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  },
+  positron: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  },
+  'dark-matter': {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }
+};
+
 export function MapView({
-  stops,
+  parentStations,
+  platformStops,
   selectedRouteId,
   selectedStopId,
   routeShapes,
@@ -38,6 +56,9 @@ export function MapView({
   showAllVehicles = false,
   allVehicles = []
 }: MapViewProps) {
+  const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
+  const tileConfig = TILE_PROVIDERS[mapTileProvider];
+
   return (
     <MapContainer
       center={ZAGREB_CENTER}
@@ -49,12 +70,14 @@ export function MapView({
       zoomControl={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        key={mapTileProvider}
+        attribution={tileConfig.attribution}
+        url={tileConfig.url}
       />
       
-      <StopMarkers 
-        stops={stops}
+      <ZoomBasedStops 
+        parentStations={parentStations}
+        platformStops={platformStops}
         selectedStopId={selectedStopId}
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}

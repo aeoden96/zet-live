@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Settings } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { BottomSheet } from './components/common/BottomSheet';
 import { RouteList } from './components/Sidebar/RouteList';
 import { RoutePanel } from './components/Sidebar/RoutePanel';
 import { StopPanel } from './components/Sidebar/StopPanel';
-import { ThemeToggle } from './components/common/ThemeToggle';
 import { TimeDisplay } from './components/common/TimeDisplay';
 import { DebugPanel } from './components/common/DebugPanel';
+import { OnboardingModal } from './components/common/OnboardingModal';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
@@ -32,13 +33,16 @@ function App() {
   const { 
     stops,
     routes, 
-    parentStations, 
     stopsById, 
     routesById, 
     calendar, 
     loading: initialLoading,
     error: initialError
   } = useInitialData();
+
+  // Separate parent stations and platform stops for zoom-based rendering
+  const parentStations = stops.filter(stop => stop.locationType === 1);
+  const platformStops = stops.filter(stop => stop.locationType === 0);
 
   // Get current service ID
   const serviceId = useCurrentService(calendar);
@@ -196,7 +200,8 @@ function App() {
         )}
         
         <MapView
-          stops={parentStations}
+          parentStations={parentStations}
+          platformStops={platformStops}
           selectedRouteId={selectedRouteId}
           selectedStopId={selectedStopId}
           routeShapes={shapes}
@@ -210,7 +215,9 @@ function App() {
 
         {/* Map controls */}
         <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-[1000] flex flex-col gap-2">
-          <ThemeToggle />
+          <Link to="/settings" className="btn btn-circle min-h-[44px] min-w-[44px] p-2">
+            <Settings className="w-6 h-6" />
+          </Link>
           <button
             onClick={() => setShowAllVehicles(!showAllVehicles)}
             className={`btn btn-circle min-h-[44px] min-w-[44px] p-2 ${
@@ -234,6 +241,9 @@ function App() {
       <BottomSheet isOpen={true} onClose={() => {}}>
         {sidebarContent}
       </BottomSheet>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal />
     </div>
   );
 }

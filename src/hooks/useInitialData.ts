@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { InitialData, Stop } from '../utils/gtfs';
-import { fetchInitialData, isParentStation } from '../utils/gtfs';
+import { fetchInitialData } from '../utils/gtfs';
 import { checkCacheVersion } from '../stores/dataCache';
 
 export function useInitialData() {
@@ -36,12 +36,6 @@ export function useInitialData() {
     };
   }, []);
 
-  // Filter parent stations for map display
-  const parentStations = useMemo(() => {
-    if (!data) return [];
-    return data.stops.filter(isParentStation);
-  }, [data]);
-
   // Create lookup maps
   const stopsById = useMemo(() => {
     if (!data) return new Map<string, Stop>();
@@ -57,7 +51,6 @@ export function useInitialData() {
     stops: data?.stops || [],
     routes: data?.routes || [],
     calendar: data?.calendar || {},
-    parentStations,
     stopsById,
     routesById,
     feedVersion: data?.feedVersion,

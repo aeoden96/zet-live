@@ -1,30 +1,18 @@
 /**
- * Debug panel for time override
+ * Sandbox panel for time override
  */
 
 import { useState, useEffect } from 'react';
-import { Clock, X, Play, Pause, Database, Trash2 } from 'lucide-react';
+import { Clock, X, Play, Pause } from 'lucide-react';
 import { useDebug } from '../../contexts/DebugContext';
 import { minutesToTime, timeToMinutes, getCurrentTimeMinutes } from '../../utils/gtfs';
-import { useDataCacheStore } from '../../stores/dataCache';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export function DebugPanel() {
   const { debugTime, setDebugTime, isDebugMode, setDebugMode, isPlaying, setIsPlaying, timeSpeed } = useDebug();
-  const { getCacheStats, clearCache, version } = useDataCacheStore();
+  const sandboxVisible = useSettingsStore((state) => state.sandboxVisible);
   const [isOpen, setIsOpen] = useState(false);
   const [timeInput, setTimeInput] = useState('');
-  const [cacheStats, setCacheStats] = useState({ entryCount: 0, sizeBytes: 0 });
-
-  // Update cache stats when panel is open
-  useEffect(() => {
-    if (isOpen) {
-      setCacheStats(getCacheStats());
-      const interval = setInterval(() => {
-        setCacheStats(getCacheStats());
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isOpen, getCacheStats]);
 
   // Initialize time input with current time
   useEffect(() => {
@@ -52,14 +40,14 @@ export function DebugPanel() {
     }
   }, [debugTime]);
 
-  const handleToggleDebugMode = () => {
+const handleToggleSandboxMode = () => {
     if (isDebugMode) {
-      // Disable debug mode
+      // Disable sandbox mode
       setDebugMode(false);
       setDebugTime(null);
       setIsPlaying(false);
     } else {
-      // Enable debug mode
+      // Enable sandbox mode
       setDebugMode(true);
       const currentMinutes = getCurrentTimeMinutes();
       setDebugTime(currentMinutes);
@@ -82,63 +70,52 @@ export function DebugPanel() {
     setTimeInput(minutesToTime(minutes));
   };
 
-  const handlePlayPause = () => {
+const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleClearCache = () => {
-    if (confirm('Are you sure you want to clear all cached data? The app will need to re-download data on next use.')) {
-      clearCache();
-      setCacheStats({ entryCount: 0, sizeBytes: 0 });
-    }
-  };
-
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+if (!sandboxVisible) {
+    return null;
+  }
 
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-4 left-4 z-[1000] btn btn-circle btn-secondary btn-sm shadow-lg"
-        aria-label="Open debug panel"
+        aria-label="Open sandbox panel"
       >
         <Clock className="w-4 h-4" />
       </button>
     );
   }
 
-  return (
+return (
     <div className="fixed bottom-4 left-4 z-[1000] card bg-base-100 shadow-xl w-80">
       <div className="card-body p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Debug Mode
+            Sandbox Mode
           </h3>
           <button
             onClick={() => setIsOpen(false)}
             className="btn btn-ghost btn-circle btn-xs"
-            aria-label="Close debug panel"
+            aria-label="Close sandbox panel"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Debug mode toggle */}
+        {/* Sandbox mode toggle */}
         <div className="form-control">
           <label className="label cursor-pointer">
-            <span className="label-text">Enable time override</span>
+            <span className="label-text">Omogući postavljanje vremena</span>
             <input
               type="checkbox"
               className="toggle toggle-primary"
               checked={isDebugMode}
-              onChange={handleToggleDebugMode}
+              onChange={handleToggleSandboxMode}
             />
           </label>
         </div>
@@ -219,57 +196,19 @@ export function DebugPanel() {
               </div>
             </div>
 
-            {/* Current debug time display */}
+            {/* Current sandbox time display */}
             <div className="alert alert-info mt-2">
               <div className="text-sm">
                 <div className="font-bold">
-                  Debug time: {debugTime !== null ? minutesToTime(debugTime) : '--:--'}
+                  Sandbox vrijeme: {debugTime !== null ? minutesToTime(debugTime) : '--:--'}
                 </div>
                 <div className="text-xs opacity-70">
-                  Real time: {minutesToTime(getCurrentTimeMinutes())}
+                  Stvarno vrijeme: {minutesToTime(getCurrentTimeMinutes())}
                 </div>
               </div>
             </div>
           </>
         )}
-
-        {/* Data Cache Section - Always visible */}
-        <div className="divider my-3"></div>
-        
-        <div className="space-y-3">
-          <h4 className="font-bold flex items-center gap-2 text-sm">
-            <Database className="w-4 h-4" />
-            Data Cache
-          </h4>
-
-          {/* Cache stats */}
-          <div className="bg-base-200 rounded-lg p-3 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="opacity-70">Cached entries:</span>
-              <span className="font-mono font-medium">{cacheStats.entryCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="opacity-70">Cache size:</span>
-              <span className="font-mono font-medium">{formatBytes(cacheStats.sizeBytes)}</span>
-            </div>
-            {version && (
-              <div className="flex justify-between">
-                <span className="opacity-70">Version:</span>
-                <span className="font-mono font-medium text-xs">{version}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Clear cache button */}
-          <button
-            onClick={handleClearCache}
-            className="btn btn-error btn-sm btn-outline w-full"
-            disabled={cacheStats.entryCount === 0}
-          >
-            <Trash2 className="w-4 h-4" />
-            Clear Cache
-          </button>
-        </div>
       </div>
     </div>
   );

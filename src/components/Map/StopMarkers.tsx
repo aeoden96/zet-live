@@ -32,11 +32,13 @@ export function StopMarkers({
             center={[stop.lat, stop.lon]}
             radius={isSelected ? 8 : isHighlighted ? 6 : 5}
             pathOptions={{
-              fillColor: isSelected ? '#ff6b6b' : isHighlighted ? '#2337ff' : '#14b8a6',
+              fillColor: isSelected ? '#ff6b6b' : isHighlighted ? '#2337ff' : '#8242be',
               fillOpacity: isSelected ? 1 : isHighlighted ? 0.9 : 0.7,
               color: 'white',
               weight: isSelected ? 2 : 1,
+              
             }}
+            
             eventHandlers={{
               click: () => onStopClick(stop.id)
             }}
