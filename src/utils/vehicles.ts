@@ -2,7 +2,7 @@
  * Vehicle position interpolation utilities
  */
 
-import type { ActiveTrip } from './gtfs';
+import type { ActiveTrip, AllActiveTripsData } from './gtfs';
 
 export interface VehiclePosition {
   tripId: string;
@@ -11,6 +11,12 @@ export interface VehiclePosition {
   headsign: string;
   direction: number;
   progress: number; // 0-1 fractional progress along route
+}
+
+export interface AllVehiclePosition extends VehiclePosition {
+  routeId: string;
+  routeShortName: string;
+  routeType: number; // 0 = Tram, 3 = Bus
 }
 
 /**
@@ -120,4 +126,59 @@ export function getActiveVehicles(
   }
   
   return vehicles;
+}
+
+/**
+ * Get active vehicle positions for ALL routes currently in service
+ */
+export function getAllActiveVehicles(
+  data: AllActiveTripsData,
+  currentMinutes: number,
+  serviceId: string
+): AllVehiclePosition[] {
+  const allVehicles: AllVehiclePosition[] = [];
+  
+  for (const [routeId, routeData] of Object.entries(data.routes)) {
+    const { trips, type, shortName } = routeData;
+    
+    for (const trip of trips) {
+      // Filter by service ID (trip IDs start with service ID like "0_20_...")
+      if (!trip.id.startsWith(serviceId)) {
+        continue;
+      }
+      
+      // Check if trip is currently active
+      if (currentMinutes < trip.start || currentMinutes > trip.end) {
+        continue;
+      }
+      
+      // Get shape for this trip
+      const shape = data.shapes[trip.shapeId];
+      if (!shape || shape.length === 0) {
+        continue;
+      }
+      
+      // Calculate progress (0-1) based on time
+      const tripDuration = trip.end - trip.start;
+      const elapsed = currentMinutes - trip.start;
+      const progress = tripDuration > 0 ? elapsed / tripDuration : 0;
+      
+      // Interpolate position
+      const [lat, lon] = interpolatePosition(shape, progress);
+      
+      allVehicles.push({
+        tripId: trip.id,
+        lat,
+        lon,
+        headsign: trip.headsign,
+        direction: trip.direction,
+        progress,
+        routeId,
+        routeShortName: shortName,
+        routeType: type
+      });
+    }
+  }
+  
+  return allVehicles;
 }

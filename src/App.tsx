@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { BottomSheet } from './components/common/BottomSheet';
@@ -13,6 +14,7 @@ import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
 import { useStopDepartures } from './hooks/useStopDepartures';
 import { useVehiclePositions } from './hooks/useVehiclePositions';
+import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
 
 type ViewMode = 'list' | 'route' | 'stop';
 type DirectionFilter = 'all' | 'A' | 'B';
@@ -24,6 +26,7 @@ function App() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAllVehicles, setShowAllVehicles] = useState(false);
 
   // Load initial data
   const { 
@@ -47,6 +50,12 @@ function App() {
 
   // Calculate vehicle positions
   const vehicles = useVehiclePositions(activeTripsData, serviceId);
+
+  // Calculate all vehicle positions (when enabled)
+  const { vehicles: allVehicles, loading: allVehiclesLoading } = useAllVehiclePositions(
+    showAllVehicles,
+    serviceId
+  );
 
   // Load stop departures
   const { departures } = useStopDepartures(selectedStopId);
@@ -177,6 +186,15 @@ function App() {
           </div>
         )}
         
+        {allVehiclesLoading && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000]">
+            <div className="alert alert-info">
+              <span className="loading loading-spinner loading-sm"></span>
+              <span>Učitavanje svih vozila...</span>
+            </div>
+          </div>
+        )}
+        
         <MapView
           stops={parentStations}
           selectedRouteId={selectedRouteId}
@@ -186,11 +204,23 @@ function App() {
           vehicles={vehicles}
           routeType={selectedRouteType}
           onStopClick={handleSelectStop}
+          showAllVehicles={showAllVehicles}
+          allVehicles={allVehicles}
         />
 
         {/* Map controls */}
         <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-[1000] flex flex-col gap-2">
           <ThemeToggle />
+          <button
+            onClick={() => setShowAllVehicles(!showAllVehicles)}
+            className={`btn btn-circle min-h-[44px] min-w-[44px] p-2 ${
+              showAllVehicles ? 'btn-primary' : ''
+            }`}
+            aria-label="Toggle all vehicles"
+            title={showAllVehicles ? 'Sakrij sva vozila' : 'Prikaži sva vozila'}
+          >
+            <MapPin className="w-6 h-6" />
+          </button>
           <div className="bg-base-100 rounded-lg px-3 py-2 lg:p-3 shadow-lg">
             <TimeDisplay serviceId={serviceId} calendar={calendar} />
           </div>

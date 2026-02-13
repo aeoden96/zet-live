@@ -349,6 +349,70 @@ def generate_route_active_trips_index(timetables_by_route, trip_lookup):
     print(f"    ✓ Wrote {len(timetables_by_route)} route active trips files")
 
 
+def generate_all_active_trips_index(timetables_by_route, trip_lookup):
+    """Generate combined index for all vehicle positions (show all vehicles feature)."""
+    print("🚗 Generating all active trips index...")
+    
+    # Load routes data for type and short name
+    routes_raw = read_csv("routes.txt")
+    routes_metadata = {}
+    for route in routes_raw:
+        routes_metadata[route['route_id']] = {
+            'type': int(route['route_type']),
+            'shortName': route['route_short_name']
+        }
+    
+    all_routes = {}
+    all_shapes = {}
+    
+    for route_id, trips_data in timetables_by_route.items():
+        # Extract trip metadata with start/end times
+        trips = []
+        for trip_id, trip_stops in trips_data.items():
+            if not trip_stops:
+                continue
+            
+            # Get metadata from trip_lookup
+            _, service_id, headsign, direction, shape_id = trip_lookup[trip_id]
+            
+            # Get start time (first stop) and end time (last stop)
+            first_stop = trip_stops[0]  # [stop_id, sequence, time]
+            last_stop = trip_stops[-1]
+            
+            trips.append({
+                'id': trip_id,
+                'headsign': headsign,
+                'direction': direction,
+                'shapeId': shape_id,
+                'start': first_stop[2],  # departure time in minutes
+                'end': last_stop[2]      # arrival time in minutes
+            })
+        
+        # Add route data with metadata
+        route_metadata = routes_metadata.get(route_id, {'type': 3, 'shortName': route_id})
+        all_routes[route_id] = {
+            'trips': trips,
+            'type': route_metadata['type'],
+            'shortName': route_metadata['shortName']
+        }
+        
+        # Load and merge shapes for this route
+        shapes_file = OUTPUT_DIR / 'shapes' / f'{route_id}.json'
+        if shapes_file.exists():
+            with open(shapes_file, 'r', encoding='utf-8') as f:
+                route_shapes = json.load(f)
+                all_shapes.update(route_shapes)
+    
+    # Write combined file
+    combined_data = {
+        'routes': all_routes,
+        'shapes': all_shapes
+    }
+    
+    write_json(OUTPUT_DIR / 'all_active_trips.json', combined_data)
+    print(f"    ✓ Wrote all_active_trips.json ({len(all_routes)} routes, {len(all_shapes)} shapes)")
+
+
 def generate_manifest():
     """Generate manifest.json with metadata about all chunks."""
     print("📋 Generating manifest...")
@@ -358,6 +422,7 @@ def generate_manifest():
         'generated': '',
         'files': {
             'initial': 'initial.json',
+            'all_active_trips': 'all_active_trips.json',
             'routes': [],
             'stops': [],
             'timetables': [],
@@ -400,6 +465,14 @@ def calculate_stats():
         total_size += size
         file_counts['initial'] = 1
         print(f"  initial.json: {size:,} bytes ({size/1024:.1f} KB)")
+    
+    # All active trips file
+    all_active_file = OUTPUT_DIR / 'all_active_trips.json'
+    if all_active_file.exists():
+        size = all_active_file.stat().st_size
+        total_size += size
+        file_counts['all_active_trips'] = 1
+        print(f"  all_active_trips.json: {size:,} bytes ({size/1024:.1f} KB)")
     
     # Subdirectories
     for subdir in ['routes', 'stops', 'timetables', 'shapes', 'route_stops', 'stop_timetables', 'route_active_trips']:
@@ -454,10 +527,13 @@ def main():
     # Step 7: Route active trips index (B1 optimization)
     generate_route_active_trips_index(timetables_by_route, trip_lookup)
     
-    # Step 8: Manifest
+    # Step 8: All active trips index (show all vehicles feature)
+    generate_all_active_trips_index(timetables_by_route, trip_lookup)
+    
+    # Step 9: Manifest
     generate_manifest()
     
-    # Step 9: Stats
+    # Step 10: Stats
     calculate_stats()
     
     print("\n✅ Done! Output in ./public/data/")

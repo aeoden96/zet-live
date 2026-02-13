@@ -66,6 +66,17 @@ export interface RouteStopsData {
   stops: string[];
 }
 
+export interface AllActiveTripsRoute {
+  trips: ActiveTrip[];
+  type: number; // 0 = Tram, 3 = Bus
+  shortName: string;
+}
+
+export interface AllActiveTripsData {
+  routes: Record<string, AllActiveTripsRoute>;
+  shapes: Record<string, [number, number][]>;
+}
+
 // Time utilities
 export function minutesToTime(minutes: number): string {
   const hours = Math.floor(minutes / 60);
@@ -190,6 +201,14 @@ export async function fetchRouteStops(routeId: string): Promise<RouteStopsData> 
   const response = await fetch(`/data/route_stops/${routeId}.json`);
   if (!response.ok) {
     throw new Error(`Failed to fetch route stops for route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchAllActiveTrips(): Promise<AllActiveTripsData> {
+  const response = await fetch('/data/all_active_trips.json');
+  if (!response.ok) {
+    throw new Error(`Failed to fetch all active trips: ${response.statusText}`);
   }
   return response.json();
 }

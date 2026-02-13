@@ -4,10 +4,11 @@
 
 import { MapContainer, TileLayer } from 'react-leaflet';
 import type { Stop } from '../../utils/gtfs';
-import type { VehiclePosition } from '../../utils/vehicles';
+import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
 import { StopMarkers } from './StopMarkers';
 import { RouteShape } from './RouteShape';
 import { VehicleMarkers } from './VehicleMarkers';
+import { AllVehicleMarkers } from './AllVehicleMarkers';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
 const DEFAULT_ZOOM = 13;
@@ -21,6 +22,8 @@ interface MapViewProps {
   vehicles: VehiclePosition[];
   routeType: number | null;
   onStopClick: (stopId: string) => void;
+  showAllVehicles?: boolean;
+  allVehicles?: AllVehiclePosition[];
 }
 
 export function MapView({
@@ -31,7 +34,9 @@ export function MapView({
   routeStops,
   vehicles,
   routeType,
-  onStopClick
+  onStopClick,
+  showAllVehicles = false,
+  allVehicles = []
 }: MapViewProps) {
   return (
     <MapContainer
@@ -54,6 +59,10 @@ export function MapView({
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}
       />
+      
+      {showAllVehicles && (
+        <AllVehicleMarkers vehicles={allVehicles} />
+      )}
       
       {selectedRouteId && (
         <>
