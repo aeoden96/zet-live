@@ -1,0 +1,258 @@
+/**
+ * Utility functions for working with processed GTFS data
+ */
+
+// Types
+export interface Stop {
+  id: string;
+  code: string;
+  name: string;
+  lat: number;
+  lon: number;
+  locationType: number;
+  parentStation: string | null;
+}
+
+export interface Route {
+  id: string;
+  shortName: string;
+  longName: string;
+  type: number; // 0 = Tram, 3 = Bus
+}
+
+export interface Trip {
+  id: string;
+  serviceId: string;
+  headsign: string;
+  direction: number;
+  shapeId: string | null;
+}
+
+export interface InitialData {
+  stops: Stop[];
+  routes: Route[];
+  calendar: Record<string, string>; // date -> service_id
+  feedVersion: string;
+  feedStartDate: string;
+  feedEndDate: string;
+}
+
+export interface StopTime {
+  stopId: string;
+  sequence: number;
+  time: number; // minutes from midnight
+}
+
+export interface StopDepartures {
+  routes: string[];
+  departures: Record<string, Record<string, number[]>>; // service_id -> route_id -> times[]
+}
+
+export interface ActiveTrip {
+  id: string;
+  headsign: string;
+  direction: number;
+  shapeId: string;
+  start: number; // minutes from midnight
+  end: number;   // minutes from midnight
+}
+
+export interface RouteActiveTripsData {
+  trips: ActiveTrip[];
+  shapes: Record<string, [number, number][]>;
+}
+
+export interface RouteStopsData {
+  stops: string[];
+}
+
+// Time utilities
+export function minutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.floor(minutes % 60);
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+export function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+export function formatTime24h(minutes: number): string {
+  const hours = Math.floor(minutes / 60) % 24;
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+// Date utilities
+export function getCurrentServiceId(calendar: Record<string, string>): string | null {
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const serviceId = calendar[today];
+  
+  // If service exists for today, return it
+  if (serviceId) {
+    return serviceId;
+  }
+  
+  // Fallback for dates outside feed range: use day-of-week default
+  // 0_20 = weekday, 0_21 = Saturday, 0_22 = Sunday
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0) {
+    return '0_22'; // Sunday
+  } else if (dayOfWeek === 6) {
+    return '0_21'; // Saturday
+  } else {
+    return '0_20'; // Weekday (Mon-Fri)
+  }
+}
+
+export function getServiceIdForDate(calendar: Record<string, string>, date: Date): string | null {
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+  return calendar[dateStr] || null;
+}
+
+// Route utilities
+export function isRouteTypeTram(routeType: number): boolean {
+  return routeType === 0;
+}
+
+export function isRouteTypeBus(routeType: number): boolean {
+  return routeType === 3;
+}
+
+export function getRouteTypeName(routeType: number): string {
+  switch (routeType) {
+    case 0: return 'Tram';
+    case 3: return 'Bus';
+    default: return 'Unknown';
+  }
+}
+
+// Stop utilities
+export function isParentStation(stop: Stop): boolean {
+  return stop.locationType === 1;
+}
+
+export function isChildPlatform(stop: Stop): boolean {
+  return stop.locationType === 0 && stop.parentStation !== null;
+}
+
+// Data fetching helpers
+export async function fetchInitialData(): Promise<InitialData> {
+  const response = await fetch('/data/initial.json');
+  if (!response.ok) {
+    throw new Error(`Failed to fetch initial data: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRouteTrips(routeId: string): Promise<{ trips: Trip[] }> {
+  const response = await fetch(`/data/routes/${routeId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRouteTimetable(routeId: string): Promise<Record<string, [string, number, number][]>> {
+  const response = await fetch(`/data/timetables/${routeId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch timetable for route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRouteShapes(routeId: string): Promise<Record<string, [number, number][]>> {
+  const response = await fetch(`/data/shapes/${routeId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch shapes for route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchStopDepartures(stopId: string): Promise<StopDepartures> {
+  const response = await fetch(`/data/stops/${stopId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch departures for stop ${stopId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRouteActiveTrips(routeId: string): Promise<RouteActiveTripsData> {
+  const response = await fetch(`/data/route_active_trips/${routeId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch active trips for route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRouteStops(routeId: string): Promise<RouteStopsData> {
+  const response = await fetch(`/data/route_stops/${routeId}.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch route stops for route ${routeId}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// Timetable parsing helpers
+export function parseTimetableEntry(entry: [string, number, number]): StopTime {
+  return {
+    stopId: entry[0],
+    sequence: entry[1],
+    time: entry[2]
+  };
+}
+
+export function getTripStopTimes(timetable: Record<string, [string, number, number][]>, tripId: string): StopTime[] {
+  const entries = timetable[tripId] || [];
+  return entries.map(parseTimetableEntry);
+}
+
+// Departure time filtering
+export function getNextDepartures(
+  departures: number[],
+  currentTimeMinutes: number,
+  count: number = 5
+): number[] {
+  return departures
+    .filter(time => time >= currentTimeMinutes)
+    .slice(0, count);
+}
+
+export function getCurrentTimeMinutes(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+// Distance calculation (Haversine formula)
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export function findNearestStops(
+  stops: Stop[],
+  lat: number,
+  lon: number,
+  limit: number = 10
+): Array<Stop & { distance: number }> {
+  return stops
+    .map(stop => ({
+      ...stop,
+      distance: calculateDistance(lat, lon, stop.lat, stop.lon)
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit);
+}

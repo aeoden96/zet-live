@@ -1,71 +1,211 @@
-import { Moon, Sun } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react';
+import { MapView } from './components/Map/MapView';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { BottomSheet } from './components/common/BottomSheet';
+import { RouteList } from './components/Sidebar/RouteList';
+import { RoutePanel } from './components/Sidebar/RoutePanel';
+import { StopPanel } from './components/Sidebar/StopPanel';
+import { ThemeToggle } from './components/common/ThemeToggle';
+import { TimeDisplay } from './components/common/TimeDisplay';
+import { DebugPanel } from './components/common/DebugPanel';
+import { useInitialData } from './hooks/useInitialData';
+import { useCurrentService } from './hooks/useCurrentService';
+import { useRouteData } from './hooks/useRouteData';
+import { useStopDepartures } from './hooks/useStopDepartures';
+import { useVehiclePositions } from './hooks/useVehiclePositions';
+
+type ViewMode = 'list' | 'route' | 'stop';
+type DirectionFilter = 'all' | 'A' | 'B';
 
 function App() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [selectedRouteType, setSelectedRouteType] = useState<number | null>(null);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-    if (savedTheme) {
-      setTheme(savedTheme)
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark')
+  // Load initial data
+  const { 
+    stops,
+    routes, 
+    parentStations, 
+    stopsById, 
+    routesById, 
+    calendar, 
+    loading: initialLoading,
+    error: initialError
+  } = useInitialData();
+
+  // Get current service ID
+  const serviceId = useCurrentService(calendar);
+
+  // Load route-specific data
+  const { shapes, routeStops, activeTripsData, loading: routeLoading } = useRouteData(
+    selectedRouteId
+  );
+
+  // Calculate vehicle positions
+  const vehicles = useVehiclePositions(activeTripsData, serviceId);
+
+  // Load stop departures
+  const { departures } = useStopDepartures(selectedStopId);
+
+  // Handlers
+  const handleSelectRoute = (routeId: string, routeType: number, directionFilter?: DirectionFilter) => {
+    setSelectedRouteId(routeId);
+    setSelectedRouteType(routeType);
+    if (directionFilter) {
+      setDirectionFilter(directionFilter);
     }
-  }, [])
+    setViewMode('route');
+  };
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
+  const handleSelectStop = (stopId: string) => {
+    const stop = stopsById.get(stopId);
+    
+    // If it's a parent station, find the first child platform
+    if (stop && stop.locationType === 1) {
+      const childPlatform = stops.find(
+        (s) => s.parentStation === stopId && s.locationType === 0
+      );
+      if (childPlatform) {
+        setSelectedStopId(childPlatform.id);
+      } else {
+        setSelectedStopId(stopId);
+      }
+    } else {
+      setSelectedStopId(stopId);
+    }
+    setViewMode('stop');
+  };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
-  }
+  const handleBack = () => {
+    if (viewMode === 'stop') {
+      // If we came from a route view, go back to route
+      if (selectedRouteId) {
+        setViewMode('route');
+      } else {
+        setViewMode('list');
+      }
+      setSelectedStopId(null);
+    } else if (viewMode === 'route') {
+      setViewMode('list');
+      setSelectedRouteId(null);
+      setSelectedRouteType(null);
+    }
+  };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card bg-base-100 shadow-xl max-w-2xl w-full">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="card-title text-3xl">React + Vite Template</h1>
-            <button
-              onClick={toggleTheme}
-              className="btn btn-circle btn-ghost"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon size={24} /> : <Sun size={24} />}
-            </button>
-          </div>
-          
-          <div className="prose dark:prose-invert">
-            <h2>Features</h2>
-            <ul>
-              <li>⚡ Vite - Lightning fast build tool</li>
-              <li>⚛️ React 19 - Latest React features</li>
-              <li>🎨 Tailwind CSS v4 - Utility-first CSS</li>
-              <li>🧩 DaisyUI - Beautiful component library</li>
-              <li>🎭 TypeScript - Type safety</li>
-              <li>🧪 Vitest - Fast unit testing</li>
-              <li>📏 ESLint - Code linting</li>
-              <li>🎯 Lucide React - Icon library</li>
-              <li>🚀 GitHub Actions - CI/CD ready</li>
-            </ul>
-          </div>
-
-          <div className="card-actions justify-end mt-4">
-            <a
-              href="https://vitejs.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary"
-            >
-              Get Started
-            </a>
-          </div>
+  // Loading state
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg"></div>
+          <div className="mt-4">Učitavanje podataka...</div>
         </div>
       </div>
+    );
+  }
+
+  // Error state
+  if (initialError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="alert alert-error max-w-md">
+          <span>Greška pri učitavanju podataka: {initialError.message}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedRoute = selectedRouteId ? routesById.get(selectedRouteId) : null;
+  const selectedStop = selectedStopId ? stopsById.get(selectedStopId) : null;
+
+  // Sidebar content component
+  const sidebarContent = (
+    <>
+      {viewMode === 'list' && (
+        <RouteList 
+          routes={routes} 
+          onSelectRoute={handleSelectRoute}
+        />
+      )}
+      
+      {viewMode === 'route' && selectedRoute && (
+        <RoutePanel
+          route={selectedRoute}
+          routeStops={routeStops}
+          stopsById={stopsById}
+          vehicles={vehicles}
+          initialDirectionFilter={directionFilter}
+          onBack={handleBack}
+          onStopClick={handleSelectStop}
+        />
+      )}
+      
+      {viewMode === 'stop' && selectedStop && (
+        <StopPanel
+          stop={selectedStop}
+          departures={departures}
+          routesById={routesById}
+          serviceId={serviceId}
+          onBack={handleBack}
+          onRouteClick={handleSelectRoute}
+        />
+      )}
+    </>
+  );
+
+  return (
+    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
+      {/* Desktop Sidebar (lg+) */}
+      <div className="hidden lg:block">
+        <Sidebar isOpen={true} onClose={() => {}}>
+          {sidebarContent}
+        </Sidebar>
+      </div>
+
+      {/* Map */}
+      <div className="flex-1 relative">
+        {routeLoading && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
+            <div className="alert alert-info">
+              <span className="loading loading-spinner loading-sm"></span>
+              <span>Učitavanje rute...</span>
+            </div>
+          </div>
+        )}
+        
+        <MapView
+          stops={parentStations}
+          selectedRouteId={selectedRouteId}
+          selectedStopId={selectedStopId}
+          routeShapes={shapes}
+          routeStops={routeStops}
+          vehicles={vehicles}
+          routeType={selectedRouteType}
+          onStopClick={handleSelectStop}
+        />
+
+        {/* Map controls */}
+        <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-[1000] flex flex-col gap-2">
+          <ThemeToggle />
+          <div className="bg-base-100 rounded-lg px-3 py-2 lg:p-3 shadow-lg">
+            <TimeDisplay serviceId={serviceId} calendar={calendar} />
+          </div>
+        </div>
+
+        {/* Debug panel */}
+        <DebugPanel />
+      </div>
+
+      {/* Mobile Bottom Sheet (< lg) */}
+      <BottomSheet isOpen={true} onClose={() => {}}>
+        {sidebarContent}
+      </BottomSheet>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

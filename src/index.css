@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 @plugin '@tailwindcss/typography';
 @plugin "daisyui";
 
@@ -10,18 +11,19 @@
   --color-medium: #8d99ae;
   --color-light: #edf2f4;
 
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-md: 16px;
-  --text-lg: 20px;
-  --text-xl: 24px;
-  --text-2xl: 32px;
-  --text-3xl: 40px;
-  --text-4xl: 48px;
-  --text-5xl: 56px;
-  --text-6xl: 64px;
-  --text-7xl: 72px;
-  --text-8xl: 80px;
+  /* Responsive typography using clamp() for fluid scaling */
+  --text-xs: clamp(11px, 0.7rem, 12px);
+  --text-sm: clamp(13px, 0.85rem, 14px);
+  --text-md: clamp(15px, 0.95rem, 16px);
+  --text-lg: clamp(18px, 1.15rem, 20px);
+  --text-xl: clamp(22px, 1.4rem, 24px);
+  --text-2xl: clamp(28px, 1.8rem, 32px);
+  --text-3xl: clamp(36px, 2.25rem, 40px);
+  --text-4xl: clamp(42px, 2.75rem, 48px);
+  --text-5xl: clamp(48px, 3.25rem, 56px);
+  --text-6xl: clamp(56px, 3.75rem, 64px);
+  --text-7xl: clamp(64px, 4.25rem, 72px);
+  --text-8xl: clamp(72px, 4.75rem, 80px);
 }
 
 :root {
@@ -43,7 +45,7 @@ body {
   text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  font-size: 16px;
+  font-size: clamp(15px, 0.95rem, 16px);
   line-height: 1.6;
 }
 
@@ -105,4 +107,27 @@ html, body {
 
 [data-theme="dark"] pre {
   background-color: rgb(var(--gray-dark));
+}
+
+/* Safe area utilities for mobile notches and home indicators */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Ensure touch targets are at least 44x44px for better mobile UX */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
 }
