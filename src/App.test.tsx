@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 // Mock Leaflet components
@@ -10,6 +11,7 @@ vi.mock('react-leaflet', () => ({
   Polyline: () => <div data-testid="polyline" />,
   Popup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Tooltip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  useMap: () => ({ getZoom: () => 13, on: vi.fn(), off: vi.fn() }),
 }));
 
 const mockInitialData = {
@@ -55,33 +57,31 @@ describe('App', () => {
   });
 
   it('renders loading state initially', () => {
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
     expect(screen.getByText(/Učitavanje podataka/i)).toBeInTheDocument();
   });
 
-  it('renders map and sidebar after loading', async () => {
-    render(<App />);
+  it('renders map and search bar after loading', async () => {
+    render(<MemoryRouter><App /></MemoryRouter>);
     
     await waitFor(() => {
       expect(screen.queryByText(/Učitavanje podataka/i)).not.toBeInTheDocument();
     });
 
     expect(screen.getByTestId('map-container')).toBeInTheDocument();
-    expect(screen.getByText(/ZET Live/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pretraži linije/i)).toBeInTheDocument();
   });
 
-  it('displays route tabs', async () => {
-    render(<App />);
+  it('search bar is present after load', async () => {
+    render(<MemoryRouter><App /></MemoryRouter>);
     
     await waitFor(() => {
-      expect(screen.getByText(/Tramvaji/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pretraži linije/i)).toBeInTheDocument();
     });
-
-    expect(screen.getByText(/Autobusi/i)).toBeInTheDocument();
   });
 
   it('renders theme toggle button', async () => {
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
     
     await waitFor(() => {
       expect(screen.queryByText(/Učitavanje podataka/i)).not.toBeInTheDocument();

@@ -3,7 +3,7 @@
  */
 
 import { MapContainer, TileLayer } from 'react-leaflet';
-import type { Stop } from '../../utils/gtfs';
+import type { Stop, Route } from '../../utils/gtfs';
 import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
 import { ZoomBasedStops } from './ZoomBasedStops';
 import { RouteShape } from './RouteShape';
@@ -26,6 +26,9 @@ interface MapViewProps {
   onStopClick: (stopId: string) => void;
   showAllVehicles?: boolean;
   allVehicles?: AllVehiclePosition[];
+  routesById: Map<string, Route>;
+  serviceId: string | null;
+  onExpandStop: (stopId: string) => void;
 }
 
 const TILE_PROVIDERS = {
@@ -54,7 +57,10 @@ export function MapView({
   routeType,
   onStopClick,
   showAllVehicles = false,
-  allVehicles = []
+  allVehicles = [],
+  routesById,
+  serviceId,
+  onExpandStop
 }: MapViewProps) {
   const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
   const tileConfig = TILE_PROVIDERS[mapTileProvider];
@@ -81,6 +87,9 @@ export function MapView({
         selectedStopId={selectedStopId}
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}
+        routesById={routesById}
+        serviceId={serviceId}
+        onExpandStop={onExpandStop}
       />
       
       {showAllVehicles && (

@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
-import type { Stop } from '../../utils/gtfs';
+import type { Stop, Route } from '../../utils/gtfs';
 
 interface ZoomBasedStopsProps {
   parentStations: Stop[];
@@ -13,6 +13,9 @@ interface ZoomBasedStopsProps {
   selectedStopId: string | null;
   highlightStopIds: string[];
   onStopClick: (stopId: string) => void;
+  routesById: Map<string, Route>;
+  serviceId: string | null;
+  onExpandStop: (stopId: string) => void;
   zoomThreshold?: number;
 }
 
@@ -22,6 +25,9 @@ export function ZoomBasedStops({
   selectedStopId, 
   highlightStopIds,
   onStopClick,
+  routesById,
+  serviceId,
+  onExpandStop,
   zoomThreshold = 17
 }: ZoomBasedStopsProps) {
   const map = useMap();
@@ -49,6 +55,9 @@ export function ZoomBasedStops({
       selectedStopId={selectedStopId}
       highlightStopIds={highlightStopIds}
       onStopClick={onStopClick}
+      routesById={routesById}
+      serviceId={serviceId}
+      onExpandStop={onExpandStop}
     />
   );
 }
