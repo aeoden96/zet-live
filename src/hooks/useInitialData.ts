@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { InitialData, Stop } from '../utils/gtfs';
 import { fetchInitialData, isParentStation } from '../utils/gtfs';
+import { checkCacheVersion } from '../stores/dataCache';
 
 export function useInitialData() {
   const [data, setData] = useState<InitialData | null>(null);
@@ -14,7 +15,9 @@ export function useInitialData() {
   useEffect(() => {
     let mounted = true;
 
-    fetchInitialData()
+    // Check cache version first, then fetch data
+    checkCacheVersion()
+      .then(() => fetchInitialData())
       .then((initialData) => {
         if (mounted) {
           setData(initialData);

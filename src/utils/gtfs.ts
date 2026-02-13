@@ -2,6 +2,8 @@
  * Utility functions for working with processed GTFS data
  */
 
+import { cachedFetch } from '../stores/dataCache';
+
 // Types
 export interface Stop {
   id: string;
@@ -150,67 +152,83 @@ export function isChildPlatform(stop: Stop): boolean {
 
 // Data fetching helpers
 export async function fetchInitialData(): Promise<InitialData> {
-  const response = await fetch('/data/initial.json');
-  if (!response.ok) {
-    throw new Error(`Failed to fetch initial data: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch('/data/initial.json', async () => {
+    const response = await fetch('/data/initial.json');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch initial data: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchRouteTrips(routeId: string): Promise<{ trips: Trip[] }> {
-  const response = await fetch(`/data/routes/${routeId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch route ${routeId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/routes/${routeId}.json`, async () => {
+    const response = await fetch(`/data/routes/${routeId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchRouteTimetable(routeId: string): Promise<Record<string, [string, number, number][]>> {
-  const response = await fetch(`/data/timetables/${routeId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch timetable for route ${routeId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/timetables/${routeId}.json`, async () => {
+    const response = await fetch(`/data/timetables/${routeId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch timetable for route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchRouteShapes(routeId: string): Promise<Record<string, [number, number][]>> {
-  const response = await fetch(`/data/shapes/${routeId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch shapes for route ${routeId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/shapes/${routeId}.json`, async () => {
+    const response = await fetch(`/data/shapes/${routeId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch shapes for route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchStopDepartures(stopId: string): Promise<StopDepartures> {
-  const response = await fetch(`/data/stops/${stopId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch departures for stop ${stopId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/stops/${stopId}.json`, async () => {
+    const response = await fetch(`/data/stops/${stopId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch departures for stop ${stopId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchRouteActiveTrips(routeId: string): Promise<RouteActiveTripsData> {
-  const response = await fetch(`/data/route_active_trips/${routeId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch active trips for route ${routeId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/route_active_trips/${routeId}.json`, async () => {
+    const response = await fetch(`/data/route_active_trips/${routeId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch active trips for route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchRouteStops(routeId: string): Promise<RouteStopsData> {
-  const response = await fetch(`/data/route_stops/${routeId}.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch route stops for route ${routeId}: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch(`/data/route_stops/${routeId}.json`, async () => {
+    const response = await fetch(`/data/route_stops/${routeId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch route stops for route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchAllActiveTrips(): Promise<AllActiveTripsData> {
-  const response = await fetch('/data/all_active_trips.json');
-  if (!response.ok) {
-    throw new Error(`Failed to fetch all active trips: ${response.statusText}`);
-  }
-  return response.json();
+  return cachedFetch('/data/all_active_trips.json', async () => {
+    const response = await fetch('/data/all_active_trips.json');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all active trips: ${response.statusText}`);
+    }
+    return response.json();
+  });
 }
 
 // Timetable parsing helpers
