@@ -214,7 +214,10 @@ function App() {
         />
 
         {/* Map controls */}
-        <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-[1000] flex flex-col gap-2">
+        <div className="absolute top-2 right-2 lg:top-4 lg:right-4 z-[1000] flex flex-col items-end gap-2">
+            <div className="bg-base-100 rounded-lg px-3 py-2 lg:p-3 shadow-lg">
+            <TimeDisplay serviceId={serviceId} calendar={calendar} />
+          </div>
           <Link to="/settings" className="btn btn-circle min-h-[44px] min-w-[44px] p-2">
             <Settings className="w-6 h-6" />
           </Link>
@@ -228,9 +231,7 @@ function App() {
           >
             <MapPin className="w-6 h-6" />
           </button>
-          <div className="bg-base-100 rounded-lg px-3 py-2 lg:p-3 shadow-lg">
-            <TimeDisplay serviceId={serviceId} calendar={calendar} />
-          </div>
+        
         </div>
 
         {/* Debug panel */}
