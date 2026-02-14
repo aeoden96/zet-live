@@ -80,6 +80,53 @@ export function interpolatePosition(
 }
 
 /**
+ * Calculate stop-aware progress based on scheduled stop times.
+ * Interpolates between stops using their time and shape progress.
+ * 
+ * @param stopTimes Array of [time_minutes, shape_progress] tuples
+ * @param currentMinutes Current time in minutes from midnight
+ * @returns Progress fraction (0-1) based on stop timing
+ */
+export function getStopAwareProgress(
+  stopTimes: [number, number][],
+  currentMinutes: number
+): number {
+  if (stopTimes.length === 0) {
+    return 0;
+  }
+  
+  // Before first stop
+  if (currentMinutes <= stopTimes[0][0]) {
+    return stopTimes[0][1];
+  }
+  
+  // After last stop
+  if (currentMinutes >= stopTimes[stopTimes.length - 1][0]) {
+    return stopTimes[stopTimes.length - 1][1];
+  }
+  
+  // Find bracketing stops
+  for (let i = 0; i < stopTimes.length - 1; i++) {
+    const [time1, progress1] = stopTimes[i];
+    const [time2, progress2] = stopTimes[i + 1];
+    
+    if (currentMinutes >= time1 && currentMinutes <= time2) {
+      // Linear interpolation between stops
+      const timeDiff = time2 - time1;
+      if (timeDiff <= 0) {
+        return progress1;
+      }
+      
+      const timeProgress = (currentMinutes - time1) / timeDiff;
+      return progress1 + (progress2 - progress1) * timeProgress;
+    }
+  }
+  
+  // Fallback (should not reach here)
+  return stopTimes[stopTimes.length - 1][1];
+}
+
+/**
  * Get active vehicle positions for trips currently in service
  */
 export function getActiveVehicles(
@@ -108,9 +155,17 @@ export function getActiveVehicles(
     }
     
     // Calculate progress (0-1) based on time
-    const tripDuration = trip.end - trip.start;
-    const elapsed = currentMinutes - trip.start;
-    const progress = tripDuration > 0 ? elapsed / tripDuration : 0;
+    let progress: number;
+    
+    if (trip.stopTimes && trip.stopTimes.length > 0) {
+      // Use stop-aware interpolation
+      progress = getStopAwareProgress(trip.stopTimes, currentMinutes);
+    } else {
+      // Fallback to linear time interpolation
+      const tripDuration = trip.end - trip.start;
+      const elapsed = currentMinutes - trip.start;
+      progress = tripDuration > 0 ? elapsed / tripDuration : 0;
+    }
     
     // Interpolate position
     const [lat, lon] = interpolatePosition(shape, progress);

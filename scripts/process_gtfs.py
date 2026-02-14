@@ -274,6 +274,87 @@ def generate_route_stops_index(timetables_by_route):
     print(f"    ✓ Wrote {len(timetables_by_route)} route stops files")
 
 
+def snap_stops_to_shape(shape_points, stop_coords):
+    """Project stops onto shape polyline and compute progress fractions.
+    
+    Args:
+        shape_points: List of [lat, lon] coordinates defining the shape polyline
+        stop_coords: List of (lat, lon) tuples for stops in sequence order
+    
+    Returns:
+        List of progress fractions (0.0 to 1.0) for each stop
+    """
+    if not shape_points or not stop_coords:
+        return []
+    
+    # Pre-compute segment lengths and cumulative distances
+    segment_lengths = []
+    cumulative_distances = [0]
+    total_length = 0
+    
+    for i in range(1, len(shape_points)):
+        lat1, lon1 = shape_points[i - 1]
+        lat2, lon2 = shape_points[i]
+        seg_len = ((lat2 - lat1) ** 2 + (lon2 - lon1) ** 2) ** 0.5
+        segment_lengths.append(seg_len)
+        total_length += seg_len
+        cumulative_distances.append(total_length)
+    
+    if total_length == 0:
+        return [0.0] * len(stop_coords)
+    
+    # For each stop, find nearest point on shape (forward search)
+    progress_values = []
+    search_start_idx = 0  # Enforce monotonic progression
+    
+    for stop_lat, stop_lon in stop_coords:
+        min_dist = float('inf')
+        best_cumulative_dist = 0
+        best_idx = search_start_idx
+        
+        # Search forward from last position (stops should be ordered along route)
+        for i in range(search_start_idx, len(segment_lengths)):
+            lat1, lon1 = shape_points[i]
+            lat2, lon2 = shape_points[i + 1]
+            
+            # Vector from segment start to stop
+            dx_seg = lat2 - lat1
+            dy_seg = lon2 - lon1
+            dx_stop = stop_lat - lat1
+            dy_stop = stop_lon - lon1
+            
+            # Project stop onto segment line (clamped to [0, 1])
+            seg_len_sq = dx_seg ** 2 + dy_seg ** 2
+            if seg_len_sq > 0:
+                t = max(0, min(1, (dx_stop * dx_seg + dy_stop * dy_seg) / seg_len_sq))
+            else:
+                t = 0
+            
+            # Calculate closest point on segment
+            proj_lat = lat1 + t * dx_seg
+            proj_lon = lon1 + t * dy_seg
+            
+            # Distance from stop to projection
+            dist = ((stop_lat - proj_lat) ** 2 + (stop_lon - proj_lon) ** 2) ** 0.5
+            
+            if dist < min_dist:
+                min_dist = dist
+                best_cumulative_dist = cumulative_distances[i] + t * segment_lengths[i]
+                best_idx = i
+                
+            # Early termination: if distance is increasing significantly, we've passed the stop
+            elif dist > min_dist * 3 and i > search_start_idx + 10:
+                break
+        
+        # Update search start for next stop (monotonic progression)
+        search_start_idx = max(search_start_idx, best_idx)
+        
+        progress = best_cumulative_dist / total_length if total_length > 0 else 0
+        progress_values.append(round(progress, 6))
+    
+    return progress_values
+
+
 def generate_stop_timetables_index(timetables_by_route, trip_lookup):
     """Generate pre-filtered timetables by stop (A2 optimization)."""
     print("⏱️  Generating stop timetables index...")
@@ -308,8 +389,35 @@ def generate_route_active_trips_index(timetables_by_route, trip_lookup):
     route_active_trips_dir = OUTPUT_DIR / 'route_active_trips'
     route_active_trips_dir.mkdir(exist_ok=True)
     
+    # Load stops data for coordinates
+    initial_file = OUTPUT_DIR / 'initial.json'
+    stops_by_id = {}
+    if initial_file.exists():
+        with open(initial_file, 'r', encoding='utf-8') as f:
+            initial_data = json.load(f)
+            for stop in initial_data.get('stops', []):
+                stops_by_id[stop['id']] = (stop['lat'], stop['lon'])
+    
+    trips_with_synthetic_shapes = 0
+    trips_with_stop_times = 0
+    routes_processed = 0
+    
+    # Cache to avoid recomputing same shape projections
+    shape_stop_progress_cache = {}
+    
     for route_id, trips_data in timetables_by_route.items():
-        # Extract trip metadata with start/end times
+        routes_processed += 1
+        if routes_processed % 20 == 0:
+            print(f"  ... processing route {routes_processed}/{len(timetables_by_route)}")
+        
+        # Load shapes for this route
+        shapes_file = OUTPUT_DIR / 'shapes' / f'{route_id}.json'
+        shapes = {}
+        if shapes_file.exists():
+            with open(shapes_file, 'r', encoding='utf-8') as f:
+                shapes = json.load(f)
+        
+        # Extract trip metadata with start/end times and stop-aware progress
         trips = []
         for trip_id, trip_stops in trips_data.items():
             if not trip_stops:
@@ -322,21 +430,65 @@ def generate_route_active_trips_index(timetables_by_route, trip_lookup):
             first_stop = trip_stops[0]  # [stop_id, sequence, time]
             last_stop = trip_stops[-1]
             
-            trips.append({
+            # Get stop coordinates in order
+            stop_coords = []
+            stop_ids = []
+            for stop_id_val, seq, time in trip_stops:
+                if stop_id_val in stops_by_id:
+                    stop_coords.append(stops_by_id[stop_id_val])
+                    stop_ids.append(stop_id_val)
+            
+            # Generate synthetic shape if shapeId is null
+            is_synthetic = False
+            if shape_id is None and stop_coords:
+                shape_id = f"{route_id}_s{direction}"
+                # Create shape from stop coordinates
+                shapes[shape_id] = [[lat, lon] for lat, lon in stop_coords]
+                trips_with_synthetic_shapes += 1
+                is_synthetic = True
+            
+            # Compute per-stop progress fractions
+            stop_times = None
+            if shape_id and shape_id in shapes and stop_coords:
+                shape_points = shapes[shape_id]
+                
+                # For synthetic shapes, progress is evenly distributed by stop index
+                if is_synthetic:
+                    # Synthetic shapes have stops as vertices, so progress is straightforward
+                    num_stops = len(stop_coords)
+                    if num_stops > 1:
+                        progress_values = [i / (num_stops - 1) for i in range(num_stops)]
+                    else:
+                        progress_values = [0.0]
+                else:
+                    # Use cache for real shapes with same stop sequence
+                    cache_key = (shape_id, tuple(stop_ids))
+                    if cache_key in shape_stop_progress_cache:
+                        progress_values = shape_stop_progress_cache[cache_key]
+                    else:
+                        progress_values = snap_stops_to_shape(shape_points, stop_coords)
+                        shape_stop_progress_cache[cache_key] = progress_values
+                
+                if progress_values:
+                    # Combine times and progress: [[time, progress], ...]
+                    stop_times = [[trip_stops[i][2], progress_values[i]] 
+                                  for i in range(min(len(trip_stops), len(progress_values)))]
+                    trips_with_stop_times += 1
+            
+            trip_data = {
                 'id': trip_id,
                 'headsign': headsign,
                 'direction': direction,
                 'shapeId': shape_id,
                 'start': first_stop[2],  # departure time in minutes
                 'end': last_stop[2]      # arrival time in minutes
-            })
-        
-        # Load shapes for this route
-        shapes_file = OUTPUT_DIR / 'shapes' / f'{route_id}.json'
-        shapes = {}
-        if shapes_file.exists():
-            with open(shapes_file, 'r', encoding='utf-8') as f:
-                shapes = json.load(f)
+            }
+            
+            # Add stopTimes if available
+            if stop_times:
+                trip_data['stopTimes'] = stop_times
+            
+            trips.append(trip_data)
         
         # Write combined file
         active_trips_data = {
@@ -347,6 +499,8 @@ def generate_route_active_trips_index(timetables_by_route, trip_lookup):
         write_json(route_active_trips_dir / f'{route_id}.json', active_trips_data)
     
     print(f"    ✓ Wrote {len(timetables_by_route)} route active trips files")
+    print(f"    ✓ Generated {trips_with_synthetic_shapes} synthetic shapes for trips with null shapeId")
+    print(f"    ✓ Added stopTimes to {trips_with_stop_times} trips")
 
 
 def generate_all_active_trips_index(timetables_by_route, trip_lookup):

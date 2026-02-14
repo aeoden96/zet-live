@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Settings, Search } from 'lucide-react';
+import { MapPin, Settings, Search, X } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
@@ -119,8 +119,13 @@ function App() {
 
   const handleCloseRoute = () => {
     setRouteModalOpen(false);
+    // Keep route selected when closing modal
+  };
+
+  const handleClearRoute = () => {
     setSelectedRouteId(null);
     setSelectedRouteType(null);
+    setDirectionFilter('all');
   };
 
   const handleCloseStop = () => {
@@ -194,18 +199,33 @@ function App() {
 
       {/* Floating search bar */}
       <div className="absolute top-2 left-2 right-2 sm:left-4 sm:right-auto sm:top-4 z-[1000]">
-        <button
-          onClick={() => setSearchModalOpen(true)}
-          className="w-full sm:w-80 flex items-center gap-3 bg-base-100 rounded-xl px-4 py-3 shadow-lg hover:shadow-xl transition-shadow text-left"
-        >
-          <Search className="w-5 h-5 text-base-content/50 shrink-0" />
-          <span className="text-base-content/50 text-sm flex-1">Pretraži linije...</span>
+        <div className="w-full sm:w-80 flex items-center gap-2 bg-base-100 rounded-xl px-4 py-3 shadow-lg">
+          <button
+            onClick={() => setSearchModalOpen(true)}
+            className="flex-1 flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+          >
+            <Search className="w-5 h-5 text-base-content/50 shrink-0" />
+            {selectedRoute ? (
+              <span className="text-sm flex-1">
+                <span className={`badge ${selectedRoute.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold mr-2`}>
+                  {selectedRoute.shortName}
+                </span>
+                <span className="text-base-content/70">{selectedRoute.longName}</span>
+              </span>
+            ) : (
+              <span className="text-base-content/50 text-sm flex-1">Pretraži linije...</span>
+            )}
+          </button>
           {selectedRoute && (
-            <span className={`badge ${selectedRoute.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold`}>
-              {selectedRoute.shortName}
-            </span>
+            <button
+              onClick={handleClearRoute}
+              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              aria-label="Očisti odabir"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Map controls (top-right) */}

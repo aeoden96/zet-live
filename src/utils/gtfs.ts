@@ -57,6 +57,7 @@ export interface ActiveTrip {
   shapeId: string;
   start: number; // minutes from midnight
   end: number;   // minutes from midnight
+  stopTimes?: [number, number][]; // [[time_minutes, shape_progress], ...] for stop-aware interpolation
 }
 
 export interface RouteActiveTripsData {
