@@ -11,6 +11,7 @@ interface RouteModalProps {
   isOpen: boolean;
   route: Route;
   routeStops: string[];
+  orderedStops?: Record<string, string[]>;
   stopsById: Map<string, Stop>;
   vehicles: VehiclePosition[];
   initialDirectionFilter?: DirectionFilter;
@@ -29,6 +30,7 @@ export function RouteModal({
   isOpen,
   route,
   routeStops,
+  orderedStops,
   stopsById,
   vehicles,
   initialDirectionFilter = 'all',
@@ -42,18 +44,22 @@ export function RouteModal({
   const groupedStops = useMemo(() => {
     const groups = new Map<string, GroupedStop>();
 
-    for (const stopId of routeStops) {
+    // Use ordered stops for proper route-sequence display
+    let stopIds: string[];
+    if (directionFilter === 'A' && orderedStops?.['0']) {
+      stopIds = orderedStops['0'];
+    } else if (directionFilter === 'B' && orderedStops?.['1']) {
+      stopIds = orderedStops['1'];
+    } else if (orderedStops?.['0'] || orderedStops?.['1']) {
+      // 'all' - combine both directions, deduplicating by stop name
+      stopIds = [...(orderedStops['0'] || []), ...(orderedStops['1'] || [])];
+    } else {
+      stopIds = routeStops; // fallback
+    }
+
+    for (const stopId of stopIds) {
       const stop = stopsById.get(stopId);
       if (!stop) continue;
-
-      if (directionFilter !== 'all') {
-        const codeNum = parseInt(stop.code);
-        if (!isNaN(codeNum)) {
-          const isOdd = codeNum % 2 === 1;
-          if (directionFilter === 'A' && !isOdd) continue;
-          if (directionFilter === 'B' && isOdd) continue;
-        }
-      }
 
       if (!groups.has(stop.name)) {
         groups.set(stop.name, { name: stop.name, platforms: [] });
@@ -62,7 +68,7 @@ export function RouteModal({
     }
 
     return Array.from(groups.values());
-  }, [routeStops, stopsById, directionFilter]);
+  }, [routeStops, orderedStops, stopsById, directionFilter]);
 
   if (!isOpen) return null;
 

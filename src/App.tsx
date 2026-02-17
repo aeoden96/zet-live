@@ -60,7 +60,7 @@ function App() {
   const serviceId = useCurrentService(calendar);
 
   // Load route-specific data
-  const { shapes, routeStops, activeTripsData, loading: routeLoading } = useRouteData(
+  const { shapes, routeStops, orderedStops, activeTripsData, loading: routeLoading } = useRouteData(
     selectedRouteId
   );
 
@@ -333,6 +333,7 @@ function App() {
           isOpen={routeModalOpen}
           route={selectedRoute}
           routeStops={routeStops}
+          orderedStops={orderedStops}
           stopsById={stopsById}
           vehicles={vehicles}
           initialDirectionFilter={directionFilter}

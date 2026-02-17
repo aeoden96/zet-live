@@ -68,6 +68,8 @@ export interface RouteActiveTripsData {
 
 export interface RouteStopsData {
   stops: string[];
+  canonicalShapes?: string[];
+  orderedStops?: Record<string, string[]>;
 }
 
 export interface AllActiveTripsRoute {

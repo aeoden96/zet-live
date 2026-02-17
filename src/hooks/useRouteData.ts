@@ -13,6 +13,7 @@ import {
 interface RouteData {
   shapes: Record<string, [number, number][]>;
   routeStops: string[];
+  orderedStops: Record<string, string[]>;
   activeTripsData: RouteActiveTripsData | null;
 }
 
@@ -51,9 +52,18 @@ export function useRouteData(routeId: string | null) {
     ])
       .then(([shapes, stopsData, activeTripsData]) => {
         if (mounted) {
+          // Filter shapes to only canonical ones (excludes deadhead/storage routes)
+          const canonicalShapes = stopsData.canonicalShapes;
+          const filteredShapes = canonicalShapes && canonicalShapes.length > 0
+            ? Object.fromEntries(
+                Object.entries(shapes).filter(([shapeId]) => canonicalShapes.includes(shapeId))
+              )
+            : shapes;
+          
           const routeData: RouteData = {
-            shapes,
+            shapes: filteredShapes,
             routeStops: stopsData.stops,
+            orderedStops: stopsData.orderedStops || {},
             activeTripsData
           };
           
@@ -79,6 +89,7 @@ export function useRouteData(routeId: string | null) {
   return {
     shapes: data?.shapes || {},
     routeStops: data?.routeStops || [],
+    orderedStops: data?.orderedStops || {},
     activeTripsData: data?.activeTripsData || null,
     loading,
     error

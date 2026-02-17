@@ -11,6 +11,7 @@ import csv
 import json
 import os
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 
@@ -303,21 +304,68 @@ def process_stop_times(trip_lookup):
     return timetables_by_route
 
 
-def generate_route_stops_index(timetables_by_route):
-    """Generate lightweight stop list per route (B2 optimization)."""
+def generate_route_stops_index(timetables_by_route, trip_lookup):
+    """Generate lightweight stop list per route (B2 optimization).
+    
+    Only includes stops from the most common trip variant (shape) per direction,
+    filtering out deadhead/storage/pullout stops that appear in minor trip variants.
+    """
     print("🗺️  Generating route stops index...")
     
     route_stops_dir = OUTPUT_DIR / 'route_stops'
     route_stops_dir.mkdir(exist_ok=True)
     
     for route_id, trips_data in timetables_by_route.items():
+        # Group trips by (direction, shape_id) and count occurrences
+        shape_trip_counts = defaultdict(int)  # (direction, shape_id) -> count
+        
+        for trip_id in trips_data:
+            if trip_id not in trip_lookup:
+                continue
+            _, _, _, direction, shape_id = trip_lookup[trip_id]
+            shape_trip_counts[(direction, shape_id)] += 1
+        
+        # Find the most common shape per direction (canonical shapes)
+        directions = set(d for d, _ in shape_trip_counts.keys())
+        canonical_shapes = set()
+        
+        for direction in directions:
+            dir_shapes = [(k, v) for k, v in shape_trip_counts.items() if k[0] == direction]
+            if dir_shapes:
+                best_key = max(dir_shapes, key=lambda x: x[1])[0]
+                canonical_shapes.add(best_key[1])  # shape_id
+        
+        # Collect stops only from canonical shape trips
         stops_set = set()
-        for trip_stops in trips_data.values():
-            for stop_id, seq, time in trip_stops:
-                stops_set.add(stop_id)
+        for trip_id, trip_stops in trips_data.items():
+            if trip_id not in trip_lookup:
+                continue
+            _, _, _, direction, shape_id = trip_lookup[trip_id]
+            if shape_id in canonical_shapes:
+                for stop_id, seq, time in trip_stops:
+                    stops_set.add(stop_id)
+        
+        # Build ordered stop lists per direction from a representative canonical trip
+        ordered_stops = {}
+        for direction in directions:
+            dir_shapes = [(k, v) for k, v in shape_trip_counts.items() if k[0] == direction]
+            if not dir_shapes:
+                continue
+            best_shape = max(dir_shapes, key=lambda x: x[1])[0][1]
+            # Find a representative trip with this shape
+            for trip_id, trip_stops in trips_data.items():
+                if trip_id not in trip_lookup:
+                    continue
+                _, _, _, d, s = trip_lookup[trip_id]
+                if d == direction and s == best_shape:
+                    sorted_stops = sorted(trip_stops, key=lambda x: x[1])  # sort by sequence
+                    ordered_stops[str(direction)] = [s_id for s_id, seq, time in sorted_stops]
+                    break
         
         route_stops = {
-            'stops': sorted(stops_set)
+            'stops': sorted(stops_set),
+            'canonicalShapes': sorted(s for s in canonical_shapes if s is not None),
+            'orderedStops': ordered_stops
         }
         
         write_json(route_stops_dir / f'{route_id}.json', route_stops)
@@ -641,7 +689,10 @@ def generate_manifest():
     # Get feed info
     feed_info_raw = read_csv("feed_info.txt")
     if feed_info_raw:
-        manifest['version'] = feed_info_raw[0].get('feed_version', '')
+        feed_version = feed_info_raw[0].get('feed_version', '')
+        # Append build timestamp so every regeneration forces cache invalidation
+        build_ts = datetime.now().strftime('%Y%m%d%H%M%S')
+        manifest['version'] = f"{feed_version}-{build_ts}"
         manifest['feedStart'] = feed_info_raw[0].get('feed_start_date', '')
         manifest['feedEnd'] = feed_info_raw[0].get('feed_end_date', '')
     
@@ -724,7 +775,7 @@ def main():
     timetables_by_route = process_stop_times(trip_lookup)
     
     # Step 5: Route stops index (B2 optimization)
-    generate_route_stops_index(timetables_by_route)
+    generate_route_stops_index(timetables_by_route, trip_lookup)
     
     # Step 6: Stop timetables index (A2 optimization)
     generate_stop_timetables_index(timetables_by_route, trip_lookup)
