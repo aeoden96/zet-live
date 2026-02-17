@@ -88,7 +88,7 @@ export function MapView({
       maxZoom={18}
       className="w-full h-full"
       style={{ width: '100%', height: '100%' }}
-      zoomControl={true}
+      zoomControl={false}
     >
       <TileLayer
         key={mapTileProvider}

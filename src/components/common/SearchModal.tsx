@@ -12,16 +12,14 @@ interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   routes: Route[];
-  onSelectRoute: (routeId: string, routeType: number, directionFilter?: 'all' | 'A' | 'B') => void;
+  onSelectRoute: (routeId: string, routeType: number, directionFilter?: 'A' | 'B') => void;
 }
 
 type FilterType = 'tram' | 'bus';
-type DirectionFilter = 'all' | 'A' | 'B';
 
 export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchModalProps) {
   const [filter, setFilter] = useState<FilterType>('tram');
   const [searchQuery, setSearchQuery] = useState('');
-  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input when modal opens
@@ -70,7 +68,7 @@ export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchMo
   }, [filter, searchQuery, trams, buses]);
 
   const handleSelectRoute = (route: Route) => {
-    onSelectRoute(route.id, route.type, directionFilter);
+    onSelectRoute(route.id, route.type, "A");
     onClose();
   };
 
@@ -122,24 +120,6 @@ export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchMo
                 <Bus className="w-4 h-4" />
                 Autobusi ({buses.length})
               </button>
-            </div>
-
-            {/* Direction filter */}
-            <div className="flex gap-1">
-              {(['all', 'A', 'B'] as DirectionFilter[]).map(dir => (
-                <button
-                  key={dir}
-                  className={`btn btn-sm btn-circle min-h-[40px] min-w-[40px] ${
-                    directionFilter === dir
-                      ? dir === 'all' ? 'btn-neutral' : dir === 'A' ? 'btn-primary' : 'btn-secondary'
-                      : 'btn-ghost'
-                  }`}
-                  onClick={() => setDirectionFilter(dir)}
-                  title={dir === 'all' ? 'Svi smjerovi' : `Smjer ${dir}`}
-                >
-                  {dir === 'all' ? '•' : dir}
-                </button>
-              ))}
             </div>
           </div>
 
