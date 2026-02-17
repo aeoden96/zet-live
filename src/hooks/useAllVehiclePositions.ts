@@ -1,101 +1,41 @@
 /**
- * Hook for calculating and updating all vehicle positions across all routes
+ * Hook for providing all-routes vehicle positions.
+ *
+ * Data comes from the GTFS Realtime proxy (realtimeStore).
+ * Returns the same { vehicles, loading, error } shape as before.
+ *
+ * --- Schedule-based interpolation (replaced by realtime GPS) ---
+ * The original implementation fetched all_active_trips.json once, cached it in a
+ * ref, then called getAllActiveVehicles() every 30 s via setInterval. The function
+ * is kept commented out in vehicles.ts for reference.
  */
 
-import { useState, useEffect, useRef } from 'react';
-import type { AllActiveTripsData } from '../utils/gtfs';
+import { useMemo } from 'react';
+import type { Route } from '../utils/gtfs';
 import type { AllVehiclePosition } from '../utils/vehicles';
-import { fetchAllActiveTrips } from '../utils/gtfs';
-import { getAllActiveVehicles } from '../utils/vehicles';
-import { useCurrentTime } from './useCurrentTime';
-
-const UPDATE_INTERVAL = 30000; // 30 seconds
+import { mapRealtimeToAllVehiclePositions } from '../utils/vehicles';
+import { useRealtimeStore } from '../stores/realtimeStore';
 
 export function useAllVehiclePositions(
   enabled: boolean,
-  serviceId: string | null
+  // serviceId kept in signature for API compatibility
+  _serviceId: string | null,
+  routesById?: Map<string, Route>
 ) {
-  const [vehicles, setVehicles] = useState<AllVehiclePosition[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const currentTime = useCurrentTime();
-  
-  // Cache loaded data to avoid refetching
-  const dataCache = useRef<AllActiveTripsData | null>(null);
+  const vehiclePositions = useRealtimeStore((s) => s.vehiclePositions);
+  const tripUpdates = useRealtimeStore((s) => s.tripUpdates);
+  const loading = useRealtimeStore((s) => s.loading);
+  const error = useRealtimeStore((s) => s.error);
 
-  useEffect(() => {
-    if (!enabled || !serviceId) {
-      setVehicles([]);
-      return;
-    }
+  const vehicles = useMemo((): AllVehiclePosition[] => {
+    if (!enabled || !routesById) return [];
 
-    // If data is already cached, just update positions
-    if (dataCache.current) {
-      const activeVehicles = getAllActiveVehicles(
-        dataCache.current,
-        currentTime,
-        serviceId
-      );
-      setVehicles(activeVehicles);
-      return;
-    }
+    return mapRealtimeToAllVehiclePositions(
+      vehiclePositions,
+      tripUpdates,
+      routesById
+    );
+  }, [enabled, vehiclePositions, tripUpdates, routesById]);
 
-    // Fetch data for the first time
-    let mounted = true;
-    setLoading(true);
-    setError(null);
-
-    fetchAllActiveTrips()
-      .then((data) => {
-        if (mounted) {
-          dataCache.current = data;
-          
-          const activeVehicles = getAllActiveVehicles(
-            data,
-            currentTime,
-            serviceId
-          );
-          setVehicles(activeVehicles);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (mounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [enabled, serviceId, currentTime]);
-
-  // Set up interval for periodic updates when enabled and data is cached
-  useEffect(() => {
-    if (!enabled || !serviceId || !dataCache.current) {
-      return;
-    }
-
-    const updatePositions = () => {
-      if (dataCache.current) {
-        const activeVehicles = getAllActiveVehicles(
-          dataCache.current,
-          currentTime,
-          serviceId
-        );
-        setVehicles(activeVehicles);
-      }
-    };
-
-    const intervalId = setInterval(updatePositions, UPDATE_INTERVAL);
-
-    return () => clearInterval(intervalId);
-  }, [enabled, serviceId, currentTime]);
-
-  return {
-    vehicles,
-    loading,
-    error
-  };
+  return { vehicles, loading, error };
 }

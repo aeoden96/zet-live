@@ -64,8 +64,8 @@ export function MapView({
   onStopClick,
   showAllVehicles = false,
   allVehicles = [],
-  routesById,
-  serviceId,
+  // routesById and serviceId are declared in the interface for future use
+  // but are not consumed by the map component directly
   parentStationZoomTarget,
   onZoomComplete
 }: MapViewProps) {

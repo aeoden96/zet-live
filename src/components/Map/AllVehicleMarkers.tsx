@@ -4,6 +4,7 @@
 
 import { CircleMarker, Tooltip } from 'react-leaflet';
 import type { AllVehiclePosition } from '../../utils/vehicles';
+import { formatDelay, speedToKmh } from '../../utils/realtime';
 
 interface AllVehicleMarkersProps {
   vehicles: AllVehiclePosition[];
@@ -15,7 +16,9 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
       {vehicles.map((vehicle) => {
         // Tram: blue, Bus: orange
         const color = vehicle.routeType === 0 ? '#2337ff' : '#ff6b35';
-        
+        const speedKmh = speedToKmh(vehicle.speed);
+        const delayStr = formatDelay(vehicle.delay);
+
         return (
           <CircleMarker
             key={vehicle.tripId}
@@ -24,7 +27,7 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
             pathOptions={{
               fillColor: color,
               fillOpacity: 0.8,
-              color: '#ffffff',
+              color: vehicle.isRealtime ? '#ffffff' : '#aaaaaa',
               weight: 2,
             }}
           >
@@ -33,9 +36,25 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
                 <div className="font-bold">
                   {vehicle.routeShortName} • {vehicle.headsign}
                 </div>
-                <div className="text-gray-600">
-                  Smjer: {vehicle.direction === 0 ? 'A' : 'B'}
-                </div>
+                {vehicle.isRealtime && (
+                  <>
+                    {speedKmh !== undefined && (
+                      <div className="text-blue-600">{speedKmh} km/h</div>
+                    )}
+                    {delayStr && (
+                      <div
+                        className={
+                          vehicle.delay !== undefined && vehicle.delay > 60
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                        }
+                      >
+                        {delayStr}
+                      </div>
+                    )}
+                    <div className="text-gray-400 italic">GPS uživo</div>
+                  </>
+                )}
               </div>
             </Tooltip>
           </CircleMarker>

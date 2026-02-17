@@ -1,8 +1,13 @@
 /**
- * Vehicle position interpolation utilities
+ * Vehicle position utilities.
+ *
+ * Realtime GPS positions (from the GTFS-RT proxy worker) are the primary source.
+ * The schedule-based interpolation functions below are kept commented out for
+ * future reference or fallback purposes.
  */
 
-import type { ActiveTrip, AllActiveTripsData } from './gtfs';
+import type { ActiveTrip, Route } from './gtfs';
+import type { ParsedVehiclePosition, ParsedTripUpdate } from './realtime';
 
 export interface VehiclePosition {
   tripId: string;
@@ -10,7 +15,14 @@ export interface VehiclePosition {
   lon: number;
   headsign: string;
   direction: number;
-  progress: number; // 0-1 fractional progress along route
+  progress: number; // 0-1 fractional progress along route (0 when realtime)
+  // ── Realtime fields (present when isRealtime === true) ──
+  isRealtime: boolean;
+  vehicleId?: string;
+  bearing?: number; // degrees 0-360
+  speed?: number;   // m/s
+  delay?: number;   // seconds (negative = early)
+  timestamp?: number; // POSIX timestamp of the GPS fix
 }
 
 export interface AllVehiclePosition extends VehiclePosition {
@@ -126,9 +138,12 @@ export function getStopAwareProgress(
   return stopTimes[stopTimes.length - 1][1];
 }
 
-/**
- * Get active vehicle positions for trips currently in service
- */
+// ============================================================
+// Schedule-based interpolation — replaced by realtime GPS.
+// Kept for reference / potential fallback use.
+// ============================================================
+
+/*
 export function getActiveVehicles(
   trips: ActiveTrip[],
   shapes: Record<string, [number, number][]>,
@@ -136,104 +151,154 @@ export function getActiveVehicles(
   serviceId: string
 ): VehiclePosition[] {
   const vehicles: VehiclePosition[] = [];
-  
+
   for (const trip of trips) {
-    // Filter by service ID (trip IDs start with service ID like "0_20_...")
-    if (!trip.id.startsWith(serviceId)) {
-      continue;
-    }
-    
-    // Check if trip is currently active
-    if (currentMinutes < trip.start || currentMinutes > trip.end) {
-      continue;
-    }
-    
-    // Get shape for this trip
+    if (!trip.id.startsWith(serviceId)) continue;
+    if (currentMinutes < trip.start || currentMinutes > trip.end) continue;
+
     const shape = shapes[trip.shapeId];
-    if (!shape || shape.length === 0) {
-      continue;
-    }
-    
-    // Calculate progress (0-1) based on time
+    if (!shape || shape.length === 0) continue;
+
     let progress: number;
-    
     if (trip.stopTimes && trip.stopTimes.length > 0) {
-      // Use stop-aware interpolation
       progress = getStopAwareProgress(trip.stopTimes, currentMinutes);
     } else {
-      // Fallback to linear time interpolation
       const tripDuration = trip.end - trip.start;
       const elapsed = currentMinutes - trip.start;
       progress = tripDuration > 0 ? elapsed / tripDuration : 0;
     }
-    
-    // Interpolate position
+
     const [lat, lon] = interpolatePosition(shape, progress);
-    
-    vehicles.push({
-      tripId: trip.id,
-      lat,
-      lon,
-      headsign: trip.headsign,
-      direction: trip.direction,
-      progress
+    vehicles.push({ tripId: trip.id, lat, lon, headsign: trip.headsign, direction: trip.direction, progress, isRealtime: false });
+  }
+
+  return vehicles;
+}
+*/
+
+// ============================================================
+// Realtime GPS mapping functions
+// ============================================================
+
+/**
+ * Map ParsedVehiclePosition entries (from the GTFS-RT proxy) to
+ * VehiclePosition objects for the single-route view.
+ *
+ * @param positions - Map of tripId → ParsedVehiclePosition from the realtime store
+ * @param tripUpdates - Map of tripId → ParsedTripUpdate for delay data
+ * @param routeTrips - Active trips for the selected route (used for headsign/direction lookup)
+ */
+export function mapRealtimeToVehiclePositions(
+  positions: Map<string, ParsedVehiclePosition>,
+  tripUpdates: Map<string, ParsedTripUpdate>,
+  routeTrips: ActiveTrip[]
+): VehiclePosition[] {
+  const tripMeta = new Map(routeTrips.map((t) => [t.id, t]));
+  const result: VehiclePosition[] = [];
+
+  for (const [tripId, pos] of positions) {
+    const meta = tripMeta.get(tripId);
+    if (!meta) continue; // not on this route
+
+    const update = tripUpdates.get(tripId);
+
+    result.push({
+      tripId,
+      lat: pos.latitude,
+      lon: pos.longitude,
+      headsign: meta.headsign,
+      direction: meta.direction,
+      progress: 0, // GPS-based; shape progress not computed
+      isRealtime: true,
+      vehicleId: pos.vehicleId,
+      bearing: pos.bearing,
+      speed: pos.speed,
+      delay: update?.delay,
+      timestamp: pos.timestamp,
     });
   }
-  
-  return vehicles;
+
+  return result;
 }
 
 /**
- * Get active vehicle positions for ALL routes currently in service
+ * Map ParsedVehiclePosition entries to AllVehiclePosition objects
+ * for the all-routes overview.
+ *
+ * @param positions - Map of tripId → ParsedVehiclePosition from the realtime store
+ * @param tripUpdates - Map of tripId → ParsedTripUpdate for delay data
+ * @param routesById - Map of routeId → Route for route metadata
  */
+export function mapRealtimeToAllVehiclePositions(
+  positions: Map<string, ParsedVehiclePosition>,
+  tripUpdates: Map<string, ParsedTripUpdate>,
+  routesById: Map<string, Route>
+): AllVehiclePosition[] {
+  const result: AllVehiclePosition[] = [];
+
+  for (const [tripId, pos] of positions) {
+    if (!pos.routeId) continue;
+
+    const route = routesById.get(pos.routeId);
+    // Skip vehicles whose route isn't in our static data
+    if (!route) continue;
+
+    const update = tripUpdates.get(tripId);
+
+    result.push({
+      tripId,
+      lat: pos.latitude,
+      lon: pos.longitude,
+      headsign: route.longName || route.shortName,
+      direction: 0, // direction not available from realtime feed alone
+      progress: 0,
+      isRealtime: true,
+      vehicleId: pos.vehicleId,
+      bearing: pos.bearing,
+      speed: pos.speed,
+      delay: update?.delay,
+      timestamp: pos.timestamp,
+      routeId: pos.routeId,
+      routeShortName: route.shortName,
+      routeType: route.type,
+    });
+  }
+
+  return result;
+}
+
+/*
 export function getAllActiveVehicles(
   data: AllActiveTripsData,
   currentMinutes: number,
   serviceId: string
 ): AllVehiclePosition[] {
   const allVehicles: AllVehiclePosition[] = [];
-  
+
   for (const [routeId, routeData] of Object.entries(data.routes)) {
     const { trips, type, shortName } = routeData;
-    
+
     for (const trip of trips) {
-      // Filter by service ID (trip IDs start with service ID like "0_20_...")
-      if (!trip.id.startsWith(serviceId)) {
-        continue;
-      }
-      
-      // Check if trip is currently active
-      if (currentMinutes < trip.start || currentMinutes > trip.end) {
-        continue;
-      }
-      
-      // Get shape for this trip
+      if (!trip.id.startsWith(serviceId)) continue;
+      if (currentMinutes < trip.start || currentMinutes > trip.end) continue;
+
       const shape = data.shapes[trip.shapeId];
-      if (!shape || shape.length === 0) {
-        continue;
-      }
-      
-      // Calculate progress (0-1) based on time
+      if (!shape || shape.length === 0) continue;
+
       const tripDuration = trip.end - trip.start;
       const elapsed = currentMinutes - trip.start;
       const progress = tripDuration > 0 ? elapsed / tripDuration : 0;
-      
-      // Interpolate position
+
       const [lat, lon] = interpolatePosition(shape, progress);
-      
+
       allVehicles.push({
-        tripId: trip.id,
-        lat,
-        lon,
-        headsign: trip.headsign,
-        direction: trip.direction,
-        progress,
-        routeId,
-        routeShortName: shortName,
-        routeType: type
+        tripId: trip.id, lat, lon, headsign: trip.headsign,
+        direction: trip.direction, progress, isRealtime: false,
+        routeId, routeShortName: shortName, routeType: type
       });
     }
   }
-  
+
   return allVehicles;
 }
+*/

@@ -15,6 +15,7 @@ import { useRouteData } from './hooks/useRouteData';
 import { useStopDepartures } from './hooks/useStopDepartures';
 import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
+import { useRealtimeData } from './hooks/useRealtimeData';
 
 type DirectionFilter = 'all' | 'A' | 'B';
 
@@ -66,10 +67,14 @@ function App() {
   // Calculate vehicle positions
   const vehicles = useVehiclePositions(activeTripsData, serviceId);
 
+  // Start polling the GTFS Realtime proxy worker (feeds realtimeStore)
+  const { error: realtimeError, stats: realtimeStats } = useRealtimeData();
+
   // Calculate all vehicle positions (when enabled)
   const { vehicles: allVehicles, loading: allVehiclesLoading } = useAllVehiclePositions(
     showAllVehicles,
-    serviceId
+    serviceId,
+    routesById
   );
 
   // Load stop departures
@@ -228,6 +233,23 @@ function App() {
           <div className="alert alert-info py-2 px-4 shadow-lg">
             <span className="loading loading-spinner loading-sm"></span>
             <span>Učitavanje svih vozila...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Realtime status badge */}
+      {realtimeError && (
+        <div className="absolute top-16 right-2 sm:right-4 z-[1000]">
+          <div className="alert alert-error py-2 px-4 shadow-lg text-xs max-w-64">
+            <span>GPS uživo: {realtimeError.message}</span>
+          </div>
+        </div>
+      )}
+      {realtimeStats && !realtimeError && (
+        <div className="absolute top-16 right-2 sm:right-4 z-[1000]">
+          <div className="badge badge-success gap-1 shadow">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            {realtimeStats.vehiclePositions} vozila uživo
           </div>
         </div>
       )}
