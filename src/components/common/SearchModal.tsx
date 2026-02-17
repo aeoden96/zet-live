@@ -1,26 +1,48 @@
 /**
- * Search modal - replaces sidebar/drawer for route browsing
- * Opens from the floating search bar on the map
+ * Search modal – route browsing, stop search, favourites & recently viewed.
+ * Opens from the floating search bar on the map.
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, X, TrainFront, Bus } from 'lucide-react';
-import type { Route } from '../../utils/gtfs';
+import { Search, X, TrainFront, Bus, MapPin, Star, Clock } from 'lucide-react';
+import type { Route, Stop } from '../../utils/gtfs';
 import { isRouteTypeTram, isRouteTypeBus } from '../../utils/gtfs';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   routes: Route[];
+  stops: Stop[];
+  stopsById: Map<string, Stop>;
   onSelectRoute: (routeId: string, routeType: number, directionFilter?: 'A' | 'B') => void;
+  onSelectStop: (stopId: string) => void;
 }
 
-type FilterType = 'tram' | 'bus';
+type FilterType = 'tram' | 'bus' | 'stanice';
 
-export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchModalProps) {
+export function SearchModal({
+  isOpen,
+  onClose,
+  routes,
+  stops,
+  stopsById,
+  onSelectRoute,
+  onSelectStop,
+}: SearchModalProps) {
   const [filter, setFilter] = useState<FilterType>('tram');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    favouriteRouteIds,
+    favouriteStopIds,
+    recentRoutes,
+    recentStops,
+    toggleFavouriteRoute,
+    toggleFavouriteStop,
+    clearRecents,
+  } = useSettingsStore();
 
   // Focus search input when modal opens
   useEffect(() => {
@@ -31,34 +53,79 @@ export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchMo
     }
   }, [isOpen]);
 
-  // Split routes by type
-  const { trams, buses } = useMemo(() => {
-    return routes.reduce(
-      (acc, route) => {
-        if (isRouteTypeTram(route.type)) acc.trams.push(route);
-        else if (isRouteTypeBus(route.type)) acc.buses.push(route);
-        return acc;
-      },
-      { trams: [] as Route[], buses: [] as Route[] }
-    );
-  }, [routes]);
+  // Routes by type
+  const { trams, buses } = useMemo(
+    () =>
+      routes.reduce(
+        (acc, route) => {
+          if (isRouteTypeTram(route.type)) acc.trams.push(route);
+          else if (isRouteTypeBus(route.type)) acc.buses.push(route);
+          return acc;
+        },
+        { trams: [] as Route[], buses: [] as Route[] }
+      ),
+    [routes]
+  );
 
-  // Popular routes for quick access
+  // Routes by id for lookups
+  const routesById = useMemo(() => new Map(routes.map((r) => [r.id, r])), [routes]);
+
+  // Platform stops only (exclude parent stations)
+  const platformStops = useMemo(() => stops.filter((s) => s.locationType === 0), [stops]);
+
+  // Popular routes
   const popularTrams = ['6', '11', '17', '4', '13', '12'];
   const popularBuses = ['101', '102', '106', '140', '268'];
 
   const quickAccessRoutes = useMemo(() => {
     const popular = filter === 'tram' ? popularTrams : popularBuses;
     return popular
-      .map(id => routes.find(r => r.shortName === id))
+      .map((id) => routes.find((r) => r.shortName === id))
       .filter((r): r is Route => r !== undefined);
   }, [filter, routes]);
 
-  // Filter routes
+  // Favourite routes for current tab
+  const favRoutes = useMemo(() => {
+    const source = filter === 'tram' ? trams : buses;
+    return favouriteRouteIds
+      .map((id) => source.find((r) => r.id === id))
+      .filter((r): r is Route => r !== undefined);
+  }, [filter, trams, buses, favouriteRouteIds]);
+
+  // Favourite stops
+  const favStops = useMemo(
+    () =>
+      favouriteStopIds
+        .map((id) => stopsById.get(id))
+        .filter((s): s is Stop => s !== undefined),
+    [favouriteStopIds, stopsById]
+  );
+
+  // Recently viewed routes & stops (up to 8 each)
+  const recentRouteItems = useMemo(
+    () =>
+      recentRoutes
+        .slice(0, 8)
+        .map((r) => routesById.get(r.id))
+        .filter((r): r is Route => r !== undefined),
+    [recentRoutes, routesById]
+  );
+
+  const recentStopItems = useMemo(
+    () =>
+      recentStops
+        .slice(0, 8)
+        .map((r) => stopsById.get(r.id))
+        .filter((s): s is Stop => s !== undefined),
+    [recentStops, stopsById]
+  );
+
+  const hasRecents = recentRouteItems.length > 0 || recentStopItems.length > 0;
+
+  // Filtered routes
   const filteredRoutes = useMemo(() => {
     const sourceRoutes = filter === 'tram' ? trams : buses;
     if (!searchQuery.trim()) return sourceRoutes;
-
     const query = searchQuery.toLowerCase();
     return sourceRoutes.filter(
       (route) =>
@@ -67,25 +134,63 @@ export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchMo
     );
   }, [filter, searchQuery, trams, buses]);
 
+  // Filtered stops (deduped by name)
+  const filteredStops = useMemo(() => {
+    if (filter !== 'stanice') return [];
+    const query = searchQuery.trim().toLowerCase();
+    const source = query
+      ? platformStops.filter((s) => s.name.toLowerCase().includes(query))
+      : platformStops;
+
+    const seen = new Set<string>();
+    const unique: Stop[] = [];
+    for (const s of source) {
+      if (!seen.has(s.name)) {
+        seen.add(s.name);
+        unique.push(s);
+      }
+    }
+    return unique.slice(0, 100);
+  }, [filter, searchQuery, platformStops]);
+
   const handleSelectRoute = (route: Route) => {
-    onSelectRoute(route.id, route.type, "A");
+    onSelectRoute(route.id, route.type, 'A');
+    onClose();
+  };
+
+  const handleSelectStop = (stop: Stop) => {
+    onSelectStop(stop.id);
     onClose();
   };
 
   if (!isOpen) return null;
 
+  const isTramOrBus = filter === 'tram' || filter === 'bus';
+  const isTram = filter === 'tram';
+  const badgeClass = isTram ? 'badge-primary' : 'badge-accent';
+
   return (
     <div className="fixed inset-0 z-[1100] flex items-start justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" style={{ animation: 'backdrop-fade-in 0.15s ease-out' }} onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        style={{ animation: 'backdrop-fade-in 0.15s ease-out' }}
+        onClick={onClose}
+      />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-2 mt-2 sm:mt-8 max-h-[90vh] bg-base-100 rounded-2xl shadow-2xl flex flex-col overflow-hidden" style={{ animation: 'modal-fade-in 0.2s ease-out' }}>
+      <div
+        className="relative w-full max-w-lg mx-2 mt-2 sm:mt-8 max-h-[90vh] bg-base-100 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ animation: 'modal-fade-in 0.2s ease-out' }}
+      >
         {/* Header / Search */}
         <div className="p-4 border-b border-base-300">
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-bold flex-1">Pretraži linije</h2>
-            <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm min-h-[44px] min-w-[44px]">
+            <h2 className="text-lg font-bold flex-1">Pretraži</h2>
+            <button
+              onClick={onClose}
+              className="btn btn-ghost btn-circle btn-sm min-h-[44px] min-w-[44px]"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -96,81 +201,248 @@ export function SearchModal({ isOpen, onClose, routes, onSelectRoute }: SearchMo
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Broj ili naziv linije..."
+              placeholder={filter === 'stanice' ? 'Naziv stanice...' : 'Broj ili naziv linije...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input input-bordered w-full pl-10 min-h-[44px] text-base"
+              className="input input-bordered w-full pl-10 pr-10 min-h-[44px] text-base"
             />
+            {searchQuery && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content/80"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2">
-            <div className="tabs tabs-boxed flex-1">
-              <button
-                className={`tab flex-1 min-h-[40px] gap-1 ${filter === 'tram' ? 'tab-active' : ''}`}
-                onClick={() => setFilter('tram')}
-              >
-                <TrainFront className="w-4 h-4" />
-                Tramvaji ({trams.length})
-              </button>
-              <button
-                className={`tab flex-1 min-h-[40px] gap-1 ${filter === 'bus' ? 'tab-active' : ''}`}
-                onClick={() => setFilter('bus')}
-              >
-                <Bus className="w-4 h-4" />
-                Autobusi ({buses.length})
-              </button>
-            </div>
+          <div className="tabs tabs-boxed w-full">
+            <button
+              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'tram' ? 'tab-active' : ''}`}
+              onClick={() => setFilter('tram')}
+            >
+              <TrainFront className="w-4 h-4" />
+              <span className="hidden sm:inline">Tramvaji ({trams.length})</span>
+              <span className="sm:hidden">Tram ({trams.length})</span>
+            </button>
+            <button
+              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'bus' ? 'tab-active' : ''}`}
+              onClick={() => setFilter('bus')}
+            >
+              <Bus className="w-4 h-4" />
+              <span className="hidden sm:inline">Autobusi ({buses.length})</span>
+              <span className="sm:hidden">Bus ({buses.length})</span>
+            </button>
+            <button
+              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'stanice' ? 'tab-active' : ''}`}
+              onClick={() => setFilter('stanice')}
+            >
+              <MapPin className="w-4 h-4" />
+              Stanice
+            </button>
           </div>
 
-          {/* Quick access */}
-          {!searchQuery && quickAccessRoutes.length > 0 && (
-            <div className="mt-3">
-              <div className="text-xs text-base-content/60 mb-1.5">Brzi pristup:</div>
-              <div className="flex flex-wrap gap-2">
-                {quickAccessRoutes.map((route) => (
-                  <button
-                    key={route.id}
-                    onClick={() => handleSelectRoute(route)}
-                    className={`badge ${
-                      filter === 'tram' ? 'badge-primary' : 'badge-accent'
-                    } badge-lg font-bold hover:opacity-80 transition-opacity cursor-pointer`}
-                  >
-                    {route.shortName}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Favourites quick access */}
+          {!searchQuery && (
+            <>
+              {isTramOrBus && favRoutes.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1 text-xs text-base-content/60 mb-1.5">
+                    <Star className="w-3 h-3 fill-current text-warning" />
+                    <span>Favoriti:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {favRoutes.map((route) => (
+                      <button
+                        key={route.id}
+                        onClick={() => handleSelectRoute(route)}
+                        className={`badge ${badgeClass} badge-lg font-bold hover:opacity-80 transition-opacity cursor-pointer`}
+                      >
+                        {route.shortName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {filter === 'stanice' && favStops.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1 text-xs text-base-content/60 mb-1.5">
+                    <Star className="w-3 h-3 fill-current text-warning" />
+                    <span>Favoriti:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {favStops.map((stop) => (
+                      <button
+                        key={stop.id}
+                        onClick={() => handleSelectStop(stop)}
+                        className="badge badge-outline badge-lg hover:badge-primary transition-colors cursor-pointer text-xs"
+                      >
+                        {stop.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Popular routes (shown only when no favourites in that tab) */}
+              {isTramOrBus && favRoutes.length === 0 && quickAccessRoutes.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-xs text-base-content/60 mb-1.5">Brzi pristup:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {quickAccessRoutes.map((route) => (
+                      <button
+                        key={route.id}
+                        onClick={() => handleSelectRoute(route)}
+                        className={`badge ${badgeClass} badge-lg font-bold hover:opacity-80 transition-opacity cursor-pointer`}
+                      >
+                        {route.shortName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Route list */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          {filteredRoutes.length === 0 ? (
-            <div className="p-8 text-center text-base-content/50">
-              {searchQuery ? 'Nema rezultata' : 'Nema linija'}
+        {/* Recently viewed — only when query is empty */}
+        {!searchQuery && hasRecents && (
+          <div className="px-4 py-3 border-b border-base-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1 text-xs text-base-content/60">
+                <Clock className="w-3 h-3" />
+                <span>Nedavno pregledano</span>
+              </div>
+              <button
+                onClick={clearRecents}
+                className="text-xs text-base-content/40 hover:text-base-content/70 transition-colors"
+              >
+                Očisti
+              </button>
             </div>
-          ) : (
-            <div className="divide-y divide-base-300">
-              {filteredRoutes.map((route) => (
+            <div className="flex flex-wrap gap-2">
+              {recentRouteItems.map((route) => (
                 <button
-                  key={route.id}
+                  key={`recent-r-${route.id}`}
                   onClick={() => handleSelectRoute(route)}
-                  className="w-full py-3 px-4 text-left hover:bg-base-200 active:bg-base-300 transition-colors min-h-[52px]"
+                  className={`badge ${
+                    isRouteTypeTram(route.type) ? 'badge-primary' : 'badge-accent'
+                  } badge-md font-bold hover:opacity-80 transition-opacity cursor-pointer`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`badge ${
-                        filter === 'tram' ? 'badge-primary' : 'badge-accent'
-                      } font-bold min-w-[3rem] justify-center`}
-                    >
-                      {route.shortName}
-                    </div>
-                    <div className="text-sm">{route.longName}</div>
-                  </div>
+                  {route.shortName}
+                </button>
+              ))}
+              {recentStopItems.map((stop) => (
+                <button
+                  key={`recent-s-${stop.id}`}
+                  onClick={() => handleSelectStop(stop)}
+                  className="badge badge-ghost badge-md hover:badge-outline transition-colors cursor-pointer text-xs flex items-center gap-1"
+                >
+                  <MapPin className="w-2.5 h-2.5" />
+                  {stop.name}
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Content list */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {/* Route list */}
+          {isTramOrBus && (
+            filteredRoutes.length === 0 ? (
+              <div className="p-8 text-center text-base-content/50">
+                {searchQuery ? 'Nema rezultata' : 'Nema linija'}
+              </div>
+            ) : (
+              <div className="divide-y divide-base-300">
+                {filteredRoutes.map((route) => {
+                  const isFav = favouriteRouteIds.includes(route.id);
+                  return (
+                    <div
+                      key={route.id}
+                      className="flex items-center hover:bg-base-200 active:bg-base-300 transition-colors"
+                    >
+                      <button
+                        onClick={() => handleSelectRoute(route)}
+                        className="flex-1 py-3 px-4 text-left min-h-[52px]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`badge ${badgeClass} font-bold min-w-[3rem] justify-center`}>
+                            {route.shortName}
+                          </div>
+                          <div className="text-sm">{route.longName}</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavouriteRoute(route.id);
+                        }}
+                        className="px-3 py-3 text-base-content/30 hover:text-warning transition-colors min-h-[52px] flex items-center"
+                        title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
+                      >
+                        <Star
+                          className="w-4 h-4"
+                          fill={isFav ? 'currentColor' : 'none'}
+                          color={isFav ? '#f59e0b' : 'currentColor'}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* Stop list */}
+          {filter === 'stanice' && (
+            filteredStops.length === 0 ? (
+              <div className="p-8 text-center text-base-content/50">
+                {searchQuery ? 'Nema rezultata' : 'Upišite naziv stanice za pretragu'}
+              </div>
+            ) : (
+              <div className="divide-y divide-base-300">
+                {filteredStops.map((stop) => {
+                  const isFav = favouriteStopIds.includes(stop.id);
+                  return (
+                    <div
+                      key={stop.id}
+                      className="flex items-center hover:bg-base-200 active:bg-base-300 transition-colors"
+                    >
+                      <button
+                        onClick={() => handleSelectStop(stop)}
+                        className="flex-1 py-3 px-4 text-left min-h-[52px]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-base-content/40 shrink-0" />
+                          <div>
+                            <div className="text-sm font-medium">{stop.name}</div>
+                            {stop.code && (
+                              <div className="text-xs text-base-content/50">Smjer {stop.code}</div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavouriteStop(stop.id);
+                        }}
+                        className="px-3 py-3 text-base-content/30 hover:text-warning transition-colors min-h-[52px] flex items-center"
+                        title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
+                      >
+                        <Star
+                          className="w-4 h-4"
+                          fill={isFav ? 'currentColor' : 'none'}
+                          color={isFav ? '#f59e0b' : 'currentColor'}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )
           )}
         </div>
       </div>

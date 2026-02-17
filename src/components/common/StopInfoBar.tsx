@@ -4,11 +4,13 @@
  */
 
 import { useMemo, useState, useEffect } from 'react';
-import { Maximize2, Clock, X } from 'lucide-react';
+import { Maximize2, Clock, X, Star } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime } from '../../utils/gtfs';
 import { useStopDepartures } from '../../hooks/useStopDepartures';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
+import { useRealtimeAdjustedDepartures } from '../../hooks/useRealtimeAdjustedDepartures';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface StopInfoBarProps {
   stop: Stop;
@@ -30,6 +32,9 @@ export function StopInfoBar({
 }: StopInfoBarProps) {
   const { departures, loading } = useStopDepartures(stop.id);
   const currentTime = useCurrentTime();
+  const realtimeDelays = useRealtimeAdjustedDepartures(stop.id, departures);
+  const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
+  const isFav = favouriteStopIds.includes(stop.id);
   const [, setTick] = useState(0);
 
   // Re-render every minute
@@ -42,7 +47,12 @@ export function StopInfoBar({
     if (!departures || !serviceId || !departures.departures[serviceId]) return [];
 
     const serviceDeps = departures.departures[serviceId];
-    const results: Array<{ route: Route; nextTime: number; formattedTime: string }> = [];
+    const results: Array<{
+      route: Route;
+      nextTime: number;
+      formattedTime: string;
+      delaySeconds: number | null;
+    }> = [];
 
     for (const routeId of departures.routes) {
       const times = serviceDeps[routeId] || [];
@@ -51,18 +61,22 @@ export function StopInfoBar({
 
       const nextTime = times.find(t => t >= currentTime);
       if (nextTime !== undefined) {
-        const diff = Math.round(nextTime - currentTime);
+        const delayInfo = realtimeDelays.get(routeId);
+        const delaySeconds = delayInfo?.delaySeconds ?? null;
+        // Adjust displayed time by delay if available
+        const adjustedTime = delaySeconds !== null ? nextTime + delaySeconds / 60 : nextTime;
+        const diff = Math.round(adjustedTime - currentTime);
         let formatted: string;
         if (diff <= 0) formatted = 'Sada';
         else if (diff < 60) formatted = `${diff} min`;
-        else formatted = minutesToTime(nextTime);
+        else formatted = minutesToTime(adjustedTime);
 
-        results.push({ route, nextTime, formattedTime: formatted });
+        results.push({ route, nextTime, formattedTime: formatted, delaySeconds });
       }
     }
 
     return results.sort((a, b) => a.nextTime - b.nextTime).slice(0, 5);
-  }, [departures, serviceId, routesById, currentTime]);
+  }, [departures, serviceId, routesById, currentTime, realtimeDelays]);
 
   return (
     <div 
@@ -85,6 +99,17 @@ export function StopInfoBar({
             )}
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => toggleFavouriteStop(stop.id)}
+              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
+            >
+              <Star
+                className="w-4 h-4"
+                fill={isFav ? 'currentColor' : 'none'}
+                color={isFav ? '#f59e0b' : 'currentColor'}
+              />
+            </button>
             <button
               onClick={() => onExpand(stop.id)}
               className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
@@ -116,32 +141,49 @@ export function StopInfoBar({
           </div>
         ) : miniDepartures.length > 0 ? (
           <div className="space-y-2">
-            {miniDepartures.map(({ route, formattedTime }, idx) => (
-              <div 
-                key={`${route.id}-${idx}`} 
-                className="flex items-center justify-between gap-2"
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span
-                    className={`badge ${
-                      route.type === 0 ? 'badge-primary' : 'badge-accent'
-                    } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0`}
-                  >
-                    {route.shortName}
-                  </span>
-                  <span className="text-xs text-base-content/80 truncate">
-                    {route.longName}
-                  </span>
-                </div>
-                <span 
-                  className={`font-semibold text-sm whitespace-nowrap ${
-                    idx === 0 ? 'text-success' : 'text-base-content/70'
-                  }`}
+            {miniDepartures.map(({ route, formattedTime, delaySeconds }, idx) => {
+              const delaySec = delaySeconds ?? 0;
+              const delayMin = Math.round(delaySec / 60);
+              const isLate = delaySec > 90;
+              const isEarly = delaySec < -90;
+              return (
+                <div
+                  key={`${route.id}-${idx}`}
+                  className="flex items-center justify-between gap-2"
                 >
-                  {formattedTime}
-                </span>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span
+                      className={`badge ${
+                        route.type === 0 ? 'badge-primary' : 'badge-accent'
+                      } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0`}
+                    >
+                      {route.shortName}
+                    </span>
+                    <span className="text-xs text-base-content/80 truncate">
+                      {route.longName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {delaySeconds !== null && (isLate || isEarly) && (
+                      <span
+                        className={`text-xs font-medium ${
+                          isLate ? 'text-error' : 'text-success'
+                        }`}
+                      >
+                        {isLate ? `+${delayMin}` : `${delayMin}`} min
+                      </span>
+                    )}
+                    <span
+                      className={`font-semibold text-sm whitespace-nowrap ${
+                        idx === 0 ? 'text-success' : 'text-base-content/70'
+                      }`}
+                    >
+                      {formattedTime}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-sm text-base-content/50 py-2 text-center">

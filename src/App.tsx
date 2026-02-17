@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Settings, Search, X } from 'lucide-react';
+import { Settings, Search, X, LocateFixed } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
@@ -9,11 +9,14 @@ import { StopInfoBar } from './components/common/StopInfoBar';
 import { RouteInfoBar } from './components/common/RouteInfoBar';
 import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingModal } from './components/common/OnboardingModal';
+import { NearbyStopsModal } from './components/common/NearbyStopsModal';
+import { ServiceAlerts } from './components/common/ServiceAlerts';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
 import { useStopDepartures } from './hooks/useStopDepartures';
 import { useSettingsStore } from './stores/settingsStore';
+import { useRealtimeStore } from './stores/realtimeStore';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
 import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useRealtimeData } from './hooks/useRealtimeData';
@@ -25,6 +28,10 @@ function App() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [stopModalOpen, setStopModalOpen] = useState(false);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [locateError, setLocateError] = useState<string | null>(null);
 
   // Selection states
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
@@ -32,6 +39,7 @@ function App() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
+  const { addRecentRoute, addRecentStop } = useSettingsStore();
   const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
@@ -73,6 +81,7 @@ function App() {
 
   // Start polling the GTFS Realtime proxy worker (feeds realtimeStore)
   const { error: realtimeError, stats: realtimeStats } = useRealtimeData();
+  const serviceAlerts = useRealtimeStore((s) => s.serviceAlerts);
 
   // Calculate all vehicle positions (when enabled)
   const { vehicles: allVehicles, loading: allVehiclesLoading } = useAllVehiclePositions(
@@ -92,6 +101,7 @@ function App() {
     if (df === 'A' || df === 'B') setDirectionFilter(df);
     else setDirectionFilter('A');
     setSearchModalOpen(false);
+    addRecentRoute(routeId);
     // Default to small route info bar; user can expand to full RouteModal
     setRouteModalOpen(false);
   };
@@ -127,6 +137,7 @@ function App() {
       }
     } else {
       setSelectedStopId(stopId);
+      addRecentStop(stopId);
     }
     // Show fixed stop info bar at top
   };
@@ -141,6 +152,7 @@ function App() {
     } else {
       setSelectedStopId(stopId);
     }
+    addRecentStop(stopId);
     setStopModalOpen(true);
   };
 
@@ -177,6 +189,39 @@ function App() {
   const handleCloseStop = () => {
     setStopModalOpen(false);
     setSelectedStopId(null);
+  };
+
+  const handleSelectStop = (stopId: string) => {
+    const stop = stopsById.get(stopId);
+    setSelectedStopId(stopId);
+    addRecentStop(stopId);
+    if (stop) {
+      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: 17 });
+    }
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      setLocateError('Geolokacija nije dostupna u ovom pregledniku.');
+      return;
+    }
+    setLocating(true);
+    setLocateError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setUserLocation({ lat: latitude, lon: longitude });
+        setParentStationZoomTarget({ lat: latitude, lon: longitude, zoom: 16 });
+        setLocating(false);
+        setNearbyOpen(true);
+      },
+      () => {
+        setLocateError('Lokacija nije dostupna. Provjerite dozvole preglednika.');
+        setLocating(false);
+        setTimeout(() => setLocateError(null), 4000);
+      },
+      { timeout: 8000, maximumAge: 30000 }
+    );
   };
 
   const handleCloseStopInfo = () => {
@@ -261,6 +306,13 @@ function App() {
       )}
       {realtimeStats && !realtimeError && (
         <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+          {/* Service Alerts */}
+          <ServiceAlerts
+            alerts={serviceAlerts}
+            routesById={routesById}
+            selectedRouteId={selectedRouteId}
+            onRouteClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
+          />
           {/* Legend popup */}
           {legendOpen && (
             <div className="bg-base-100 rounded-xl shadow-xl border border-base-200 p-3 w-52 text-xs space-y-2">
@@ -383,7 +435,28 @@ function App() {
         <Link to="/settings" className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg">
           <Settings className="w-5 h-5" />
         </Link>
+        <button
+          onClick={handleLocateMe}
+          disabled={locating}
+          className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg"
+          title="Moja lokacija"
+        >
+          {locating ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <LocateFixed className="w-5 h-5" />
+          )}
+        </button>
       </div>
+
+      {/* Locate error toast */}
+      {locateError && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[1300]">
+          <div className="alert alert-error py-2 px-4 shadow-lg text-xs max-w-72 text-center">
+            <span>{locateError}</span>
+          </div>
+        </div>
+      )}
 
       {/* Debug panel */}
       <DebugPanel />
@@ -393,7 +466,10 @@ function App() {
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
         routes={routes}
+        stops={stops}
+        stopsById={stopsById}
         onSelectRoute={handleSelectRoute}
+        onSelectStop={handleSelectStop}
       />
 
       {/* Route Modal */}
@@ -421,6 +497,18 @@ function App() {
           serviceId={serviceId}
           onClose={handleCloseStop}
           onRouteClick={handleRouteClickFromStop}
+        />
+      )}
+
+      {/* Nearby Stops Modal */}
+      {userLocation && (
+        <NearbyStopsModal
+          isOpen={nearbyOpen}
+          userLat={userLocation.lat}
+          userLon={userLocation.lon}
+          stops={platformStops}
+          onClose={() => setNearbyOpen(false)}
+          onSelectStop={handleSelectStop}
         />
       )}
 

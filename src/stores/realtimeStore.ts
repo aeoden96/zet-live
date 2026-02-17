@@ -8,10 +8,12 @@ import {
   fetchRealtimeFeed,
   parseVehiclePositions,
   parseTripUpdates,
+  parseServiceAlerts,
   getFeedStatistics,
   enrichWithDeadReckoning,
   type ParsedVehiclePosition,
   type ParsedTripUpdate,
+  type ParsedServiceAlert,
   type FeedStatistics,
   type VehicleSnapshot,
 } from '../utils/realtime';
@@ -27,6 +29,8 @@ interface RealtimeState {
   vehiclePositions: Map<string, ParsedVehiclePosition>;
   /** Trip updates keyed by tripId */
   tripUpdates: Map<string, ParsedTripUpdate>;
+  /** Parsed service alerts */
+  serviceAlerts: ParsedServiceAlert[];
   /** Feed statistics from the last successful fetch */
   stats: FeedStatistics | null;
   /** POSIX timestamp (ms) of the last successful fetch */
@@ -45,6 +49,7 @@ interface RealtimeState {
 export const useRealtimeStore = create<RealtimeState>()((set) => ({
   vehiclePositions: new Map(),
   tripUpdates: new Map(),
+  serviceAlerts: [],
   stats: null,
   lastUpdate: null,
   loading: false,
@@ -60,6 +65,7 @@ export const useRealtimeStore = create<RealtimeState>()((set) => ({
 
       const positions = parseVehiclePositions(feed);
       const updates = parseTripUpdates(feed);
+      const alerts = parseServiceAlerts(feed);
       const stats = getFeedStatistics(feed);
 
       const vehiclePositions = new Map<string, ParsedVehiclePosition>();
@@ -94,6 +100,7 @@ export const useRealtimeStore = create<RealtimeState>()((set) => ({
       set({
         vehiclePositions,
         tripUpdates,
+        serviceAlerts: alerts,
         stats,
         lastUpdate: Date.now(),
         loading: false,
@@ -110,6 +117,7 @@ export const useRealtimeStore = create<RealtimeState>()((set) => ({
     set({
       vehiclePositions: new Map(),
       tripUpdates: new Map(),
+      serviceAlerts: [],
       stats: null,
       lastUpdate: null,
       error: null,

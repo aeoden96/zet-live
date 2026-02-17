@@ -101,6 +101,26 @@ export interface FeedStatistics {
   lastUpdate?: Date;
 }
 
+export interface ParsedServiceAlert {
+  id: string;
+  /** Affected route IDs */
+  routeIds: string[];
+  /** Affected stop IDs */
+  stopIds: string[];
+  /** Short header text (Croatian preferred) */
+  header: string;
+  /** Long description text (Croatian preferred) */
+  description: string;
+  /** Alert cause (e.g. 'CONSTRUCTION', 'STRIKE') */
+  cause: string;
+  /** Alert effect (e.g. 'DETOUR', 'NO_SERVICE') */
+  effect: string;
+  /** POSIX start timestamp in seconds, or null */
+  activeSince: number | null;
+  /** POSIX end timestamp in seconds, or null */
+  activeUntil: number | null;
+}
+
 // ============================================
 // Feed fetch helpers
 // ============================================
@@ -224,6 +244,79 @@ export function getFeedStatistics(feed: GtfsRealtimeFeed): FeedStatistics {
       ? new Date(Number(feed.header.timestamp) * 1000)
       : undefined,
   };
+}
+
+/**
+ * Extract text from a GTFS-RT TranslatedString.
+ * Prefers Croatian ('hr'), falls back to first translation.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getTranslatedText(ts: any): string {
+  if (!ts?.translation?.length) return '';
+  const hr = ts.translation.find((t: { language?: string; text?: string }) => t.language === 'hr');
+  return (hr ?? ts.translation[0])?.text ?? '';
+}
+
+const CAUSE_LABELS: Record<number, string> = {
+  1: 'UNKNOWN_CAUSE',
+  2: 'OTHER_CAUSE',
+  3: 'TECHNICAL_PROBLEM',
+  4: 'STRIKE',
+  5: 'DEMONSTRATION',
+  6: 'ACCIDENT',
+  7: 'HOLIDAY',
+  8: 'WEATHER',
+  9: 'MAINTENANCE',
+  10: 'CONSTRUCTION',
+  11: 'POLICE_ACTIVITY',
+  12: 'MEDICAL_EMERGENCY',
+};
+
+const EFFECT_LABELS: Record<number, string> = {
+  1: 'NO_SERVICE',
+  2: 'REDUCED_SERVICE',
+  3: 'SIGNIFICANT_DELAYS',
+  4: 'DETOUR',
+  5: 'ADDITIONAL_SERVICE',
+  6: 'MODIFIED_SERVICE',
+  7: 'OTHER_EFFECT',
+  8: 'UNKNOWN_EFFECT',
+  9: 'STOP_MOVED',
+};
+
+/**
+ * Parse service alerts from a decoded GTFS-RT feed.
+ */
+export function parseServiceAlerts(feed: GtfsRealtimeFeed): ParsedServiceAlert[] {
+  return feed.entity
+    .filter((entity: FeedEntity) => entity.alert)
+    .map((entity: FeedEntity): ParsedServiceAlert => {
+      const alert = entity.alert;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const informed: any[] = alert.informedEntity || [];
+      const routeIds = informed
+        .map((e: { routeId?: string }) => e.routeId)
+        .filter((id): id is string => !!id);
+      const stopIds = informed
+        .map((e: { stopId?: string }) => e.stopId)
+        .filter((id): id is string => !!id);
+
+      // Active period — take the first one if multiple
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const period: any = alert.activePeriod?.[0] ?? null;
+
+      return {
+        id: entity.id || String(Math.random()),
+        routeIds,
+        stopIds,
+        header: getTranslatedText(alert.headerText),
+        description: getTranslatedText(alert.descriptionText),
+        cause: CAUSE_LABELS[Number(alert.cause)] ?? 'UNKNOWN_CAUSE',
+        effect: EFFECT_LABELS[Number(alert.effect)] ?? 'UNKNOWN_EFFECT',
+        activeSince: period?.start ? Number(period.start) : null,
+        activeUntil: period?.end ? Number(period.end) : null,
+      };
+    });
 }
 
 // ============================================

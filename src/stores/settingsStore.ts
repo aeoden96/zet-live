@@ -7,6 +7,13 @@ export type Theme = 'light' | 'dark';
  *  'grouped'   – classic grouped parents / parent-station / platform view */
 export type StopDisplayMode = 'individual' | 'grouped';
 
+export interface RecentItem {
+  id: string;
+  timestamp: number;
+}
+
+const MAX_RECENTS = 10;
+
 interface SettingsState {
   sandboxVisible: boolean;
   mapTileProvider: MapTileProvider;
@@ -14,12 +21,26 @@ interface SettingsState {
   onboardingCompleted: boolean;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
+  /** Favourite route IDs */
+  favouriteRouteIds: string[];
+  /** Favourite stop IDs */
+  favouriteStopIds: string[];
+  /** Recently viewed routes (newest first, max 10) */
+  recentRoutes: RecentItem[];
+  /** Recently viewed stops (newest first, max 10) */
+  recentStops: RecentItem[];
+
   setSandboxVisible: (visible: boolean) => void;
   setMapTileProvider: (provider: MapTileProvider) => void;
   setTheme: (theme: Theme) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
+  toggleFavouriteRoute: (id: string) => void;
+  toggleFavouriteStop: (id: string) => void;
+  addRecentRoute: (id: string) => void;
+  addRecentStop: (id: string) => void;
+  clearRecents: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -31,6 +52,11 @@ export const useSettingsStore = create<SettingsState>()(
       onboardingCompleted: false,
       stopDisplayMode: 'individual',
       showAllVehicles: true,
+      favouriteRouteIds: [],
+      favouriteStopIds: [],
+      recentRoutes: [],
+      recentStops: [],
+
       setSandboxVisible: (visible) => set({ sandboxVisible: visible }),
       setMapTileProvider: (provider) => set({ mapTileProvider: provider }),
       setTheme: (theme) => {
@@ -41,6 +67,38 @@ export const useSettingsStore = create<SettingsState>()(
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
       setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
       setShowAllVehicles: (show) => set({ showAllVehicles: show }),
+
+      toggleFavouriteRoute: (id) =>
+        set((s) => ({
+          favouriteRouteIds: s.favouriteRouteIds.includes(id)
+            ? s.favouriteRouteIds.filter((r) => r !== id)
+            : [...s.favouriteRouteIds, id],
+        })),
+
+      toggleFavouriteStop: (id) =>
+        set((s) => ({
+          favouriteStopIds: s.favouriteStopIds.includes(id)
+            ? s.favouriteStopIds.filter((r) => r !== id)
+            : [...s.favouriteStopIds, id],
+        })),
+
+      addRecentRoute: (id) =>
+        set((s) => {
+          const filtered = s.recentRoutes.filter((r) => r.id !== id);
+          return {
+            recentRoutes: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
+          };
+        }),
+
+      addRecentStop: (id) =>
+        set((s) => {
+          const filtered = s.recentStops.filter((r) => r.id !== id);
+          return {
+            recentStops: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
+          };
+        }),
+
+      clearRecents: () => set({ recentRoutes: [], recentStops: [] }),
     }),
     {
       name: 'zet-live-settings',

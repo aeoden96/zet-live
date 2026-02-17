@@ -4,9 +4,10 @@
  * can be expanded into the full RouteModal via the Maximize2 button.
  */
 
-import { Maximize2, X, Train, Bus } from 'lucide-react';
+import { Maximize2, X, Train, Bus, Star } from 'lucide-react';
 import type { Route } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface RouteInfoBarProps {
   route: Route;
@@ -21,6 +22,8 @@ const BUS_COLOR  = '#ea580c'; // orange-600
 export function RouteInfoBar({ route, vehicles, onExpand, onClose }: RouteInfoBarProps) {
   const color = route.type === 0 ? TRAM_COLOR : BUS_COLOR;
   const isTram = route.type === 0;
+  const { favouriteRouteIds, toggleFavouriteRoute } = useSettingsStore();
+  const isFav = favouriteRouteIds.includes(route.id);
 
   const vehicleCount = vehicles.length;
   const vehicleLabel =
@@ -54,6 +57,17 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose }: RouteInfoBa
 
           {/* Actions */}
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => toggleFavouriteRoute(route.id)}
+              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
+            >
+              <Star
+                className="w-4 h-4"
+                fill={isFav ? 'currentColor' : 'none'}
+                color={isFav ? '#f59e0b' : 'currentColor'}
+              />
+            </button>
             <button
               onClick={onExpand}
               className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
