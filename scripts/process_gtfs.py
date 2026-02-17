@@ -43,6 +43,52 @@ def write_json(filepath, data):
         json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
 
 
+def _haversine_meters(a_lat, a_lon, b_lat, b_lon):
+    """Return distance in meters between two points using Haversine formula."""
+    from math import radians, sin, cos, asin, sqrt
+    R = 6371000.0
+    dlat = radians(b_lat - a_lat)
+    dlon = radians(b_lon - a_lon)
+    lat1 = radians(a_lat)
+    lat2 = radians(b_lat)
+    sin_dlat = sin(dlat / 2.0)
+    sin_dlon = sin(dlon / 2.0)
+    h = sin_dlat * sin_dlat + cos(lat1) * cos(lat2) * sin_dlon * sin_dlon
+    return 2.0 * R * asin(sqrt(h))
+
+
+def _cluster_parent_stops(parents, radius_meters=150):
+    """Greedy single-pass clustering of parent stations by proximity.
+
+    Returns list of groups: {id, lat, lon, childIds, count}
+    """
+    used = set()
+    groups = []
+
+    for i, p in enumerate(parents):
+        if p['id'] in used:
+            continue
+        members = [p]
+        used.add(p['id'])
+        for j in range(i + 1, len(parents)):
+            q = parents[j]
+            if q['id'] in used:
+                continue
+            if _haversine_meters(p['lat'], p['lon'], q['lat'], q['lon']) <= radius_meters:
+                members.append(q)
+                used.add(q['id'])
+        lat = sum(m['lat'] for m in members) / len(members)
+        lon = sum(m['lon'] for m in members) / len(members)
+        groups.append({
+            'id': f"group-{len(groups)}",
+            'lat': round(lat, 5),
+            'lon': round(lon, 5),
+            'childIds': [m['id'] for m in members],
+            'count': len(members)
+        })
+    return groups
+
+
 def process_initial_bundle():
     """Generate initial.json with stops, routes, and calendar data."""
     print("📦 Processing initial bundle...")
@@ -82,10 +128,15 @@ def process_initial_bundle():
     feed_info_raw = read_csv("feed_info.txt")
     feed_info = feed_info_raw[0] if feed_info_raw else {}
     
+    # Compute grouped parent stations (server-side clustering)
+    parents = [s for s in stops if s['locationType'] == 1]
+    grouped = _cluster_parent_stops(parents, radius_meters=600) if parents else []
+
     initial_data = {
         'stops': stops,
         'routes': routes,
         'calendar': calendar,
+        'groupedParentStations': grouped,
         'feedVersion': feed_info.get('feed_version', ''),
         'feedStartDate': feed_info.get('feed_start_date', ''),
         'feedEndDate': feed_info.get('feed_end_date', '')

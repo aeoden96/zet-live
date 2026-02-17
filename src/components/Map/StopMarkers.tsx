@@ -4,12 +4,12 @@
 
 import { CircleMarker, Marker } from 'react-leaflet';
 import L from 'leaflet';
-import type { Stop } from '../../utils/gtfs';
+import type { Stop, ParentGroup } from '../../utils/gtfs';
 
 interface StopMarkersProps {
-  stops: Stop[];
+  stops: Array<Stop | ParentGroup>;
   isParentStationView: boolean;
-  parentChildCounts: Map<string, number>;
+  parentChildCounts: Map<string, number>; // platform-counts per parent station id
   selectedStopId: string | null;
   highlightStopIds: string[];
   onStopClick: (stopId: string) => void;
@@ -23,19 +23,51 @@ export function StopMarkers({
   highlightStopIds,
   onStopClick
 }: StopMarkersProps) {
-  const highlightSet = new Set(highlightStopIds);
+  const highlightSet = new Set(highlightStopIds as string[]);
   
   return (
     <>
-      {stops.map((stop) => {
-        const isSelected = stop.id === selectedStopId;
-        const isHighlighted = highlightSet.has(stop.id);
-        
-        // Render parent stations with custom DivIcon showing child count
-        if (isParentStationView && stop.locationType === 1) {
+      {stops.map((s) => {
+        const isGroup = (s as ParentGroup).childIds !== undefined;
+        const id = (s as any).id as string;
+        const lat = (s as any).lat as number;
+        const lon = (s as any).lon as number;
+
+        const isSelected = id === selectedStopId;
+        const isHighlighted = highlightSet.has(id);
+
+        // Render grouped parent cluster marker
+        if (isParentStationView && isGroup) {
+          const group = s as ParentGroup;
+          // sum platform counts for all parent stations inside this group
+          const groupPlatformCount = group.childIds.reduce((acc, pid) => acc + (parentChildCounts.get(pid) || 0), 0);
+          const displayCount = groupPlatformCount > 9 ? '9+' : String(groupPlatformCount || group.count);
+
+          const icon = L.divIcon({
+            html: `<div class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
+              <span class="count">${displayCount}</span>
+            </div>`,
+            className: 'parent-station-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+          });
+
+          return (
+            <Marker
+              key={id}
+              position={[lat, lon]}
+              icon={icon}
+              eventHandlers={{ click: () => onStopClick(id) }}
+            />
+          );
+        }
+
+        // Render parent stations (real parent stops) when in parent-station view
+        if (isParentStationView && !isGroup && (s as Stop).locationType === 1) {
+          const stop = s as Stop;
           const childCount = parentChildCounts.get(stop.id) || 0;
           const displayCount = childCount > 9 ? '9+' : childCount.toString();
-          
+
           const icon = L.divIcon({
             html: `<div class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
               <span class="count">${displayCount}</span>
@@ -44,7 +76,7 @@ export function StopMarkers({
             iconSize: [28, 28],
             iconAnchor: [14, 14],
           });
-          
+
           return (
             <Marker
               key={stop.id}
@@ -56,8 +88,9 @@ export function StopMarkers({
             />
           );
         }
-        
+
         // Render regular platform stops as circle markers
+        const stop = s as Stop;
         return (
           <CircleMarker
             key={stop.id}

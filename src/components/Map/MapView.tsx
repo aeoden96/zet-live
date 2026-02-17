@@ -3,7 +3,7 @@
  */
 
 import { MapContainer, TileLayer } from 'react-leaflet';
-import type { Stop, Route } from '../../utils/gtfs';
+import type { Stop, Route, ParentGroup } from '../../utils/gtfs';
 import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
 import { ZoomBasedStops } from './ZoomBasedStops';
 import { RouteShape } from './RouteShape';
@@ -17,6 +17,7 @@ const DEFAULT_ZOOM = 13;
 
 interface MapViewProps {
   parentStations: Stop[];
+  groupedParentStations?: ParentGroup[];
   platformStops: Stop[];
   parentChildCounts: Map<string, number>;
   selectedRouteId: string | null;
@@ -30,7 +31,7 @@ interface MapViewProps {
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
-  parentStationZoomTarget: { lat: number; lon: number } | null;
+  parentStationZoomTarget: { lat: number; lon: number; zoom?: number } | null;
   onZoomComplete: () => void;
 }
 
@@ -51,6 +52,7 @@ const TILE_PROVIDERS = {
 
 export function MapView({
   parentStations,
+  groupedParentStations,
   platformStops,
   parentChildCounts,
   selectedRouteId,
@@ -93,6 +95,7 @@ export function MapView({
       
       <ZoomBasedStops 
         parentStations={parentStations}
+        groupedParentStations={groupedParentStations}
         platformStops={platformStops}
         parentChildCounts={parentChildCounts}
         selectedStopId={selectedStopId}

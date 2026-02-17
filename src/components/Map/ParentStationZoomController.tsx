@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 
 interface ParentStationZoomControllerProps {
-  zoomTarget: { lat: number; lon: number } | null;
+  zoomTarget: { lat: number; lon: number; zoom?: number } | null;
   onZoomComplete: () => void;
 }
 
@@ -18,8 +18,9 @@ export function ParentStationZoomController({
 
   useEffect(() => {
     if (zoomTarget) {
-      // Zoom to parent station location
-      map.flyTo([zoomTarget.lat, zoomTarget.lon], 17, {
+      // Zoom to provided level (fallback to 17)
+      const targetZoom = zoomTarget.zoom ?? 17;
+      map.flyTo([zoomTarget.lat, zoomTarget.lon], targetZoom, {
         duration: 0.8,
         easeLinearity: 0.25
       });

@@ -30,7 +30,7 @@ function App() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
   const [showAllVehicles, setShowAllVehicles] = useState(false);
-  const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number } | null>(null);
+  const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
   // Load initial data
   const { 
@@ -38,6 +38,7 @@ function App() {
     routes, 
     stopsById, 
     routesById, 
+    groupedParentStations,
     calendar, 
     loading: initialLoading,
     error: initialError
@@ -84,10 +85,25 @@ function App() {
   };
 
   const handleStopClickFromMap = (stopId: string) => {
+    // Handle clustered group clicks (ids prefixed with "group-")
+    if (stopId.startsWith('group-')) {
+      const group = (groupedParentStations || []).find(g => g.id === stopId);
+      if (group) {
+        // Zoom to level where group splits into real parent stations
+        setParentStationZoomTarget({ lat: group.lat, lon: group.lon, zoom: 15 });
+
+        // Select first platform under the first parent in the group (if available)
+        const firstParentId = group.childIds[0];
+        const childPlatform = stops.find(s => s.parentStation === firstParentId && s.locationType === 0);
+        setSelectedStopId(childPlatform ? childPlatform.id : firstParentId);
+      }
+      return;
+    }
+
     const stop = stopsById.get(stopId);
     if (stop && stop.locationType === 1) {
       // Parent station clicked - trigger zoom
-      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon });
+      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: 17 });
       
       const childPlatform = stops.find(
         (s) => s.parentStation === stopId && s.locationType === 0
@@ -180,6 +196,7 @@ function App() {
       {/* Full-screen map */}
       <MapView
         parentStations={parentStations}
+        groupedParentStations={groupedParentStations}
         platformStops={platformStops}
         parentChildCounts={parentChildCounts}
         selectedRouteId={selectedRouteId}
