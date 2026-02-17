@@ -32,6 +32,7 @@ function App() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
@@ -259,11 +260,68 @@ function App() {
         </div>
       )}
       {realtimeStats && !realtimeError && (
-        <div className="absolute bottom-6 right-4 z-[1000] pointer-events-none">
-          <div className="badge badge-success gap-1 shadow">
+        <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+          {/* Legend popup */}
+          {legendOpen && (
+            <div className="bg-base-100 rounded-xl shadow-xl border border-base-200 p-3 w-52 text-xs space-y-2">
+              <p className="font-semibold text-base-content mb-1">Legenda</p>
+
+              {/* Tram */}
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="18" height="18" style={{ transform: 'rotate(0deg)' }}>
+                  <polygon points="0,-7 5,6 -5,6" fill="#2337ff" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
+                </svg>
+                <span className="text-base-content/80">Tramvaj (smjer poznat)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="16" height="16">
+                  <circle cx="0" cy="0" r="7" fill="#2337ff" fillOpacity="0.85" stroke="#ffffff" strokeWidth="2" />
+                </svg>
+                <span className="text-base-content/80">Tramvaj (u mirovanju)</span>
+              </div>
+
+              <div className="divider my-0.5" />
+
+              {/* Bus */}
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="18" height="18">
+                  <polygon points="0,-7 5,6 -5,6" fill="#ff6b35" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
+                </svg>
+                <span className="text-base-content/80">Autobus (smjer poznat)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="16" height="16">
+                  <circle cx="0" cy="0" r="7" fill="#ff6b35" fillOpacity="0.85" stroke="#ffffff" strokeWidth="2" />
+                </svg>
+                <span className="text-base-content/80">Autobus (u mirovanju)</span>
+              </div>
+
+              <div className="divider my-0.5" />
+
+              {/* Stops */}
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="14" height="14">
+                  <circle cx="0" cy="0" r="7" fill="#8242be" fillOpacity="0.7" stroke="white" strokeWidth="1.5" />
+                </svg>
+                <span className="text-base-content/80">Stanica</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg viewBox="-10 -10 20 20" width="16" height="16">
+                  <circle cx="0" cy="0" r="7" fill="#ff6b6b" fillOpacity="1" stroke="white" strokeWidth="2" />
+                </svg>
+                <span className="text-base-content/80">Odabrana stanica</span>
+              </div>
+            </div>
+          )}
+
+          {/* Badge button */}
+          <button
+            className="badge badge-success gap-1 shadow cursor-pointer hover:badge-outline transition-all"
+            onClick={() => setLegendOpen((o) => !o)}
+          >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
             {realtimeStats.vehiclePositions} vozila uživo
-          </div>
+          </button>
         </div>
       )}
 
