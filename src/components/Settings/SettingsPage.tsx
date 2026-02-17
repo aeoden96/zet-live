@@ -4,7 +4,7 @@
 
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info } from 'lucide-react';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
 
@@ -14,6 +14,11 @@ const TILE_PROVIDERS = [
   { id: 'dark-matter' as const, name: 'Dark', description: 'Dark mode friendly' },
 ];
 
+const STOP_DISPLAY_MODES: { id: StopDisplayMode; name: string; description: string }[] = [
+  { id: 'individual', name: 'Individualne stanice', description: 'Prikazuje svaku platformu zasebno; prozirnost se smanjuje pri manjem uvećanju' },
+  { id: 'grouped', name: 'Grupirane stanice', description: 'Klasični prikaz s grupiranim roditeljskim stanicama i platformama po uvećanju' },
+];
+
 export function SettingsPage() {
   const theme = useSettingsStore((state) => state.theme);
   const setTheme = useSettingsStore((state) => state.setTheme);
@@ -21,6 +26,8 @@ export function SettingsPage() {
   const setSandboxVisible = useSettingsStore((state) => state.setSandboxVisible);
   const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
   const setMapTileProvider = useSettingsStore((state) => state.setMapTileProvider);
+  const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
+  const setStopDisplayMode = useSettingsStore((state) => state.setStopDisplayMode);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -111,6 +118,27 @@ export function SettingsPage() {
                   <div className="flex-1">
                     <p className="font-medium">{provider.name}</p>
                     <p className="text-sm text-base-content/70">{provider.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="divider my-2" />
+
+            <div className="space-y-3">
+              <p className="font-medium">Prikaz stanica</p>
+              {STOP_DISPLAY_MODES.map((mode) => (
+                <label key={mode.id} className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="stop-display-mode"
+                    className="radio radio-primary mt-1"
+                    checked={stopDisplayMode === mode.id}
+                    onChange={() => setStopDisplayMode(mode.id)}
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium">{mode.name}</p>
+                    <p className="text-sm text-base-content/70">{mode.description}</p>
                   </div>
                 </label>
               ))}

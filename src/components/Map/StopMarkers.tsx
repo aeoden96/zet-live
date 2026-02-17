@@ -13,6 +13,8 @@ interface StopMarkersProps {
   selectedStopId: string | null;
   highlightStopIds: string[];
   onStopClick: (stopId: string) => void;
+  /** 0-1 factor applied to all marker opacity (individual mode zoom fading). Selected stops always stay at 1. */
+  opacityFactor?: number;
 }
 
 export function StopMarkers({ 
@@ -21,7 +23,8 @@ export function StopMarkers({
   parentChildCounts,
   selectedStopId, 
   highlightStopIds,
-  onStopClick
+  onStopClick,
+  opacityFactor = 1
 }: StopMarkersProps) {
   const highlightSet = new Set(highlightStopIds as string[]);
   
@@ -91,6 +94,10 @@ export function StopMarkers({
 
         // Render regular platform stops as circle markers
         const stop = s as Stop;
+        // Selected stops always remain fully visible regardless of opacityFactor
+        const effectiveFactor = isSelected ? 1 : opacityFactor;
+        // Skip rendering when fully transparent (perf optimisation)
+        if (effectiveFactor === 0) return null;
         return (
           <CircleMarker
             key={stop.id}
@@ -98,9 +105,10 @@ export function StopMarkers({
             radius={isSelected ? 8 : isHighlighted ? 6 : 5}
             pathOptions={{
               fillColor: isSelected ? '#ff6b6b' : isHighlighted ? '#2337ff' : '#8242be',
-              fillOpacity: isSelected ? 1 : isHighlighted ? 0.9 : 0.7,
+              fillOpacity: (isSelected ? 1 : isHighlighted ? 0.9 : 0.7) * effectiveFactor,
               color: 'white',
               weight: isSelected ? 2 : 1,
+              opacity: effectiveFactor,
             }}
             eventHandlers={{
               click: () => onStopClick(stop.id)

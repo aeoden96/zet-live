@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface ZoomBasedStopsProps {
   parentStations: Stop[];
@@ -32,6 +33,7 @@ export function ZoomBasedStops({
 }: ZoomBasedStopsProps) {
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
+  const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
 
   useEffect(() => {
     const handleZoomEnd = () => {
@@ -45,7 +47,34 @@ export function ZoomBasedStops({
     };
   }, [map]);
 
-  // 3-tier display logic:
+  // ── Individual mode ──────────────────────────────────────────────────────
+  // Always show platform stops; opacity scales with zoom.
+  // zoom >= 17  → factor 1.0 (fully visible)
+  // 14 < zoom < 17 → linearly 0 → 1
+  // zoom <= 14  → factor 0 (invisible)
+  if (stopDisplayMode === 'individual') {
+    const FADE_MIN = 14;
+    const FADE_MAX = 17;
+    const opacityFactor = zoom >= FADE_MAX
+      ? 1
+      : zoom <= FADE_MIN
+        ? 0
+        : (zoom - FADE_MIN) / (FADE_MAX - FADE_MIN);
+
+    return (
+      <StopMarkers
+        stops={platformStops}
+        isParentStationView={false}
+        parentChildCounts={parentChildCounts}
+        selectedStopId={selectedStopId}
+        highlightStopIds={highlightStopIds}
+        onStopClick={onStopClick}
+        opacityFactor={opacityFactor}
+      />
+    );
+  }
+
+  // ── Grouped mode (original 3-tier logic) ─────────────────────────────────
   // - zoom < parentClusterZoom -> show grouped parent-station clusters
   // - parentClusterZoom <= zoom < parentSplitZoom -> show real parent stations
   // - zoom >= parentSplitZoom -> show platform stops
