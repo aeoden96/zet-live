@@ -1,21 +1,21 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Settings, Search, X } from 'lucide-react';
+import { Settings, Search, X } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
 import { StopModal } from './components/common/StopModal';
 import { StopInfoBar } from './components/common/StopInfoBar';
 import { RouteInfoBar } from './components/common/RouteInfoBar';
-import { TimeDisplay } from './components/common/TimeDisplay';
 import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingModal } from './components/common/OnboardingModal';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
 import { useStopDepartures } from './hooks/useStopDepartures';
-import { useVehiclePositions } from './hooks/useVehiclePositions';
+import { useSettingsStore } from './stores/settingsStore';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
+import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useRealtimeData } from './hooks/useRealtimeData';
 
 type DirectionFilter = 'A' | 'B';
@@ -31,7 +31,7 @@ function App() {
   const [selectedRouteType, setSelectedRouteType] = useState<number | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
-  const [showAllVehicles, setShowAllVehicles] = useState(false);
+  const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
@@ -244,11 +244,9 @@ function App() {
         </div>
       )}
       {allVehiclesLoading && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-[1000]">
-          <div className="alert alert-info py-2 px-4 shadow-lg">
-            <span className="loading loading-spinner loading-sm"></span>
-            <span>Učitavanje svih vozila...</span>
-          </div>
+        <div className="absolute bottom-6 left-4 z-[1000] flex items-center gap-2 bg-base-100/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md text-xs text-base-content/70 pointer-events-none">
+          <span className="loading loading-spinner loading-xs"></span>
+          <span>Učitavanje vozila...</span>
         </div>
       )}
 
@@ -261,7 +259,7 @@ function App() {
         </div>
       )}
       {realtimeStats && !realtimeError && (
-        <div className="absolute top-16 right-2 sm:right-4 z-[1000]">
+        <div className="absolute bottom-6 right-4 z-[1000] pointer-events-none">
           <div className="badge badge-success gap-1 shadow">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
             {realtimeStats.vehiclePositions} vozila uživo
@@ -324,22 +322,9 @@ function App() {
 
       {/* Map controls (top-right) */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000] flex flex-col items-end gap-2">
-        <div className="bg-base-100 rounded-lg px-3 py-2 shadow-lg hidden sm:block">
-          <TimeDisplay serviceId={serviceId} calendar={calendar} />
-        </div>
         <Link to="/settings" className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg">
           <Settings className="w-5 h-5" />
         </Link>
-        <button
-          onClick={() => setShowAllVehicles(!showAllVehicles)}
-          className={`btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg ${
-            showAllVehicles ? 'btn-primary' : ''
-          }`}
-          aria-label="Toggle all vehicles"
-          title={showAllVehicles ? 'Sakrij sva vozila' : 'Prikaži sva vozila'}
-        >
-          <MapPin className="w-5 h-5" />
-        </button>
       </div>
 
       {/* Debug panel */}

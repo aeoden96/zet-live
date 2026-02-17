@@ -3,7 +3,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin } from 'lucide-react';
 import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
@@ -28,6 +28,8 @@ export function SettingsPage() {
   const setMapTileProvider = useSettingsStore((state) => state.setMapTileProvider);
   const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
   const setStopDisplayMode = useSettingsStore((state) => state.setStopDisplayMode);
+  const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
+  const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -121,6 +123,24 @@ export function SettingsPage() {
                   </div>
                 </label>
               ))}
+            </div>
+
+            <div className="divider my-2" />
+
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-base-content/70" />
+                  <p className="font-medium">Prikaži sva vozila</p>
+                </div>
+                <p className="text-sm text-base-content/70 mt-0.5">Prikazuje GPS položaje svih vozila na karti</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary mt-1"
+                checked={showAllVehicles}
+                onChange={(e) => setShowAllVehicles(e.target.checked)}
+              />
             </div>
 
             <div className="divider my-2" />

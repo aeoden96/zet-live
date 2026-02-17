@@ -13,11 +13,13 @@ interface SettingsState {
   theme: Theme;
   onboardingCompleted: boolean;
   stopDisplayMode: StopDisplayMode;
+  showAllVehicles: boolean;
   setSandboxVisible: (visible: boolean) => void;
   setMapTileProvider: (provider: MapTileProvider) => void;
   setTheme: (theme: Theme) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
+  setShowAllVehicles: (show: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -28,6 +30,7 @@ export const useSettingsStore = create<SettingsState>()(
       theme: (localStorage.getItem('theme') as Theme) || 'light',
       onboardingCompleted: false,
       stopDisplayMode: 'individual',
+      showAllVehicles: true,
       setSandboxVisible: (visible) => set({ sandboxVisible: visible }),
       setMapTileProvider: (provider) => set({ mapTileProvider: provider }),
       setTheme: (theme) => {
@@ -37,6 +40,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
       setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
+      setShowAllVehicles: (show) => set({ showAllVehicles: show }),
     }),
     {
       name: 'zet-live-settings',
