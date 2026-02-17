@@ -10,6 +10,7 @@ import { RouteShape } from './RouteShape';
 import { VehicleMarkers } from './VehicleMarkers';
 import { AllVehicleMarkers } from './AllVehicleMarkers';
 import { ParentStationZoomController } from './ParentStationZoomController';
+import { OffScreenStopIndicator } from './OffScreenStopIndicator';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
@@ -34,6 +35,9 @@ interface MapViewProps {
   serviceId: string | null;
   parentStationZoomTarget: { lat: number; lon: number; zoom?: number } | null;
   onZoomComplete: () => void;
+  /** Stop object for off-screen directional indicator */
+  selectedStop?: Stop | null;
+  onFlyToStop?: () => void;
 }
 
 const TILE_PROVIDERS = {
@@ -69,7 +73,9 @@ export function MapView({
   // routesById and serviceId are declared in the interface for future use
   // but are not consumed by the map component directly
   parentStationZoomTarget,
-  onZoomComplete
+  onZoomComplete,
+  selectedStop,
+  onFlyToStop
 }: MapViewProps) {
   const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
   const tileConfig = TILE_PROVIDERS[mapTileProvider];
@@ -94,6 +100,10 @@ export function MapView({
         zoomTarget={parentStationZoomTarget}
         onZoomComplete={onZoomComplete}
       />
+
+      {selectedStop && onFlyToStop && (
+        <OffScreenStopIndicator stop={selectedStop} onFlyTo={onFlyToStop} />
+      )}
       
       <ZoomBasedStops 
         parentStations={parentStations}

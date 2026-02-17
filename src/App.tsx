@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Settings, Search, X } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
@@ -33,6 +33,8 @@ function App() {
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
   const [showAllVehicles, setShowAllVehicles] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
+
+  const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
 
   // Load initial data
   const { 
@@ -227,7 +229,9 @@ function App() {
         routesById={routesById}
         serviceId={serviceId}
         parentStationZoomTarget={parentStationZoomTarget}
-        onZoomComplete={() => setParentStationZoomTarget(null)}
+        onZoomComplete={handleZoomComplete}
+        selectedStop={selectedStop && !stopModalOpen ? selectedStop : null}
+        onFlyToStop={selectedStop ? () => setParentStationZoomTarget({ lat: selectedStop.lat, lon: selectedStop.lon, zoom: 17 }) : undefined}
       />
 
       {/* Loading indicators */}
