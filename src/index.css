@@ -211,3 +211,53 @@ html, body {
 [data-theme="dark"] .leaflet-popup-close-button:hover {
   background-color: #374151 !important;
 }
+
+/* Parent station marker styles */
+.parent-station-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.parent-station-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #8242be;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.parent-station-marker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.parent-station-marker.selected {
+  background-color: #ff6b6b;
+  border-width: 3px;
+  width: 32px;
+  height: 32px;
+}
+
+.parent-station-marker.highlighted {
+  background-color: #2337ff;
+  border-width: 2px;
+}
+
+.parent-station-marker .count {
+  color: white;
+  font-weight: bold;
+  font-size: 11px;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.parent-station-marker.selected .count {
+  font-size: 12px;
+}

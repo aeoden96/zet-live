@@ -9,6 +9,7 @@ import { ZoomBasedStops } from './ZoomBasedStops';
 import { RouteShape } from './RouteShape';
 import { VehicleMarkers } from './VehicleMarkers';
 import { AllVehicleMarkers } from './AllVehicleMarkers';
+import { ParentStationZoomController } from './ParentStationZoomController';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
@@ -17,6 +18,7 @@ const DEFAULT_ZOOM = 13;
 interface MapViewProps {
   parentStations: Stop[];
   platformStops: Stop[];
+  parentChildCounts: Map<string, number>;
   selectedRouteId: string | null;
   selectedStopId: string | null;
   routeShapes: Record<string, [number, number][]>;
@@ -28,6 +30,8 @@ interface MapViewProps {
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
+  parentStationZoomTarget: { lat: number; lon: number } | null;
+  onZoomComplete: () => void;
 }
 
 const TILE_PROVIDERS = {
@@ -48,6 +52,7 @@ const TILE_PROVIDERS = {
 export function MapView({
   parentStations,
   platformStops,
+  parentChildCounts,
   selectedRouteId,
   selectedStopId,
   routeShapes,
@@ -58,7 +63,9 @@ export function MapView({
   showAllVehicles = false,
   allVehicles = [],
   routesById,
-  serviceId
+  serviceId,
+  parentStationZoomTarget,
+  onZoomComplete
 }: MapViewProps) {
   const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
   const tileConfig = TILE_PROVIDERS[mapTileProvider];
@@ -79,9 +86,15 @@ export function MapView({
         url={tileConfig.url}
       />
       
+      <ParentStationZoomController
+        zoomTarget={parentStationZoomTarget}
+        onZoomComplete={onZoomComplete}
+      />
+      
       <ZoomBasedStops 
         parentStations={parentStations}
         platformStops={platformStops}
+        parentChildCounts={parentChildCounts}
         selectedStopId={selectedStopId}
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}

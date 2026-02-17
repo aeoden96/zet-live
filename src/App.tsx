@@ -30,6 +30,7 @@ function App() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
   const [showAllVehicles, setShowAllVehicles] = useState(false);
+  const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number } | null>(null);
 
   // Load initial data
   const { 
@@ -45,6 +46,13 @@ function App() {
   // Separate parent stations and platform stops for zoom-based rendering
   const parentStations = stops.filter(stop => stop.locationType === 1);
   const platformStops = stops.filter(stop => stop.locationType === 0);
+
+  // Calculate child stop counts for parent stations
+  const parentChildCounts = new Map<string, number>();
+  parentStations.forEach(parent => {
+    const childCount = platformStops.filter(s => s.parentStation === parent.id).length;
+    parentChildCounts.set(parent.id, childCount);
+  });
 
   // Get current service ID
   const serviceId = useCurrentService(calendar);
@@ -78,6 +86,9 @@ function App() {
   const handleStopClickFromMap = (stopId: string) => {
     const stop = stopsById.get(stopId);
     if (stop && stop.locationType === 1) {
+      // Parent station clicked - trigger zoom
+      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon });
+      
       const childPlatform = stops.find(
         (s) => s.parentStation === stopId && s.locationType === 0
       );
@@ -170,6 +181,7 @@ function App() {
       <MapView
         parentStations={parentStations}
         platformStops={platformStops}
+        parentChildCounts={parentChildCounts}
         selectedRouteId={selectedRouteId}
         selectedStopId={selectedStopId}
         routeShapes={shapes}
@@ -181,6 +193,8 @@ function App() {
         allVehicles={allVehicles}
         routesById={routesById}
         serviceId={serviceId}
+        parentStationZoomTarget={parentStationZoomTarget}
+        onZoomComplete={() => setParentStationZoomTarget(null)}
       />
 
       {/* Loading indicators */}

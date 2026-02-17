@@ -10,6 +10,7 @@ import type { Stop } from '../../utils/gtfs';
 interface ZoomBasedStopsProps {
   parentStations: Stop[];
   platformStops: Stop[];
+  parentChildCounts: Map<string, number>;
   selectedStopId: string | null;
   highlightStopIds: string[];
   onStopClick: (stopId: string) => void;
@@ -19,6 +20,7 @@ interface ZoomBasedStopsProps {
 export function ZoomBasedStops({ 
   parentStations,
   platformStops,
+  parentChildCounts,
   selectedStopId, 
   highlightStopIds,
   onStopClick,
@@ -42,10 +44,13 @@ export function ZoomBasedStops({
   // Show platform stops (individual platforms) when zoomed in
   // Show parent stations (grouped stops) when zoomed out
   const stopsToShow = zoom >= zoomThreshold ? platformStops : parentStations;
+  const showParentStations = zoom < zoomThreshold;
 
   return (
     <StopMarkers 
       stops={stopsToShow}
+      isParentStationView={showParentStations}
+      parentChildCounts={parentChildCounts}
       selectedStopId={selectedStopId}
       highlightStopIds={highlightStopIds}
       onStopClick={onStopClick}
