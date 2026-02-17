@@ -1,0 +1,91 @@
+/**
+ * Fixed route info bar — compact "small view" for a selected route.
+ * Mirrors the StopInfoBar pattern: appears below the search bar,
+ * can be expanded into the full RouteModal via the Maximize2 button.
+ */
+
+import { Maximize2, X, Train, Bus } from 'lucide-react';
+import type { Route } from '../../utils/gtfs';
+import type { VehiclePosition } from '../../utils/vehicles';
+
+interface RouteInfoBarProps {
+  route: Route;
+  vehicles: VehiclePosition[];
+  onExpand: () => void;
+  onClose: () => void;
+}
+
+const TRAM_COLOR = '#2563eb'; // blue-600
+const BUS_COLOR  = '#ea580c'; // orange-600
+
+export function RouteInfoBar({ route, vehicles, onExpand, onClose }: RouteInfoBarProps) {
+  const color = route.type === 0 ? TRAM_COLOR : BUS_COLOR;
+  const isTram = route.type === 0;
+
+  const vehicleCount = vehicles.length;
+  const vehicleLabel =
+    vehicleCount === 0
+      ? 'Nema aktivnih vozila'
+      : vehicleCount === 1
+      ? `1 vozilo aktivno`
+      : `${vehicleCount} vozila aktivna`;
+
+  return (
+    <div
+      className="fixed top-16 sm:top-20 left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-base-100 rounded-xl shadow-2xl"
+      style={{ animation: 'modal-fade-in 0.2s ease-out' }}
+    >
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
+            {/* Route badge */}
+            <span
+              className="badge font-bold text-white shrink-0 min-w-[2.5rem] justify-center"
+              style={{ backgroundColor: color, borderColor: color }}
+            >
+              {route.shortName}
+            </span>
+            {/* Route name */}
+            <h3 className="font-bold text-base leading-tight text-base-content truncate">
+              {route.longName}
+            </h3>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={onExpand}
+              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              title="Prikaži detalje rute"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              title="Zatvori"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Vehicle status */}
+        <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+          {isTram ? (
+            <Train className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <Bus className="w-3.5 h-3.5 shrink-0" />
+          )}
+          <span className={vehicleCount > 0 ? 'text-success font-medium' : ''}>
+            {vehicleLabel}
+          </span>
+          {vehicleCount > 0 && (
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse ml-0.5" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

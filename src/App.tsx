@@ -6,6 +6,7 @@ import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
 import { StopModal } from './components/common/StopModal';
 import { StopInfoBar } from './components/common/StopInfoBar';
+import { RouteInfoBar } from './components/common/RouteInfoBar';
 import { TimeDisplay } from './components/common/TimeDisplay';
 import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingModal } from './components/common/OnboardingModal';
@@ -88,7 +89,8 @@ function App() {
     if (df === 'A' || df === 'B') setDirectionFilter(df);
     else setDirectionFilter('A');
     setSearchModalOpen(false);
-    setRouteModalOpen(true);
+    // Default to small route info bar; user can expand to full RouteModal
+    setRouteModalOpen(false);
   };
 
   const handleStopClickFromMap = (stopId: string) => {
@@ -142,13 +144,19 @@ function App() {
   const handleStopClickFromRoute = (stopId: string) => {
     setSelectedStopId(stopId);
     setRouteModalOpen(false);
-    setStopModalOpen(true);
+    // Keep stopModalOpen false — stop appears as small StopInfoBar below the RouteInfoBar
   };
 
   const handleRouteClickFromStop = (routeId: string, routeType: number) => {
     setSelectedRouteId(routeId);
     setSelectedRouteType(routeType);
     setStopModalOpen(false);
+    setSelectedStopId(null);
+    // Default to small route info bar
+    setRouteModalOpen(false);
+  };
+
+  const handleExpandRoute = () => {
     setRouteModalOpen(true);
   };
 
@@ -257,6 +265,16 @@ function App() {
         </div>
       )}
 
+      {/* Route Info Bar (when route selected but full modal not open) */}
+      {selectedRoute && !routeModalOpen && !stopModalOpen && (
+        <RouteInfoBar
+          route={selectedRoute}
+          vehicles={vehicles}
+          onExpand={handleExpandRoute}
+          onClose={handleClearRoute}
+        />
+      )}
+
       {/* Stop Info Bar (when stop selected but modal not open) */}
       {selectedStop && !stopModalOpen && (
         <StopInfoBar
@@ -265,6 +283,7 @@ function App() {
           serviceId={serviceId}
           onExpand={handleExpandStop}
           onClose={handleCloseStopInfo}
+          stackBelow={!!(selectedRoute && !routeModalOpen)}
         />
       )}
 
@@ -276,7 +295,7 @@ function App() {
             className="flex-1 flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
           >
             <Search className="w-5 h-5 text-base-content/50 shrink-0" />
-            {selectedRoute ? (
+            {selectedRoute && routeModalOpen ? (
               <span className="text-sm flex-1">
                 <span className={`badge ${selectedRoute.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold mr-2`}>
                   {selectedRoute.shortName}
@@ -287,7 +306,7 @@ function App() {
               <span className="text-base-content/50 text-sm flex-1">Pretraži linije...</span>
             )}
           </button>
-          {selectedRoute && (
+          {selectedRoute && routeModalOpen && (
             <button
               onClick={handleClearRoute}
               className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
