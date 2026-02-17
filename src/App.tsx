@@ -17,7 +17,7 @@ import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
 import { useRealtimeData } from './hooks/useRealtimeData';
 
-type DirectionFilter = 'all' | 'A' | 'B';
+type DirectionFilter = 'A' | 'B';
 
 function App() {
   // Modal states
@@ -29,7 +29,7 @@ function App() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedRouteType, setSelectedRouteType] = useState<number | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
-  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all');
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
   const [showAllVehicles, setShowAllVehicles] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
@@ -81,10 +81,12 @@ function App() {
   const { departures } = useStopDepartures(selectedStopId);
 
   // Handlers
-  const handleSelectRoute = (routeId: string, routeType: number, df?: DirectionFilter) => {
+  const handleSelectRoute = (routeId: string, routeType: number, df?: DirectionFilter | 'all') => {
     setSelectedRouteId(routeId);
     setSelectedRouteType(routeType);
-    if (df) setDirectionFilter(df);
+    // Coerce 'all' (from SearchModal) to 'A'
+    if (df === 'A' || df === 'B') setDirectionFilter(df);
+    else setDirectionFilter('A');
     setSearchModalOpen(false);
     setRouteModalOpen(true);
   };
@@ -158,7 +160,7 @@ function App() {
   const handleClearRoute = () => {
     setSelectedRouteId(null);
     setSelectedRouteType(null);
-    setDirectionFilter('all');
+    setDirectionFilter('A');
   };
 
   const handleCloseStop = () => {

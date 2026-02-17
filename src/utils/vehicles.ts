@@ -267,6 +267,59 @@ export function mapRealtimeToAllVehiclePositions(
   return result;
 }
 
+// ============================================================
+// Nearest-stop progress computation (for metro diagram display)
+// ============================================================
+
+/**
+ * Given a vehicle's GPS position and an ordered array of stops (for a single
+ * direction), returns a fractional index representing where along the stop
+ * sequence the vehicle is.
+ *
+ * e.g. 2.4 means ~40% of the way between stop index 2 and stop index 3.
+ *
+ * Uses simple Euclidean distance in lat/lon space (sufficient for city scale).
+ */
+export function computeVehicleStopProgress(
+  vehicleLat: number,
+  vehicleLon: number,
+  stops: Array<{ lat: number; lon: number }>
+): number {
+  if (stops.length === 0) return 0;
+  if (stops.length === 1) return 0;
+
+  let bestScore = Infinity;
+  let bestIndex = 0;
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    const { lat: lat1, lon: lon1 } = stops[i];
+    const { lat: lat2, lon: lon2 } = stops[i + 1];
+
+    // Project vehicle onto the segment (i → i+1)
+    const dx = lat2 - lat1;
+    const dy = lon2 - lon1;
+    const lenSq = dx * dx + dy * dy;
+
+    let t = 0;
+    if (lenSq > 0) {
+      t = ((vehicleLat - lat1) * dx + (vehicleLon - lon1) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+    }
+
+    const projLat = lat1 + t * dx;
+    const projLon = lon1 + t * dy;
+    const distSq =
+      (vehicleLat - projLat) ** 2 + (vehicleLon - projLon) ** 2;
+
+    if (distSq < bestScore) {
+      bestScore = distSq;
+      bestIndex = i + t;
+    }
+  }
+
+  return bestIndex;
+}
+
 /*
 export function getAllActiveVehicles(
   data: AllActiveTripsData,
