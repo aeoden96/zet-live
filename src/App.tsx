@@ -5,6 +5,7 @@ import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
 import { StopModal } from './components/common/StopModal';
+import { StopInfoBar } from './components/common/StopInfoBar';
 import { TimeDisplay } from './components/common/TimeDisplay';
 import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingModal } from './components/common/OnboardingModal';
@@ -88,7 +89,7 @@ function App() {
     } else {
       setSelectedStopId(stopId);
     }
-    // Don't open modal - just select on map; popup will show timetable
+    // Show fixed stop info bar at top
   };
 
   const handleExpandStop = (stopId: string) => {
@@ -130,6 +131,10 @@ function App() {
 
   const handleCloseStop = () => {
     setStopModalOpen(false);
+    setSelectedStopId(null);
+  };
+
+  const handleCloseStopInfo = () => {
     setSelectedStopId(null);
   };
 
@@ -176,7 +181,6 @@ function App() {
         allVehicles={allVehicles}
         routesById={routesById}
         serviceId={serviceId}
-        onExpandStop={handleExpandStop}
       />
 
       {/* Loading indicators */}
@@ -195,6 +199,17 @@ function App() {
             <span>Učitavanje svih vozila...</span>
           </div>
         </div>
+      )}
+
+      {/* Stop Info Bar (when stop selected but modal not open) */}
+      {selectedStop && !stopModalOpen && (
+        <StopInfoBar
+          stop={selectedStop}
+          routesById={routesById}
+          serviceId={serviceId}
+          onExpand={handleExpandStop}
+          onClose={handleCloseStopInfo}
+        />
       )}
 
       {/* Floating search bar */}

@@ -1,29 +1,22 @@
 /**
- * Render stop markers on the map with enhanced popups
+ * Render stop markers on the map
  */
 
-import { CircleMarker, Popup } from 'react-leaflet';
-import type { Stop, Route } from '../../utils/gtfs';
-import { StopPopupContent } from './StopPopupContent';
+import { CircleMarker } from 'react-leaflet';
+import type { Stop } from '../../utils/gtfs';
 
 interface StopMarkersProps {
   stops: Stop[];
   selectedStopId: string | null;
   highlightStopIds: string[];
   onStopClick: (stopId: string) => void;
-  routesById: Map<string, Route>;
-  serviceId: string | null;
-  onExpandStop: (stopId: string) => void;
 }
 
 export function StopMarkers({ 
   stops, 
   selectedStopId, 
   highlightStopIds,
-  onStopClick,
-  routesById,
-  serviceId,
-  onExpandStop
+  onStopClick
 }: StopMarkersProps) {
   const highlightSet = new Set(highlightStopIds);
   
@@ -47,16 +40,7 @@ export function StopMarkers({
             eventHandlers={{
               click: () => onStopClick(stop.id)
             }}
-          >
-            <Popup>
-              <StopPopupContent
-                stop={stop}
-                routesById={routesById}
-                serviceId={serviceId}
-                onExpand={onExpandStop}
-              />
-            </Popup>
-          </CircleMarker>
+          />
         );
       })}
     </>

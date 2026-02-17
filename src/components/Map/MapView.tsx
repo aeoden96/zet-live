@@ -28,7 +28,6 @@ interface MapViewProps {
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
-  onExpandStop: (stopId: string) => void;
 }
 
 const TILE_PROVIDERS = {
@@ -59,8 +58,7 @@ export function MapView({
   showAllVehicles = false,
   allVehicles = [],
   routesById,
-  serviceId,
-  onExpandStop
+  serviceId
 }: MapViewProps) {
   const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
   const tileConfig = TILE_PROVIDERS[mapTileProvider];
@@ -87,9 +85,6 @@ export function MapView({
         selectedStopId={selectedStopId}
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}
-        routesById={routesById}
-        serviceId={serviceId}
-        onExpandStop={onExpandStop}
       />
       
       {showAllVehicles && (
