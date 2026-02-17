@@ -9,10 +9,18 @@ import {
   parseVehiclePositions,
   parseTripUpdates,
   getFeedStatistics,
+  enrichWithDeadReckoning,
   type ParsedVehiclePosition,
   type ParsedTripUpdate,
   type FeedStatistics,
+  type VehicleSnapshot,
 } from '../utils/realtime';
+
+/**
+ * Module-level history — survives store updates but is not reactive.
+ * Keyed by vehicleId (not tripId, as tripId changes each service day).
+ */
+const vehicleHistory = new Map<string, VehicleSnapshot>();
 
 interface RealtimeState {
   /** Vehicle positions keyed by tripId */
@@ -56,8 +64,23 @@ export const useRealtimeStore = create<RealtimeState>()((set) => ({
 
       const vehiclePositions = new Map<string, ParsedVehiclePosition>();
       for (const pos of positions) {
-        if (pos.tripId) {
-          vehiclePositions.set(pos.tripId, pos);
+        // Enrich with dead-reckoning if we have a previous snapshot
+        // Only use history when vehicleId is non-empty (avoids cross-vehicle pollution)
+        const historyKey = pos.vehicleId || pos.tripId;
+        const prev = historyKey ? vehicleHistory.get(historyKey) : undefined;
+        const enriched = prev ? enrichWithDeadReckoning(pos, prev) : pos;
+
+        // Update history with the raw (un-enriched) current position
+        if (historyKey) {
+          vehicleHistory.set(historyKey, {
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+            timestamp: pos.timestamp,
+          });
+        }
+
+        if (enriched.tripId) {
+          vehiclePositions.set(enriched.tripId, enriched);
         }
       }
 

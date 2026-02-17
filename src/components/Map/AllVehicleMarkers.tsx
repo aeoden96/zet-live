@@ -2,9 +2,10 @@
  * Render all vehicle position markers on the map
  */
 
-import { CircleMarker, Tooltip } from 'react-leaflet';
+import { Marker, Tooltip } from 'react-leaflet';
 import type { AllVehiclePosition } from '../../utils/vehicles';
 import { formatDelay, speedToKmh } from '../../utils/realtime';
+import { makeVehicleIcon } from '../../utils/vehicleIcon';
 
 interface AllVehicleMarkersProps {
   vehicles: AllVehiclePosition[];
@@ -18,18 +19,13 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
         const color = vehicle.routeType === 0 ? '#2337ff' : '#ff6b35';
         const speedKmh = speedToKmh(vehicle.speed);
         const delayStr = formatDelay(vehicle.delay);
+        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime);
 
         return (
-          <CircleMarker
+          <Marker
             key={vehicle.tripId}
-            center={[vehicle.lat, vehicle.lon]}
-            radius={6}
-            pathOptions={{
-              fillColor: color,
-              fillOpacity: 0.8,
-              color: vehicle.isRealtime ? '#ffffff' : '#aaaaaa',
-              weight: 2,
-            }}
+            position={[vehicle.lat, vehicle.lon]}
+            icon={icon}
           >
             <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
               <div className="text-xs">
@@ -57,7 +53,7 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
                 )}
               </div>
             </Tooltip>
-          </CircleMarker>
+          </Marker>
         );
       })}
     </>

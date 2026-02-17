@@ -164,8 +164,10 @@ export function parseVehiclePositions(feed: GtfsRealtimeFeed): ParsedVehiclePosi
         routeId: vehicle.trip?.routeId || '',
         latitude: vehicle.position.latitude,
         longitude: vehicle.position.longitude,
-        bearing: vehicle.position?.bearing,
-        speed: vehicle.position?.speed,
+        // Feed bearing is often 0 even when the vehicle is moving — ignore it
+        bearing: undefined,
+        // Feed speed is always 0 on this provider — treat as missing
+        speed: (vehicle.position?.speed > 0) ? vehicle.position.speed : undefined,
         timestamp: Number(vehicle.timestamp) || Math.floor(Date.now() / 1000),
         currentStopId: vehicle.stopId,
         status: vehicle.currentStatus,
@@ -253,4 +255,88 @@ export function formatDelay(delaySeconds?: number): string {
  */
 export function speedToKmh(speedMs?: number): number | undefined {
   return speedMs !== undefined ? Math.round(speedMs * 3.6 * 10) / 10 : undefined;
+}
+
+// ============================================
+// Dead-reckoning: derive bearing + speed from
+// consecutive position snapshots.
+// ============================================
+
+/** Haversine distance in metres between two WGS-84 coordinates. */
+export function haversineDistance(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const R = 6_371_000; // Earth radius in metres
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Bearing in degrees (0 = North, clockwise) from point 1 → point 2.
+ */
+export function computeBearing(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+export interface VehicleSnapshot {
+  latitude: number;
+  longitude: number;
+  /** POSIX seconds */
+  timestamp: number;
+}
+
+/**
+ * Enrich a vehicle position with derived bearing and/or speed by comparing
+ * it against a previous snapshot.
+ *
+ * Rules:
+ * - Time delta must be 3 s – 300 s (avoid noise & stale data)
+ * - Movement must be ≥ 5 m (below GPS noise threshold)
+ * - Derived speed capped at 33 m/s (~120 km/h)
+ * - Derived values only fill in missing fields from the feed
+ */
+export function enrichWithDeadReckoning(
+  current: ParsedVehiclePosition,
+  prev: VehicleSnapshot,
+): ParsedVehiclePosition {
+  const dt = current.timestamp - prev.timestamp; // seconds
+  if (dt < 3 || dt > 300) return current;
+
+  const dist = haversineDistance(
+    prev.latitude, prev.longitude,
+    current.latitude, current.longitude,
+  );
+
+  if (dist < 5) return current; // GPS noise — vehicle likely stationary
+
+  const derivedBearing = computeBearing(
+    prev.latitude, prev.longitude,
+    current.latitude, current.longitude,
+  );
+  const derivedSpeed = Math.min(dist / dt, 33); // m/s, capped at ~120 km/h
+
+  return {
+    ...current,
+    // Always prefer derived bearing — feed value is unreliable/zero
+    bearing: derivedBearing,
+    // Always prefer derived speed — feed speed is always 0 on this provider
+    speed: derivedSpeed,
+  };
 }
