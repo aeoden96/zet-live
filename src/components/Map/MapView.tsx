@@ -27,6 +27,7 @@ interface MapViewProps {
   vehicles: VehiclePosition[];
   routeType: number | null;
   onStopClick: (stopId: string) => void;
+  onVehicleClick?: (routeId: string, routeType: number) => void;
   showAllVehicles?: boolean;
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
@@ -62,6 +63,7 @@ export function MapView({
   vehicles,
   routeType,
   onStopClick,
+  onVehicleClick,
   showAllVehicles = false,
   allVehicles = [],
   // routesById and serviceId are declared in the interface for future use
@@ -104,7 +106,7 @@ export function MapView({
       />
       
       {showAllVehicles && (
-        <AllVehicleMarkers vehicles={allVehicles} />
+        <AllVehicleMarkers vehicles={allVehicles} onVehicleClick={onVehicleClick} />
       )}
       
       {selectedRouteId && (

@@ -213,8 +213,9 @@ function App() {
         vehicles={vehicles}
         routeType={selectedRouteType}
         onStopClick={handleStopClickFromMap}
+        onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}
-        allVehicles={allVehicles}
+        allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}
         serviceId={serviceId}
         parentStationZoomTarget={parentStationZoomTarget}

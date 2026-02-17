@@ -9,9 +9,10 @@ import { makeVehicleIcon } from '../../utils/vehicleIcon';
 
 interface AllVehicleMarkersProps {
   vehicles: AllVehiclePosition[];
+  onVehicleClick?: (routeId: string, routeType: number) => void;
 }
 
-export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
+export function AllVehicleMarkers({ vehicles, onVehicleClick }: AllVehicleMarkersProps) {
   return (
     <>
       {vehicles.map((vehicle) => {
@@ -26,6 +27,7 @@ export function AllVehicleMarkers({ vehicles }: AllVehicleMarkersProps) {
             key={vehicle.tripId}
             position={[vehicle.lat, vehicle.lon]}
             icon={icon}
+            eventHandlers={onVehicleClick ? { click: () => onVehicleClick(vehicle.routeId, vehicle.routeType) } : undefined}
           >
             <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
               <div className="text-xs">
