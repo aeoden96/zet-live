@@ -2,7 +2,8 @@
  * Main Leaflet map component
  */
 
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
 import type { Stop, Route, ParentGroup } from '../../utils/gtfs';
 import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
 import { ZoomBasedStops } from './ZoomBasedStops';
@@ -33,6 +34,7 @@ interface MapViewProps {
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
+  userLocation?: { lat: number; lon: number } | null;
   parentStationZoomTarget: { lat: number; lon: number; zoom?: number } | null;
   onZoomComplete: () => void;
   /** Stop object for off-screen directional indicator */
@@ -70,6 +72,7 @@ export function MapView({
   onVehicleClick,
   showAllVehicles = false,
   allVehicles = [],
+  userLocation,
   // routesById and serviceId are declared in the interface for future use
   // but are not consumed by the map component directly
   parentStationZoomTarget,
@@ -114,6 +117,18 @@ export function MapView({
         highlightStopIds={selectedRouteId ? routeStops : []}
         onStopClick={onStopClick}
       />
+
+      {userLocation && (
+        <Marker
+          position={[userLocation.lat, userLocation.lon]}
+          icon={L.divIcon({
+            html: `<div class="user-location-marker"><span class="pulse"></span><span class="dot"></span></div>`,
+            className: 'user-location-icon',
+            iconSize: [44, 44],
+            iconAnchor: [22, 22],
+          })}
+        />
+      )}
       
       {showAllVehicles && (
         <AllVehicleMarkers vehicles={allVehicles} onVehicleClick={onVehicleClick} />

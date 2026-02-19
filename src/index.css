@@ -261,3 +261,39 @@ html, body {
 .parent-station-marker.selected .count {
   font-size: 12px;
 }
+
+/* User location marker (pulsing 'you are here' dot) */
+.user-location-marker {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  pointer-events: none;
+}
+.user-location-marker .pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(34,197,94,0.12); /* green pulse */
+  animation: user-location-pulse 1.6s ease-out infinite;
+}
+.user-location-marker .dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #22c55e; /* green */
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+@keyframes user-location-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.6; }
+  70% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+  100% { opacity: 0; }
+}

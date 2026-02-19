@@ -43,18 +43,11 @@ export function NearbyStopsModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[1100] flex items-start justify-center">
-      {/* Backdrop */}
+    <div className="fixed top-16 sm:top-20 left-2 sm:left-4 w-[calc(100%-1rem)] sm:w-auto sm:max-w-sm z-[1050]">
+      {/* Compact card (no backdrop / no blur) */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        style={{ animation: 'backdrop-fade-in 0.15s ease-out' }}
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div
-        className="relative w-full max-w-lg mx-2 mt-2 sm:mt-8 max-h-[90vh] bg-base-100 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ animation: 'modal-fade-in 0.2s ease-out' }}
+        className="relative w-full bg-base-100 rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[50vh]"
+        style={{ animation: 'modal-fade-in 0.18s ease-out' }}
       >
         {/* Header */}
         <div className="p-4 border-b border-base-300">
@@ -81,7 +74,7 @@ export function NearbyStopsModal({
             </div>
           ) : (
             <div className="divide-y divide-base-300">
-              {unique.map((stop) => (
+              {unique.slice(0, 6).map((stop) => (
                 <button
                   key={stop.id}
                   onClick={() => {

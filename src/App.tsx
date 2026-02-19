@@ -274,6 +274,7 @@ function App() {
         allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}
         serviceId={serviceId}
+        userLocation={userLocation}
         parentStationZoomTarget={parentStationZoomTarget}
         onZoomComplete={handleZoomComplete}
         selectedStop={selectedStop && !stopModalOpen ? selectedStop : null}
@@ -507,7 +508,10 @@ function App() {
           userLat={userLocation.lat}
           userLon={userLocation.lon}
           stops={platformStops}
-          onClose={() => setNearbyOpen(false)}
+          onClose={() => {
+            setNearbyOpen(false);
+            setUserLocation(null);
+          }}
           onSelectStop={handleSelectStop}
         />
       )}
