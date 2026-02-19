@@ -11,6 +11,7 @@ import { useStopDepartures } from '../../hooks/useStopDepartures';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useRealtimeAdjustedDepartures } from '../../hooks/useRealtimeAdjustedDepartures';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useDebug } from '../../contexts/DebugContext';
 
 interface StopInfoBarProps {
   stop: Stop;
@@ -34,6 +35,7 @@ export function StopInfoBar({
   const currentTime = useCurrentTime();
   const realtimeDelays = useRealtimeAdjustedDepartures(stop.id, departures);
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
+  const { isDebugMode } = useDebug();
   const isFav = favouriteStopIds.includes(stop.id);
   const [, setTick] = useState(0);
 
@@ -52,6 +54,8 @@ export function StopInfoBar({
       nextTime: number;
       formattedTime: string;
       delaySeconds: number | null;
+      delaySource: 'stop' | 'trip' | null;
+      adjustedTime: number; // minutes (may be fractional)
     }> = [];
 
     for (const routeId of departures.routes) {
@@ -63,6 +67,7 @@ export function StopInfoBar({
       if (nextTime !== undefined) {
         const delayInfo = realtimeDelays.get(routeId);
         const delaySeconds = delayInfo?.delaySeconds ?? null;
+        const delaySource = delayInfo?.source ?? null;
         // Adjust displayed time by delay if available
         const adjustedTime = delaySeconds !== null ? nextTime + delaySeconds / 60 : nextTime;
         const diff = Math.round(adjustedTime - currentTime);
@@ -71,7 +76,7 @@ export function StopInfoBar({
         else if (diff < 60) formatted = `${diff} min`;
         else formatted = minutesToTime(adjustedTime);
 
-        results.push({ route, nextTime, formattedTime: formatted, delaySeconds });
+        results.push({ route, nextTime, formattedTime: formatted, delaySeconds, delaySource, adjustedTime });
       }
     }
 
@@ -141,7 +146,7 @@ export function StopInfoBar({
           </div>
         ) : miniDepartures.length > 0 ? (
           <div className="space-y-2">
-            {miniDepartures.map(({ route, formattedTime, delaySeconds }, idx) => {
+            {miniDepartures.map(({ route, formattedTime, delaySeconds, delaySource, nextTime, adjustedTime }, idx) => {
               const delaySec = delaySeconds ?? 0;
               const delayMin = Math.round(delaySec / 60);
               const isLate = delaySec > 90;
@@ -173,13 +178,25 @@ export function StopInfoBar({
                         {isLate ? `+${delayMin}` : `${delayMin}`} min
                       </span>
                     )}
-                    <span
-                      className={`font-semibold text-sm whitespace-nowrap ${
-                        idx === 0 ? 'text-success' : 'text-base-content/70'
-                      }`}
-                    >
-                      {formattedTime}
-                    </span>
+
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`font-semibold text-sm whitespace-nowrap ${
+                            idx === 0 ? 'text-success' : 'text-base-content/70'
+                          }`}
+                        >
+                          {formattedTime}
+                        </span>
+                        {/* Debug info (only visible in sandbox/debug mode) */}
+                        {isDebugMode && (
+                          <span className="ml-2 text-[11px] text-base-content/50 whitespace-nowrap">
+                            calc: sched {minutesToTime(nextTime)} ({nextTime})
+                            {delaySeconds !== null ? ` + ${delaySec}s (${delaySource})` : ' (no-RT)'} → {minutesToTime(adjustedTime)} ({Math.round(adjustedTime - currentTime)}m)
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
