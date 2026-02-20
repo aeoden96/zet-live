@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Navigation, MapPin, Smartphone, Wifi, Sun, LayoutList, Map } from 'lucide-react';
+import { X, Navigation, MapPin, Smartphone, Wifi, LayoutList, Map } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 export function OnboardingWizard() {

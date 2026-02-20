@@ -58,8 +58,9 @@ export const useSettingsStore = create<SettingsState>()(
       // Ensure the document theme attribute matches the initial value
       try {
         document.documentElement.setAttribute('data-theme', initialTheme);
-      } catch (e) {
+      } catch (_e) {
         // no-op (safe for environments without document)
+        void _e;
       }
 
       return {
@@ -84,7 +85,9 @@ export const useSettingsStore = create<SettingsState>()(
         set({ mapTileProvider: provider, theme: themeForProvider });
         try {
           document.documentElement.setAttribute('data-theme', themeForProvider);
-        } catch (e) {}
+        } catch (_e) {
+          void _e;
+        }
         localStorage.setItem('theme', themeForProvider);
       },
       setTheme: (theme) => {
@@ -92,7 +95,9 @@ export const useSettingsStore = create<SettingsState>()(
         set({ theme, mapTileProvider: providerForTheme });
         try {
           document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {}
+        } catch (_e) {
+          void _e;
+        }
         localStorage.setItem('theme', theme);
       },
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
