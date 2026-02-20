@@ -21,7 +21,7 @@ export function VehicleMarkers({ vehicles, routeType }: VehicleMarkersProps) {
       {vehicles.map((vehicle) => {
         const speedKmh = speedToKmh(vehicle.speed);
         const delayStr = formatDelay(vehicle.delay);
-        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime);
+        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime, vehicle.routeShortName);
 
         return (
           <Marker

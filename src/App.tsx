@@ -317,14 +317,21 @@ function App() {
 
               {/* Tram */}
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="18" height="18" style={{ transform: 'rotate(0deg)' }}>
-                  <polygon points="0,-7 5,6 -5,6" fill="#2337ff" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
-                </svg>
-                <span className="text-base-content/80">Tramvaj (smjer poznat)</span>
+                <div style={{ position: 'relative', width: 22, height: 22, flexShrink: 0 }}>
+                  <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(0deg)', transformOrigin: '11px 11px' }} width="22" height="22" viewBox="0 0 22 22">
+                    <polygon points="11,1 8,6 14,6" fill="#2337ff" stroke="white" strokeWidth="1" strokeLinejoin="round" />
+                  </svg>
+                  <svg style={{ position: 'absolute', top: 0, left: 0 }} width="22" height="22" viewBox="0 0 22 22">
+                    <circle cx="11" cy="11" r="7" fill="#2337ff" fillOpacity="0.95" stroke="white" strokeWidth="2" />
+                    <text x="11" y="14" textAnchor="middle" fontSize="7" fontWeight="bold" fill="white" fontFamily="system-ui,sans-serif">T1</text>
+                  </svg>
+                </div>
+                <span className="text-base-content/80">Tramvaj (GPS, smjer poznat)</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="16" height="16">
-                  <circle cx="0" cy="0" r="7" fill="#2337ff" fillOpacity="0.85" stroke="#ffffff" strokeWidth="2" />
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" r="7" fill="#2337ff" fillOpacity="0.85" stroke="white" strokeWidth="2" />
+                  <text x="10" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="white" fontFamily="system-ui,sans-serif">T1</text>
                 </svg>
                 <span className="text-base-content/80">Tramvaj (u mirovanju)</span>
               </div>
@@ -333,14 +340,21 @@ function App() {
 
               {/* Bus */}
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="18" height="18">
-                  <polygon points="0,-7 5,6 -5,6" fill="#ff6b35" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
-                </svg>
-                <span className="text-base-content/80">Autobus (smjer poznat)</span>
+                <div style={{ position: 'relative', width: 22, height: 22, flexShrink: 0 }}>
+                  <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(45deg)', transformOrigin: '11px 11px' }} width="22" height="22" viewBox="0 0 22 22">
+                    <polygon points="11,1 8,6 14,6" fill="#ff6b35" stroke="white" strokeWidth="1" strokeLinejoin="round" />
+                  </svg>
+                  <svg style={{ position: 'absolute', top: 0, left: 0 }} width="22" height="22" viewBox="0 0 22 22">
+                    <circle cx="11" cy="11" r="7" fill="#ff6b35" fillOpacity="0.95" stroke="white" strokeWidth="2" />
+                    <text x="11" y="14" textAnchor="middle" fontSize="6" fontWeight="bold" fill="white" fontFamily="system-ui,sans-serif">109</text>
+                  </svg>
+                </div>
+                <span className="text-base-content/80">Autobus (GPS, smjer poznat)</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="16" height="16">
-                  <circle cx="0" cy="0" r="7" fill="#ff6b35" fillOpacity="0.85" stroke="#ffffff" strokeWidth="2" />
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" r="7" fill="#ff6b35" fillOpacity="0.85" stroke="white" strokeWidth="2" />
+                  <text x="10" y="13" textAnchor="middle" fontSize="6" fontWeight="bold" fill="white" fontFamily="system-ui,sans-serif">109</text>
                 </svg>
                 <span className="text-base-content/80">Autobus (u mirovanju)</span>
               </div>

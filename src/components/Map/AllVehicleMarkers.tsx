@@ -20,7 +20,7 @@ export function AllVehicleMarkers({ vehicles, onVehicleClick }: AllVehicleMarker
         const color = vehicle.routeType === 0 ? '#2337ff' : '#ff6b35';
         const speedKmh = speedToKmh(vehicle.speed);
         const delayStr = formatDelay(vehicle.delay);
-        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime);
+        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime, vehicle.routeShortName);
 
         return (
           <Marker
