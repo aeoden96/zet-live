@@ -16,6 +16,9 @@ type FilterType = 'tram' | 'bus';
 
 type DirectionFilter = 'all' | 'A' | 'B';
 
+const POPULAR_TRAMS = ['6', '11', '17', '4', '13', '12'];
+const POPULAR_BUSES = ['101', '102', '106', '140', '268'];
+
 export function RouteList({ routes, onSelectRoute }: RouteListProps) {
   const [filter, setFilter] = useState<FilterType>('tram');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,11 +40,8 @@ export function RouteList({ routes, onSelectRoute }: RouteListProps) {
   }, [routes]);
 
   // Popular routes for quick access
-  const popularTrams = ['6', '11', '17', '4', '13', '12'];
-  const popularBuses = ['101', '102', '106', '140', '268'];
-  
   const quickAccessRoutes = useMemo(() => {
-    const popular = filter === 'tram' ? popularTrams : popularBuses;
+    const popular = filter === 'tram' ? POPULAR_TRAMS : POPULAR_BUSES;
     return popular
       .map(id => routes.find(r => r.shortName === id))
       .filter((r): r is Route => r !== undefined);

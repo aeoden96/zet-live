@@ -2,7 +2,7 @@
  * Hook for getting current time with debug override support
  */
 
-import { useDebug } from '../contexts/DebugContext';
+import { useDebug } from './useDebug';
 import { getCurrentTimeMinutes } from '../utils/gtfs';
 
 export function useCurrentTime() {

@@ -12,7 +12,6 @@
 // In Vite's browser runtime, the entire root is exposed as the default export.
 // We access transit_realtime via the namespace, falling back to .default for CJS interop.
 import * as _GtfsRT from 'gtfs-realtime-bindings';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GtfsRealtimeBindings: typeof _GtfsRT = ((_GtfsRT as any).default ?? _GtfsRT) as typeof _GtfsRT;
 import { GTFS_PROXY_URL, GTFS_API_KEY } from '../config';
 
@@ -168,7 +167,6 @@ export async function fetchRealtimeFeed(
 // Parsing utilities (adapted from worker parser.ts)
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FeedEntity = any;
 
 /**
@@ -212,7 +210,6 @@ export function parseTripUpdates(feed: GtfsRealtimeFeed): ParsedTripUpdate[] {
         routeId: tripUpdate.trip.routeId || '',
         vehicleId: tripUpdate.vehicle?.id,
         stopTimeUpdates: (tripUpdate.stopTimeUpdate || []).map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (stu: any): ParsedStopTimeUpdate => ({
             stopId: stu.stopId || '',
             stopSequence: stu.stopSequence,
@@ -252,7 +249,6 @@ export function getFeedStatistics(feed: GtfsRealtimeFeed): FeedStatistics {
  * Extract text from a GTFS-RT TranslatedString.
  * Prefers Croatian ('hr'), falls back to first translation.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getTranslatedText(ts: any): string {
   if (!ts?.translation?.length) return '';
   const hr = ts.translation.find((t: { language?: string; text?: string }) => t.language === 'hr');
@@ -294,7 +290,6 @@ export function parseServiceAlerts(feed: GtfsRealtimeFeed): ParsedServiceAlert[]
     .filter((entity: FeedEntity) => entity.alert)
     .map((entity: FeedEntity): ParsedServiceAlert => {
       const alert = entity.alert;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const informed: any[] = alert.informedEntity || [];
       const routeIds = informed
         .map((e: { routeId?: string }) => e.routeId)
@@ -304,7 +299,6 @@ export function parseServiceAlerts(feed: GtfsRealtimeFeed): ParsedServiceAlert[]
         .filter((id): id is string => !!id);
 
       // Active period — take the first one if multiple
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const period: any = alert.activePeriod?.[0] ?? null;
 
       return {

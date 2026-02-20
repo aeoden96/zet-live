@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, X, Play, Pause } from 'lucide-react';
-import { useDebug } from '../../contexts/DebugContext';
+import { useDebug } from '../../hooks/useDebug';
 import { minutesToTime, timeToMinutes, getCurrentTimeMinutes } from '../../utils/gtfs';
 import { useSettingsStore } from '../../stores/settingsStore';
 

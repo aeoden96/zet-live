@@ -4,7 +4,7 @@
 
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin, List } from 'lucide-react';
-import { useSettingsStore, type StopDisplayMode, type AppMode } from '../../stores/settingsStore';
+import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
 

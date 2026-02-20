@@ -21,6 +21,9 @@ interface SearchModalProps {
 
 type FilterType = 'tram' | 'bus' | 'stanice';
 
+const POPULAR_TRAMS = ['6', '11', '17', '4', '13', '12'];
+const POPULAR_BUSES = ['101', '102', '106', '140', '268'];
+
 export function SearchModal({
   isOpen,
   onClose,
@@ -74,11 +77,8 @@ export function SearchModal({
   const platformStops = useMemo(() => stops.filter((s) => s.locationType === 0), [stops]);
 
   // Popular routes
-  const popularTrams = ['6', '11', '17', '4', '13', '12'];
-  const popularBuses = ['101', '102', '106', '140', '268'];
-
   const quickAccessRoutes = useMemo(() => {
-    const popular = filter === 'tram' ? popularTrams : popularBuses;
+    const popular = filter === 'tram' ? POPULAR_TRAMS : POPULAR_BUSES;
     return popular
       .map((id) => routes.find((r) => r.shortName === id))
       .filter((r): r is Route => r !== undefined);

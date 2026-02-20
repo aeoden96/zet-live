@@ -2,7 +2,7 @@
  * Debug context for time override
  */
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 
 interface DebugContextType {
   debugTime: number | null; // minutes from midnight, null = use real time
@@ -15,6 +15,7 @@ interface DebugContextType {
 }
 
 const DebugContext = createContext<DebugContextType | undefined>(undefined);
+export { DebugContext };
 
 const TIME_SPEED = 0.3; // 0.3 minutes per second
 
@@ -23,7 +24,7 @@ export function DebugProvider({ children }: { children: ReactNode }) {
   const [isDebugMode, setDebugMode] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [baseTime, setBaseTime] = useState<number>(0); // Base time in minutes
-  const [baseTimestamp, setBaseTimestamp] = useState<number>(Date.now()); // Base timestamp in ms
+  const [baseTimestamp, setBaseTimestamp] = useState<number>(() => Date.now()); // Base timestamp in ms
 
   // Set base time and timestamp when debug time is manually set
   const handleSetDebugTime = (minutes: number | null) => {
@@ -55,6 +56,7 @@ export function DebugProvider({ children }: { children: ReactNode }) {
       setBaseTime(debugTime);
       setBaseTimestamp(Date.now());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]);
 
   return (
@@ -72,12 +74,4 @@ export function DebugProvider({ children }: { children: ReactNode }) {
       {children}
     </DebugContext.Provider>
   );
-}
-
-export function useDebug() {
-  const context = useContext(DebugContext);
-  if (context === undefined) {
-    throw new Error('useDebug must be used within a DebugProvider');
-  }
-  return context;
 }

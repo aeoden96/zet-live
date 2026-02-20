@@ -42,7 +42,6 @@ export function useRealtimeAdjustedDepartures(
       if (existing) {
         existing.push(update);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byRoute.set(update.routeId, [update] as any);
       }
     }

@@ -264,6 +264,7 @@ function App() {
         routeStops={routeStops}
         vehicles={vehicles}
         routeType={selectedRouteType}
+        routeShortName={selectedRoute?.shortName}
         onStopClick={handleStopClickFromMap}
         onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}

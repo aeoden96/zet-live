@@ -4,7 +4,6 @@
 
 import { Marker } from 'react-leaflet';
 import type { AllVehiclePosition } from '../../utils/vehicles';
-import { formatDelay, speedToKmh } from '../../utils/realtime';
 import { makeVehicleIcon } from '../../utils/vehicleIcon';
 import { useMapBounds } from '../../hooks/useMapBounds';
 
@@ -22,8 +21,6 @@ export function AllVehicleMarkers({ vehicles, onVehicleClick }: AllVehicleMarker
       {visible.map((vehicle) => {
         // Tram: blue, Bus: orange
         const color = vehicle.routeType === 0 ? '#2337ff' : '#ff6b35';
-        const speedKmh = speedToKmh(vehicle.speed);
-        const delayStr = formatDelay(vehicle.delay);
         const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime, vehicle.routeShortName);
 
         return (

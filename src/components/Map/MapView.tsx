@@ -28,6 +28,7 @@ interface MapViewProps {
   routeStops: string[];
   vehicles: VehiclePosition[];
   routeType: number | null;
+  routeShortName?: string;
   onStopClick: (stopId: string) => void;
   onVehicleClick?: (routeId: string, routeType: number) => void;
   showAllVehicles?: boolean;
@@ -68,6 +69,7 @@ export function MapView({
   routeStops,
   vehicles,
   routeType,
+  routeShortName,
   onStopClick,
   onVehicleClick,
   showAllVehicles = false,
@@ -143,6 +145,7 @@ export function MapView({
           <VehicleMarkers 
             vehicles={vehicles}
             routeType={routeType}
+            routeShortName={routeShortName}
           />
         </>
       )}

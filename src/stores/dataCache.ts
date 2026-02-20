@@ -91,7 +91,7 @@ export const useDataCacheStore = create<DataCacheState>()(
         try {
           const serialized = JSON.stringify(state.cache);
           sizeBytes = new Blob([serialized]).size;
-        } catch (e) {
+        } catch {
           // If serialization fails, return 0
           sizeBytes = 0;
         }
