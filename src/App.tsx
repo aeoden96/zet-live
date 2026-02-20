@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Settings, Search, X, LocateFixed } from 'lucide-react';
+import { Settings, Search, X, LocateFixed, HelpCircle } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
@@ -8,7 +8,7 @@ import { StopModal } from './components/common/StopModal';
 import { StopInfoBar } from './components/common/StopInfoBar';
 import { RouteInfoBar } from './components/common/RouteInfoBar';
 import { DebugPanel } from './components/common/DebugPanel';
-import { OnboardingModal } from './components/common/OnboardingModal';
+import { OnboardingWizard } from './components/common/OnboardingWizard';
 import { NearbyStopsModal } from './components/common/NearbyStopsModal';
 import { ServiceAlerts } from './components/common/ServiceAlerts';
 import { useInitialData } from './hooks/useInitialData';
@@ -39,6 +39,8 @@ function App() {
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
+  const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
+  const setOnboardingStep = useSettingsStore((s) => s.setOnboardingStep);
   const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
@@ -466,6 +468,16 @@ function App() {
 
       {/* Map controls (top-right) */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000] flex flex-col items-end gap-2">
+        <button
+          onClick={() => {
+            setOnboardingStep(0);
+            setOnboardingCompleted(false);
+          }}
+          className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg"
+          title="Pomoć / Uvod"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
         <Link to="/settings" className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg">
           <Settings className="w-5 h-5" />
         </Link>
@@ -548,8 +560,8 @@ function App() {
         />
       )}
 
-      {/* Onboarding Modal */}
-      <OnboardingModal />
+      {/* Onboarding Wizard */}
+      <OnboardingWizard />
     </div>
   );
 }

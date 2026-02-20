@@ -69,9 +69,9 @@ export function OnboardingModal() {
               <Wifi className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold">Radi offline</h3>
+              <h3 className="font-semibold">Postupno preuzima podatke</h3>
               <p className="text-sm text-base-content/70">
-                Rasporedi dostupni i bez internetske veze
+                Postupno preuzima podatke za offline korištenje
               </p>
             </div>
           </div>

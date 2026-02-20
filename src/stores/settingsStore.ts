@@ -20,6 +20,7 @@ interface SettingsState {
   mapTileProvider: MapTileProvider;
   theme: Theme;
   onboardingCompleted: boolean;
+  onboardingStep: number;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
@@ -39,6 +40,7 @@ interface SettingsState {
   setTheme: (theme: Theme) => void;
   setDetailedMap: (detailed: boolean) => void;
   setOnboardingCompleted: (completed: boolean) => void;
+  setOnboardingStep: (step: number) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
@@ -66,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
         theme: initialTheme,
         detailedMap: true,
       onboardingCompleted: false,
+      onboardingStep: 0,
       stopDisplayMode: 'individual',
       showAllVehicles: true,
       appMode: 'map',
@@ -93,6 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
         localStorage.setItem('theme', theme);
       },
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+      setOnboardingStep: (step) => set({ onboardingStep: step }),
       setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
       setShowAllVehicles: (show) => set({ showAllVehicles: show }),
       setAppMode: (mode) => set({ appMode: mode }),
