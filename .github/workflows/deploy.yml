@@ -2,6 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   workflow_dispatch:
+    inputs:
+      force_gtfs:
+        description: 'Force re-download and re-process GTFS data (ignore cache)'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -33,10 +39,24 @@ jobs:
       - name: Download GTFS data
         run: curl -L https://www.zet.hr/gtfs-scheduled/latest -o gtfs.zip
 
+      - name: Compute GTFS hash
+        id: gtfs-hash
+        run: echo "hash=$(sha256sum gtfs.zip | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Restore processed GTFS cache
+        id: gtfs-cache
+        if: ${{ !inputs.force_gtfs }}
+        uses: actions/cache@v4
+        with:
+          path: public/data
+          key: gtfs-processed-${{ steps.gtfs-hash.outputs.hash }}
+
       - name: Extract GTFS data
+        if: steps.gtfs-cache.outputs.cache-hit != 'true'
         run: unzip -o gtfs.zip -d data/
 
       - name: Process GTFS data
+        if: steps.gtfs-cache.outputs.cache-hit != 'true'
         run: bash scripts/run.sh
 
       - name: Install dependencies
