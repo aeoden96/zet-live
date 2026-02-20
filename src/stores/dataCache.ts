@@ -135,7 +135,7 @@ export async function cachedFetch<T>(
  */
 export async function checkCacheVersion(): Promise<void> {
   try {
-    const response = await fetch('/data/manifest.json');
+    const response = await fetch(`${import.meta.env.BASE_URL}data/manifest.json`);
     if (!response.ok) {
       console.warn('Failed to fetch manifest.json');
       return;
