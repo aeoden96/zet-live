@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Maximize2, Clock, X, Star } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
-import { minutesToTime } from '../../utils/gtfs';
+import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
@@ -81,9 +81,13 @@ export function StopInfoBar({
             <h3 className="font-bold text-base leading-tight text-base-content mb-1">
               {stop.name}
             </h3>
-            {stop.code && (
+            {(stop.bearing !== undefined || stop.code) && (
               <div className="text-xs text-base-content/60 flex items-center gap-1">
-                <span>Smjer {stop.code}</span>
+                <span>
+                  {stop.bearing !== undefined
+                    ? `Smjer prema ${bearingToDirection(stop.bearing)}`
+                    : `Smjer ${stop.code}`}
+                </span>
               </div>
             )}
           </div>

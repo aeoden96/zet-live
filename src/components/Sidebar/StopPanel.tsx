@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { Stop, Route, StopDepartures } from '../../utils/gtfs';
-import { minutesToTime } from '../../utils/gtfs';
+import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 
 interface StopPanelProps {
@@ -94,7 +94,13 @@ export function StopPanel({
         <div className="mb-2">
           <h2 className="text-lg lg:text-xl font-bold">{stop.name}</h2>
           <div className="text-sm text-base-content/60">
-            {stop.code && <div>Smjer {stop.code}</div>}
+            {(stop.bearing !== undefined || stop.code) && (
+              <div>
+                {stop.bearing !== undefined
+                  ? `Smjer prema ${bearingToDirection(stop.bearing)}`
+                  : `Smjer ${stop.code}`}
+              </div>
+            )}
             <div className="text-xs opacity-50">ID: {stop.id}</div>
           </div>
         </div>

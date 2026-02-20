@@ -19,6 +19,26 @@ export interface Stop {
   bearing?: number;
 }
 
+/**
+ * Convert a compass bearing (degrees clockwise from North) to a Croatian
+ * direction label in the dative case, e.g. "sjeveru", "jugoistoku".
+ * Suitable for display as "Smjer prema …".
+ */
+export function bearingToDirection(bearing: number): string {
+  const labels = [
+    'sjeveru',       // N    0°
+    'sjeveroistoku', // NE  45°
+    'istoku',        // E   90°
+    'jugoistoku',    // SE 135°
+    'jugu',          // S  180°
+    'jugozapadu',    // SW 225°
+    'zapadu',        // W  270°
+    'sjeverozapadu', // NW 315°
+  ];
+  const idx = Math.round(((bearing % 360) + 360) % 360 / 45) % 8;
+  return labels[idx];
+}
+
 export interface Route {
   id: string;
   shortName: string;

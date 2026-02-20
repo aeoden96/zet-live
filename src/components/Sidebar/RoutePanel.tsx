@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { Route, Stop } from '../../utils/gtfs';
+import { bearingToDirection } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
 
 interface RoutePanelProps {
@@ -172,13 +173,20 @@ export function RoutePanel({
                       {group.platforms.length === 1 ? (
                         // Single platform - show its code and ID
                         <div className="text-xs text-base-content/60 mt-1">
-                          <div>Smjer {group.platforms[0].code}</div>
+                          <div>{group.platforms[0].stop.bearing !== undefined
+                            ? `Smjer prema ${bearingToDirection(group.platforms[0].stop.bearing)}`
+                            : `Smjer ${group.platforms[0].code}`}
+                          </div>
                           <div className="opacity-50">ID: {group.platforms[0].id}</div>
                         </div>
                       ) : (
-                        // Multiple platforms in same direction - show all codes and IDs
+                        // Multiple platforms in same direction - show all directions
                         <div className="text-xs text-base-content/60 mt-1">
-                          <div>Smjer {group.platforms.map(p => p.code).join(', ')}</div>
+                          <div>{group.platforms.map(p =>
+                            p.stop.bearing !== undefined
+                              ? `Smjer prema ${bearingToDirection(p.stop.bearing)}`
+                              : `Smjer ${p.code}`
+                          ).join(' / ')}</div>
                           <div className="opacity-50">IDs: {group.platforms.map(p => p.id).join(', ')}</div>
                         </div>
                       )}
@@ -198,7 +206,10 @@ export function RoutePanel({
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <div>Smjer {platform.code}</div>
+                                <div>{platform.stop.bearing !== undefined
+                                  ? `Smjer prema ${bearingToDirection(platform.stop.bearing)}`
+                                  : `Smjer ${platform.code}`}
+                                </div>
                                 <div className="text-xs opacity-50">ID: {platform.id}</div>
                               </div>
                               <span className="text-xs opacity-60">→</span>
