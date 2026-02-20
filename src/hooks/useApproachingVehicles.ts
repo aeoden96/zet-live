@@ -39,12 +39,18 @@ export interface ApproachingVehicle {
   confidence: 'realtime' | 'scheduled';
   lat: number | null;
   lon: number | null;
+  /** True when vehicle has already passed this stop but is within ~200m */
+  passedStop: boolean;
+  /** GPS-derived ETA in seconds: distance / speed (fallback: distance / 5 m/s); null = no GPS */
+  etaFromGpsSeconds: number | null;
 }
 
 /** Show all trips arriving within this many minutes */
 const LOOKAHEAD_MINUTES = 30;
-/** Allow trips that arrived up to this many seconds ago (grace window) */
+/** Allow trips that arrived up to this many seconds ago (grace window for scheduled) */
 const ARRIVED_GRACE_SECONDS = 30;
+/** Keep GPS-tracked vehicles visible until they are this many metres past the stop */
+const PASSED_STOP_DISTANCE_METERS = 400;
 
 /** Approximate haversine distance in metres between two lat/lon points */
 function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -181,12 +187,15 @@ export function useApproachingVehicles(
         const etaAbsoluteSeconds = midnightSeconds + scheduledMinutes * 60 + (delaySeconds ?? 0);
         const arrivingInSeconds = etaAbsoluteSeconds - nowSeconds;
 
-        // Skip trips outside the time window
-        if (arrivingInSeconds < -ARRIVED_GRACE_SECONDS) continue;
+        // Skip trips outside the time window.
+        // For GPS-tracked vehicles, we allow negative arrivingInSeconds (already passed by schedule)
+        // because we'll use distance-based filtering below. For scheduled-only, apply strict grace.
+        if (!vehiclePositions.has(tripId) && arrivingInSeconds < -ARRIVED_GRACE_SECONDS) continue;
         if (etaAbsoluteSeconds > windowEnd) continue;
 
         // Compute stops away via GPS → fractional stop-index projection
         let stopsAway: number | null = null;
+        let passedStop = false;
         if (vehiclePos && targetStopIndex >= 0 && directionKey !== null) {
           const orderedStopIds = routeStopsData?.orderedStops?.[directionKey] ?? [];
           const stopCoords = orderedStopIds
@@ -204,20 +213,38 @@ export function useApproachingVehicles(
             );
 
             const rawStopsAway = targetStopIndex - vehicleProgress;
-            // Round up so "0.1 stops away" shows as 1 (not yet arrived)
-            stopsAway = Math.max(0, Math.ceil(rawStopsAway));
-
-            // If GPS says vehicle has passed the stop and the time window also says
-            // it already arrived, skip it
-            if (stopsAway === 0 && arrivingInSeconds < -10) continue;
+            if (rawStopsAway < 0) {
+              // Vehicle has passed the stop according to GPS projection
+              passedStop = true;
+              stopsAway = 0;
+            } else {
+              // Round up so "0.1 stops away" shows as 1 (not yet arrived)
+              stopsAway = Math.max(0, Math.ceil(rawStopsAway));
+            }
           }
         }
 
-        // Straight-line distance vehicle → stop (debug)
+        // Straight-line distance vehicle → stop
         const distanceMeters =
           vehiclePos && targetStop
             ? Math.round(haversineMeters(vehiclePos.latitude, vehiclePos.longitude, targetStop.lat, targetStop.lon))
             : null;
+
+        // For GPS-tracked vehicles that have passed: only keep visible within 200m
+        if (vehiclePos && passedStop && distanceMeters !== null && distanceMeters > PASSED_STOP_DISTANCE_METERS) {
+          continue;
+        }
+        // For scheduled-only (no GPS), use the grace window to drop old entries
+        if (!vehiclePos && arrivingInSeconds < -ARRIVED_GRACE_SECONDS) {
+          continue;
+        }
+
+        // GPS-derived ETA in seconds: distance / speed (fallback to 5 m/s city transit estimate)
+        let etaFromGpsSeconds: number | null = null;
+        if (vehiclePos && distanceMeters !== null && !passedStop) {
+          const speed = vehiclePos.speed ?? 5; // m/s
+          etaFromGpsSeconds = Math.round(distanceMeters / Math.max(speed, 1));
+        }
 
         results.push({
           tripId,
@@ -234,12 +261,16 @@ export function useApproachingVehicles(
           confidence: vehiclePos ? 'realtime' : 'scheduled',
           lat: vehiclePos?.latitude ?? null,
           lon: vehiclePos?.longitude ?? null,
+          passedStop,
+          etaFromGpsSeconds,
         });
       }
     }
 
-    // Sort by arrivingInSeconds ascending (soonest first); realtime first within same ETA
+    // Sort: passed-stop vehicles go last; within each group sort by arrivingInSeconds ascending,
+    // then realtime before scheduled at the same ETA.
     const sorted = results.sort((a, b) => {
+      if (a.passedStop !== b.passedStop) return a.passedStop ? 1 : -1;
       if (a.arrivingInSeconds !== b.arrivingInSeconds) return a.arrivingInSeconds - b.arrivingInSeconds;
       const aRT = a.confidence === 'realtime' ? 0 : 1;
       const bRT = b.confidence === 'realtime' ? 0 : 1;

@@ -1,6 +1,6 @@
 /**
- * Full-screen stop modal - expanded view of approaching vehicles
- * Opened from the map popup expand button
+ * Full-screen stop modal — tabbed view with "Vozila" (live GPS) and "Red vožnje" (timetable).
+ * Opened from the map popup expand button.
  */
 
 import { useState, useEffect } from 'react';
@@ -9,7 +9,10 @@ import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
+import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
 import { ApproachingVehicleCard } from './ApproachingVehicleCard';
+import { TimetableDepartureCard } from './TimetableDepartureCard';
+import { StopTabSelector, type StopTab } from './StopTabSelector';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 interface StopModalProps {
@@ -33,6 +36,7 @@ export function StopModal({
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [activeTab, setActiveTab] = useState<StopTab>('vehicles');
 
   // 1-second tick for live countdown
   useEffect(() => {
@@ -41,10 +45,19 @@ export function StopModal({
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  // Approaching vehicles data (only active when modal is open)
-  const { vehicles: approachingVehicles, loading: vehiclesLoading } = useApproachingVehicles(
+  // Approaching vehicles (GPS) — only active when modal is open
+  const { vehicles: allVehicles, loading: vehiclesLoading } = useApproachingVehicles(
     isOpen ? stop.id : null,
     stopsById,
+    routesById,
+    nowMs
+  );
+  const liveVehicles = allVehicles.filter((v) => v.confidence === 'realtime');
+  const liveCount = liveVehicles.filter((v) => !v.passedStop).length;
+
+  // Timetable departures — 60-min window, only active when modal is open
+  const { departures: timetableDepartures, loading: timetableLoading } = useTimetableDepartures(
+    isOpen ? stop.id : null,
     routesById,
     nowMs
   );
@@ -77,7 +90,7 @@ export function StopModal({
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-base-content/60">
               {stop.code && <span>Smjer {stop.code}</span>}
             </div>
@@ -86,36 +99,77 @@ export function StopModal({
               <span>{minutesToTime(currentTime)}</span>
             </div>
           </div>
+          {/* Tab selector */}
+          <StopTabSelector
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            liveVehicleCount={liveCount}
+            compact
+          />
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          {vehiclesLoading ? (
-            <div className="flex items-center justify-center gap-3 p-8 text-base-content/50">
-              <span className="loading loading-spinner loading-sm" />
-              <span>Tražim vozila...</span>
-            </div>
-          ) : approachingVehicles.length === 0 ? (
-            <div className="p-8 text-center text-base-content/50">
-              Nema vozila koja dolaze u sljedećih 30 min
-            </div>
-          ) : (
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-semibold">Nadolazeća vozila</h3>
-                <span className="text-xs text-base-content/40">slj. 30 min</span>
+          {/* Vehicles tab */}
+          {activeTab === 'vehicles' && (
+            vehiclesLoading ? (
+              <div className="flex items-center justify-center gap-3 p-8 text-base-content/50">
+                <span className="loading loading-spinner loading-sm" />
+                <span>Tražim vozila...</span>
               </div>
-              {approachingVehicles.map((vehicle) => (
-                <ApproachingVehicleCard
-                  key={vehicle.tripId}
-                  vehicle={vehicle}
-                  onRouteClick={(routeId, routeType) => {
-                    onRouteClick(routeId, routeType);
-                    onClose();
-                  }}
-                />
-              ))}
-            </div>
+            ) : liveVehicles.length === 0 ? (
+              <div className="p-8 text-center text-base-content/50">
+                Nema GPS vozila u blizini
+              </div>
+            ) : (
+              <div className="p-4 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold">Nadolazeća vozila</h3>
+                  <span className="text-xs text-base-content/40">GPS uživo</span>
+                </div>
+                {liveVehicles.map((vehicle) => (
+                  <ApproachingVehicleCard
+                    key={vehicle.tripId}
+                    vehicle={vehicle}
+                    onRouteClick={(routeId, routeType) => {
+                      onRouteClick(routeId, routeType);
+                      onClose();
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          )}
+
+          {/* Timetable tab */}
+          {activeTab === 'timetable' && (
+            timetableLoading ? (
+              <div className="flex items-center justify-center gap-3 p-8 text-base-content/50">
+                <span className="loading loading-spinner loading-sm" />
+                <span>Učitavam red vožnje...</span>
+              </div>
+            ) : timetableDepartures.length === 0 ? (
+              <div className="p-8 text-center text-base-content/50">
+                Nema polazaka u sljedećih 60 min
+              </div>
+            ) : (
+              <div className="p-4 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold">Red vožnje</h3>
+                  <span className="text-xs text-base-content/40">slj. 60 min</span>
+                </div>
+                {timetableDepartures.map((dep) => (
+                  <TimetableDepartureCard
+                    key={dep.tripId}
+                    departure={dep}
+                    onRouteClick={(routeId, routeType) => {
+                      onRouteClick(routeId, routeType);
+                      onClose();
+                    }}
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

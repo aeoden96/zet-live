@@ -1,9 +1,8 @@
 /**
- * A single vehicle card in the approaching-vehicles list.
+ * A single vehicle card in the "Vehicles" tab approaching-vehicles list.
  *
- * Shows route badge, ETA countdown, stops-away, and a reverse progress bar
- * that shrinks as the vehicle approaches. Schedule-only trips are shown grayed
- * with a "~" prefix.
+ * Distance is the primary indicator; GPS-derived time estimate is secondary.
+ * Passed-stop vehicles are shown dimmed at the bottom.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -18,7 +17,22 @@ interface ApproachingVehicleCardProps {
 /** Reference window used for proportional bar width (30 min) */
 const WINDOW_SECONDS = 30 * 60;
 
-function formatArrivingIn(
+/** Format distance: metres below 1000, km above */
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${meters} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+/** Format GPS-derived ETA as a short string */
+function formatGpsEta(seconds: number): string {
+  if (seconds < 30) return 'Dolazi';
+  if (seconds < 120) return `~${Math.round(seconds)} sek`;
+  const mins = Math.round(seconds / 60);
+  return `~${mins} min`;
+}
+
+/** Format schedule-based ETA */
+function formatScheduleEta(
   seconds: number,
   isScheduled: boolean,
   etaMinutes: number,
@@ -35,50 +49,85 @@ function formatArrivingIn(
 
 export function ApproachingVehicleCard({ vehicle, onRouteClick }: ApproachingVehicleCardProps) {
   const isScheduled = vehicle.confidence === 'scheduled';
-  const isArriving = vehicle.arrivingInSeconds <= 0;
+  const isArriving = !vehicle.passedStop && vehicle.arrivingInSeconds <= 0;
+  const isAtStop = vehicle.distanceMeters !== null && vehicle.distanceMeters < 15;
 
-  // Animate out when the vehicle has arrived: shrink height to 0
+  // Animate out when the vehicle has arrived and is no longer in the list
   const [leaving, setLeaving] = useState(false);
   const prevArrivingRef = useRef(vehicle.arrivingInSeconds);
 
   useEffect(() => {
     const prev = prevArrivingRef.current;
     prevArrivingRef.current = vehicle.arrivingInSeconds;
-
-    // Trigger leave animation when crossing from positive to 0 / negative
-    if (prev > 0 && vehicle.arrivingInSeconds <= 0) {
+    if (prev > 0 && vehicle.arrivingInSeconds <= 0 && !vehicle.passedStop) {
       setLeaving(true);
     }
-  }, [vehicle.arrivingInSeconds]);
+  }, [vehicle.arrivingInSeconds, vehicle.passedStop]);
 
-  // Progress bar: proportional to remaining time (wide = far, narrow = close)
+  // Progress bar: proportional to remaining time (wide = far, narrow = close / arrived)
   const remaining = Math.max(0, vehicle.arrivingInSeconds);
   const barPercent = Math.min(100, (remaining / WINDOW_SECONDS) * 100);
 
-  // Delay badge
+  // Delay info
   const delaySec = vehicle.delaySeconds ?? 0;
   const delayMin = Math.round(Math.abs(delaySec) / 60);
   const isLate = delaySec > 90;
   const isEarly = delaySec < -90;
 
   const badgeClass = vehicle.routeType === 0 ? 'badge-primary' : 'badge-accent';
-  const dimClass = isScheduled ? 'opacity-60' : '';
+
+  // Proximity state for highlight effects
+  const isNear = !vehicle.passedStop && vehicle.distanceMeters !== null && vehicle.distanceMeters < 100;
+  const proximityRing = isAtStop
+    ? 'ring-2 ring-success bg-success/10'
+    : isNear
+    ? 'ring-1 ring-success/50 bg-success/5'
+    : '';
+  const badgeAnim = isAtStop ? 'animate-pulse' : '';
+
+  // Primary display: distance in meters
+  let primaryText: string;
+  let primaryColorClass: string;
+  if (vehicle.passedStop) {
+    primaryText = vehicle.distanceMeters !== null ? `${formatDistance(vehicle.distanceMeters)} ↑` : 'Prošao';
+    primaryColorClass = 'text-base-content/40';
+  } else if (isAtStop) {
+    primaryText = 'Na stajalištu';
+    primaryColorClass = 'text-success';
+  } else if (vehicle.distanceMeters !== null) {
+    primaryText = formatDistance(vehicle.distanceMeters);
+    primaryColorClass = isArriving ? 'text-success' : isScheduled ? 'text-base-content/50' : isNear ? 'text-success' : 'text-base-content';
+  } else {
+    // No GPS — fall back to schedule ETA as primary
+    primaryText = formatScheduleEta(vehicle.arrivingInSeconds, isScheduled, vehicle.etaMinutes, vehicle.delaySeconds);
+    primaryColorClass = isArriving ? 'text-success' : isScheduled ? 'text-base-content/50' : 'text-base-content';
+  }
+
+  // Secondary: GPS time estimate (or schedule when no distance)
+  let secondaryText: string | null = null;
+  if (!vehicle.passedStop && !isAtStop && vehicle.distanceMeters !== null) {
+    secondaryText = vehicle.etaFromGpsSeconds !== null
+      ? formatGpsEta(vehicle.etaFromGpsSeconds)
+      : formatScheduleEta(vehicle.arrivingInSeconds, isScheduled, vehicle.etaMinutes, vehicle.delaySeconds);
+  }
+
+  const dimClass = isScheduled || vehicle.passedStop ? 'opacity-50' : '';
 
   return (
     <div
-      className={`card bg-base-200 overflow-hidden transition-all duration-500 ${
-        leaving ? 'opacity-0 max-h-0 !py-0 !my-0' : 'max-h-40 opacity-100'
+      className={`card bg-base-200 overflow-hidden transition-all duration-500 ${proximityRing} ${
+        leaving ? 'opacity-0 max-h-0 !py-0 !my-0' : 'max-h-44 opacity-100'
       }`}
     >
       <div className="card-body p-3 pb-2 gap-0">
-        {/* Top row: badge + name + ETA + delay */}
+        {/* Top row: badge + name + distance + time */}
         <div className={`flex items-center gap-2 mb-1.5 ${dimClass}`}>
           {/* Route badge */}
-          <div className={`badge ${badgeClass} font-bold shrink-0 min-w-[2.75rem] justify-center`}>
+          <div className={`badge ${badgeClass} ${badgeAnim} font-bold shrink-0 min-w-[2.75rem] justify-center`}>
             {vehicle.routeShortName}
           </div>
 
-          {/* Route name */}
+          {/* Route name + status */}
           <div className="flex-1 min-w-0">
             {onRouteClick ? (
               <button
@@ -88,20 +137,22 @@ export function ApproachingVehicleCard({ vehicle, onRouteClick }: ApproachingVeh
                 {vehicle.routeLongName}
               </button>
             ) : (
-              <div className="text-sm font-medium truncate leading-tight">
-                {vehicle.routeLongName}
-              </div>
+              <div className="text-sm font-medium truncate leading-tight">{vehicle.routeLongName}</div>
             )}
-            {/* Stops away / realtime indicator */}
             <div className="text-xs text-base-content/50 mt-0.5 flex items-center gap-1.5">
-              {vehicle.confidence === 'realtime' ? (
+              {vehicle.passedStop ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+                  <span>Prošao stajalište</span>
+                </>
+              ) : vehicle.confidence === 'realtime' ? (
                 <>
                   <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0 animate-pulse" />
                   {vehicle.stopsAway !== null ? (
                     <span>
                       {vehicle.stopsAway === 0
                         ? 'na stajalištu'
-                        : `${vehicle.stopsAway} ${vehicle.stopsAway === 1 ? 'staništa' : 'stajališta'}`}
+                        : `${vehicle.stopsAway} ${vehicle.stopsAway === 1 ? 'stajalište' : 'stajališta'}`}
                     </span>
                   ) : (
                     <span>GPS uživo</span>
@@ -116,50 +167,43 @@ export function ApproachingVehicleCard({ vehicle, onRouteClick }: ApproachingVeh
             </div>
           </div>
 
-          {/* ETA + delay */}
+          {/* Distance (primary) + time estimate (secondary) */}
           <div className="text-right shrink-0">
-            <div
-              className={`font-bold text-sm ${
-                isArriving
-                  ? 'text-success'
-                  : isScheduled
-                  ? 'text-base-content/50'
-                  : 'text-base-content'
-              }`}
-            >
-              {formatArrivingIn(vehicle.arrivingInSeconds, isScheduled, vehicle.etaMinutes, vehicle.delaySeconds)}
+            <div className={`font-bold text-base tabular-nums whitespace-nowrap ${primaryColorClass}`}>
+              {primaryText}
             </div>
-            {vehicle.delaySeconds !== null && (isLate || isEarly) && (
-              <div className="text-[11px] text-base-content/40">
-                red: {minutesToTime(vehicle.etaMinutes)}
-              </div>
+            {secondaryText && (
+              <div className="text-xs text-base-content/50 tabular-nums">{secondaryText}</div>
             )}
-            {vehicle.delaySeconds !== null && (isLate || isEarly) && (
+            {/* Delay info when no GPS distance available */}
+            {vehicle.distanceMeters === null && vehicle.delaySeconds !== null && (isLate || isEarly) && (
               <div className={`text-xs font-medium ${isLate ? 'text-error' : 'text-success'}`}>
                 {isLate ? `+${delayMin}` : `-${delayMin}`} min
               </div>
             )}
-            {vehicle.delaySeconds !== null && !isLate && !isEarly && (
+            {vehicle.distanceMeters === null && vehicle.delaySeconds !== null && !isLate && !isEarly && (
               <div className="text-xs text-success font-medium">Na vrij.</div>
             )}
           </div>
         </div>
 
-        {/* Reverse progress bar */}
-        <div className="w-full h-1 bg-base-300 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-[width] duration-[4s] ease-linear ${
-              isScheduled
-                ? 'bg-base-content/25'
-                : isArriving
-                ? 'bg-success'
-                : vehicle.routeType === 0
-                ? 'bg-primary'
-                : 'bg-accent'
-            }`}
-            style={{ width: `${barPercent}%` }}
-          />
-        </div>
+        {/* Reverse progress bar (hidden for passed-stop vehicles) */}
+        {!vehicle.passedStop && (
+          <div className="w-full h-1 bg-base-300 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-[width] duration-[4s] ease-linear ${
+                isScheduled
+                  ? 'bg-base-content/25'
+                  : isArriving
+                  ? 'bg-success'
+                  : vehicle.routeType === 0
+                  ? 'bg-primary'
+                  : 'bg-accent'
+              }`}
+              style={{ width: `${barPercent}%` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
