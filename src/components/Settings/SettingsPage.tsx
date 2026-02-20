@@ -3,8 +3,8 @@
  */
 
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin } from 'lucide-react';
-import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsStore';
+import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin, List } from 'lucide-react';
+import { useSettingsStore, type StopDisplayMode, type AppMode } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
 
@@ -30,6 +30,8 @@ export function SettingsPage() {
   const setStopDisplayMode = useSettingsStore((state) => state.setStopDisplayMode);
   const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
   const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
+  const appMode = useSettingsStore((state) => state.appMode);
+  const setAppMode = useSettingsStore((state) => state.setAppMode);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -94,6 +96,47 @@ export function SettingsPage() {
                   onChange={(e) => setTheme(e.target.checked ? 'dark' : 'light')}
                 />
                 <Moon className="w-4 h-4" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* App Mode Section */}
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body">
+            <h2 className="card-title text-lg flex items-center gap-2">
+              {appMode === 'map' ? <Map className="w-5 h-5" /> : <List className="w-5 h-5" />}
+              Način rada
+            </h2>
+            <p className="text-sm text-base-content/70 mb-2">
+              Karta prikazuje vozila i stanice na karti. Popis prikazuje favorite, linije i stanice u obliku liste.
+            </p>
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="app-mode"
+                  className="radio radio-primary mt-1"
+                  checked={appMode === 'map'}
+                  onChange={() => setAppMode('map')}
+                />
+                <div className="flex-1">
+                  <p className="font-medium flex items-center gap-1.5"><Map className="w-4 h-4" /> Karta</p>
+                  <p className="text-sm text-base-content/70">Puni prikaz s interaktivnom kartom, GPS vozilima i stanicama</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="app-mode"
+                  className="radio radio-primary mt-1"
+                  checked={appMode === 'list'}
+                  onChange={() => setAppMode('list')}
+                />
+                <div className="flex-1">
+                  <p className="font-medium flex items-center gap-1.5"><List className="w-4 h-4" /> Popis</p>
+                  <p className="text-sm text-base-content/70">Lagan način rada bez karte — favoriti, linije, obližnje stanice i obavijesti</p>
+                </div>
               </label>
             </div>
           </div>

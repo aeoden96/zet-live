@@ -6,6 +6,7 @@ export type Theme = 'light' | 'dark';
 /** 'individual' – show only platform stops with zoom-based opacity (default)
  *  'grouped'   – classic grouped parents / parent-station / platform view */
 export type StopDisplayMode = 'individual' | 'grouped';
+export type AppMode = 'map' | 'list';
 
 export interface RecentItem {
   id: string;
@@ -21,6 +22,7 @@ interface SettingsState {
   onboardingCompleted: boolean;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
+  appMode: AppMode;
   /** Favourite route IDs */
   favouriteRouteIds: string[];
   /** Favourite stop IDs */
@@ -36,6 +38,7 @@ interface SettingsState {
   setOnboardingCompleted: (completed: boolean) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
+  setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
   addRecentRoute: (id: string) => void;
@@ -52,6 +55,7 @@ export const useSettingsStore = create<SettingsState>()(
       onboardingCompleted: false,
       stopDisplayMode: 'individual',
       showAllVehicles: true,
+      appMode: 'map',
       favouriteRouteIds: [],
       favouriteStopIds: [],
       recentRoutes: [],
@@ -67,6 +71,7 @@ export const useSettingsStore = create<SettingsState>()(
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
       setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
       setShowAllVehicles: (show) => set({ showAllVehicles: show }),
+      setAppMode: (mode) => set({ appMode: mode }),
 
       toggleFavouriteRoute: (id) =>
         set((s) => ({
