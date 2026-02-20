@@ -6,6 +6,7 @@ import { Marker, Tooltip } from 'react-leaflet';
 import type { AllVehiclePosition } from '../../utils/vehicles';
 import { formatDelay, speedToKmh } from '../../utils/realtime';
 import { makeVehicleIcon } from '../../utils/vehicleIcon';
+import { useMapBounds } from '../../hooks/useMapBounds';
 
 interface AllVehicleMarkersProps {
   vehicles: AllVehiclePosition[];
@@ -13,9 +14,12 @@ interface AllVehicleMarkersProps {
 }
 
 export function AllVehicleMarkers({ vehicles, onVehicleClick }: AllVehicleMarkersProps) {
+  const bounds = useMapBounds();
+  const visible = vehicles.filter((v) => bounds.contains([v.lat, v.lon]));
+
   return (
     <>
-      {vehicles.map((vehicle) => {
+      {visible.map((vehicle) => {
         // Tram: blue, Bus: orange
         const color = vehicle.routeType === 0 ? '#2337ff' : '#ff6b35';
         const speedKmh = speedToKmh(vehicle.speed);

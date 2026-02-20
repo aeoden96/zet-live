@@ -7,6 +7,7 @@ import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useMapBounds } from '../../hooks/useMapBounds';
 
 interface ZoomBasedStopsProps {
   parentStations: Stop[];
@@ -33,6 +34,7 @@ export function ZoomBasedStops({
 }: ZoomBasedStopsProps) {
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
+  const bounds = useMapBounds();
   const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
 
   useEffect(() => {
@@ -61,9 +63,11 @@ export function ZoomBasedStops({
         ? 0
         : (zoom - FADE_MIN) / (FADE_MAX - FADE_MIN);
 
+    const visiblePlatforms = platformStops.filter((s) => bounds.contains([s.lat, s.lon]));
+
     return (
       <StopMarkers
-        stops={platformStops}
+        stops={visiblePlatforms}
         isParentStationView={false}
         parentChildCounts={parentChildCounts}
         selectedStopId={selectedStopId}
@@ -86,6 +90,12 @@ export function ZoomBasedStops({
   } else {
     stopsToShow = parentStations;
   }
+
+  stopsToShow = stopsToShow.filter((s) => {
+    const lat = (s as any).lat as number;
+    const lon = (s as any).lon as number;
+    return bounds.contains([lat, lon]);
+  });
 
   const showParentStations = zoom < parentSplitZoom;
 
