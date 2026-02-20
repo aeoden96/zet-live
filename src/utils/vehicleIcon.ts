@@ -23,21 +23,21 @@ export function makeVehicleIcon(
 ): L.DivIcon {
   const stroke = isRealtime ? '#ffffff' : '#aaaaaa';
   const len = label.length;
-  const fontSize = len <= 1 ? 10 : len === 2 ? 9 : len === 3 ? 7 : 6;
+  const fontSize = len <= 1 ? 13 : len === 2 ? 11 : len === 3 ? 9 : 8;
 
   if (bearing !== undefined) {
     // Moving vehicle: circle with label + small directional pin.
     // The pin is a triangle sitting just outside the circle, pointing up in SVG
     // space (i.e. towards bearing after the rotation layer spins it).
     //
-    // Layout (34×34 px, centre at 17,17):
-    //   circle r=10, pin tip at (17,2), pin base at (14,7)–(20,7)
-    const size = 34;
-    const cx = size / 2; // 17
-    const r = 10;
-    const pinTipY   = cx - r - 5;      // 2
-    const pinBaseY  = cx - r;           // 7
-    const pinHalfW  = 3;
+    // Layout (42×42 px, centre at 21,21):
+    //   circle r=13, pin tip at (21,3), pin base at (17,8)–(25,8)
+    const size = 42;
+    const cx = size / 2; // 21
+    const r = 13;
+    const pinTipY   = cx - r - 5;      // 3
+    const pinBaseY  = cx - r;           // 8
+    const pinHalfW  = 4;
 
     const html =
       `<div style="position:relative;width:${size}px;height:${size}px;">` +
@@ -69,9 +69,9 @@ export function makeVehicleIcon(
   }
 
   // Stationary vehicle: plain circle with label, no pin.
-  const size = 28;
-  const cx = size / 2; // 14
-  const r = 9;
+  const size = 34;
+  const cx = size / 2; // 17
+  const r = 12;
 
   const html =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
