@@ -5,6 +5,7 @@
 import { Marker } from 'react-leaflet';
 import type { VehiclePosition } from '../../utils/vehicles';
 import { makeVehicleIcon } from '../../utils/vehicleIcon';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useMapBounds } from '../../hooks/useMapBounds';
 
 interface VehicleMarkersProps {
@@ -16,13 +17,14 @@ interface VehicleMarkersProps {
 export function VehicleMarkers({ vehicles, routeType, routeShortName = '' }: VehicleMarkersProps) {
   // Tram: blue, Bus: orange
   const color = routeType === 0 ? '#2337ff' : '#ff6b35';
+  const theme = useSettingsStore((s) => s.theme);
   const bounds = useMapBounds();
   const visible = vehicles.filter((v) => bounds.contains([v.lat, v.lon]));
 
   return (
     <>
       {visible.map((vehicle) => {
-        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime, routeShortName);
+        const icon = makeVehicleIcon(color, vehicle.bearing, vehicle.isRealtime, routeShortName, theme === 'dark');
 
         return (
           <Marker

@@ -22,6 +22,8 @@ interface SettingsState {
   onboardingCompleted: boolean;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
+  /** Prefer more detailed map tiles (Standard / HOT) */
+  detailedMap: boolean;
   appMode: AppMode;
   /** Favourite route IDs */
   favouriteRouteIds: string[];
@@ -35,6 +37,7 @@ interface SettingsState {
   setSandboxVisible: (visible: boolean) => void;
   setMapTileProvider: (provider: MapTileProvider) => void;
   setTheme: (theme: Theme) => void;
+  setDetailedMap: (detailed: boolean) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
@@ -48,10 +51,20 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
-      sandboxVisible: true,
-      mapTileProvider: 'osm',
-      theme: (localStorage.getItem('theme') as Theme) || 'light',
+    (set) => {
+      const initialTheme = (localStorage.getItem('theme') as Theme) || 'dark';
+      // Ensure the document theme attribute matches the initial value
+      try {
+        document.documentElement.setAttribute('data-theme', initialTheme);
+      } catch (e) {
+        // no-op (safe for environments without document)
+      }
+
+      return {
+        sandboxVisible: false,
+        mapTileProvider: initialTheme === 'dark' ? 'dark-matter' : 'osm',
+        theme: initialTheme,
+        detailedMap: true,
       onboardingCompleted: false,
       stopDisplayMode: 'individual',
       showAllVehicles: true,
@@ -62,10 +75,21 @@ export const useSettingsStore = create<SettingsState>()(
       recentStops: [],
 
       setSandboxVisible: (visible) => set({ sandboxVisible: visible }),
-      setMapTileProvider: (provider) => set({ mapTileProvider: provider }),
+      setDetailedMap: (detailed) => set({ detailedMap: detailed }),
+      setMapTileProvider: (provider) => {
+        const themeForProvider: Theme = provider === 'dark-matter' ? 'dark' : 'light';
+        set({ mapTileProvider: provider, theme: themeForProvider });
+        try {
+          document.documentElement.setAttribute('data-theme', themeForProvider);
+        } catch (e) {}
+        localStorage.setItem('theme', themeForProvider);
+      },
       setTheme: (theme) => {
-        set({ theme });
-        document.documentElement.setAttribute('data-theme', theme);
+        const providerForTheme: MapTileProvider = theme === 'dark' ? 'dark-matter' : 'osm';
+        set({ theme, mapTileProvider: providerForTheme });
+        try {
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
         localStorage.setItem('theme', theme);
       },
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
@@ -104,7 +128,8 @@ export const useSettingsStore = create<SettingsState>()(
         }),
 
       clearRecents: () => set({ recentRoutes: [], recentStops: [] }),
-    }),
+      };
+    },
     {
       name: 'zet-live-settings',
     }

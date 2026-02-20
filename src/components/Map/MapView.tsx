@@ -45,8 +45,9 @@ interface MapViewProps {
 
 const TILE_PROVIDERS = {
   osm: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    // Use the HOT (Humanitarian) tile style which has slightly more detail
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://www.hotosm.org/">HOT</a>'
   },
   positron: {
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -82,8 +83,12 @@ export function MapView({
   selectedStop,
   onFlyToStop
 }: MapViewProps) {
-  const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
-  const tileConfig = TILE_PROVIDERS[mapTileProvider];
+  const theme = useSettingsStore((state) => state.theme);
+  const detailedMap = useSettingsStore((state) => state.detailedMap);
+  const providerId: keyof typeof TILE_PROVIDERS = detailedMap
+    ? (theme === 'dark' ? 'dark-matter' : 'osm')
+    : (theme === 'dark' ? 'dark-matter' : 'positron');
+  const tileConfig = TILE_PROVIDERS[providerId];
 
   return (
     <MapContainer
@@ -96,7 +101,7 @@ export function MapView({
       zoomControl={false}
     >
       <TileLayer
-        key={mapTileProvider}
+        key={providerId}
         attribution={tileConfig.attribution}
         url={tileConfig.url}
       />

@@ -8,11 +8,7 @@ import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsSto
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
 
-const TILE_PROVIDERS = [
-  { id: 'osm' as const, name: 'Standard', description: 'OpenStreetMap default' },
-  { id: 'positron' as const, name: 'Light (Positron)', description: 'Clean, minimal design' },
-  { id: 'dark-matter' as const, name: 'Dark', description: 'Dark mode friendly' },
-];
+// Map tile providers handled automatically via theme + detailedMap setting
 
 const STOP_DISPLAY_MODES: { id: StopDisplayMode; name: string; description: string }[] = [
   { id: 'individual', name: 'Individualne stanice', description: 'Prikazuje svaku platformu zasebno; prozirnost se smanjuje pri manjem uvećanju' },
@@ -24,8 +20,8 @@ export function SettingsPage() {
   const setTheme = useSettingsStore((state) => state.setTheme);
   const sandboxVisible = useSettingsStore((state) => state.sandboxVisible);
   const setSandboxVisible = useSettingsStore((state) => state.setSandboxVisible);
-  const mapTileProvider = useSettingsStore((state) => state.mapTileProvider);
-  const setMapTileProvider = useSettingsStore((state) => state.setMapTileProvider);
+  const detailedMap = useSettingsStore((state) => state.detailedMap);
+  const setDetailedMap = useSettingsStore((state) => state.setDetailedMap);
   const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
   const setStopDisplayMode = useSettingsStore((state) => state.setStopDisplayMode);
   const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
@@ -150,22 +146,18 @@ export function SettingsPage() {
               Karta
             </h2>
             <div className="space-y-3">
-              <p className="font-medium">Stil karte</p>
-              {TILE_PROVIDERS.map((provider) => (
-                <label key={provider.id} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="tile-provider"
-                    className="radio radio-primary mt-1"
-                    checked={mapTileProvider === provider.id}
-                    onChange={() => setMapTileProvider(provider.id)}
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium">{provider.name}</p>
-                    <p className="text-sm text-base-content/70">{provider.description}</p>
-                  </div>
-                </label>
-              ))}
+              <p className="font-medium">Detaljnija karta</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-base-content/70">Uključi za detaljniji stil karte (Standard / HOT). Vrijedi za svijetlu i tamnu temu.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary mt-1"
+                  checked={detailedMap}
+                  onChange={(e) => setDetailedMap(e.target.checked)}
+                />
+              </div>
             </div>
 
             <div className="divider my-2" />

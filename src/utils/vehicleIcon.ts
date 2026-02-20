@@ -20,8 +20,11 @@ export function makeVehicleIcon(
   bearing: number | undefined,
   isRealtime: boolean,
   label: string = '',
+  darkBackground: boolean = false,
 ): L.DivIcon {
-  const stroke = isRealtime ? '#ffffff' : '#aaaaaa';
+  const dark = darkBackground;
+  const stroke = dark ? (isRealtime ? '#0b1220' : '#1f2937') : (isRealtime ? '#ffffff' : '#aaaaaa');
+  const outerRingFill = dark ? 'rgba(255,255,255,0.04)' : 'transparent';
   const len = label.length;
   const fontSize = len <= 1 ? 13 : len === 2 ? 11 : len === 3 ? 9 : 8;
 
@@ -39,25 +42,26 @@ export function makeVehicleIcon(
     const pinBaseY  = cx - r;           // 8
     const pinHalfW  = 4;
 
-    const html =
-      `<div style="position:relative;width:${size}px;height:${size}px;">` +
-        // ── rotating layer: only the directional pin ──
-        `<svg style="position:absolute;top:0;left:0;` +
-             `transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
-             ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-          `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
-                   ` fill="${color}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>` +
-        `</svg>` +
-        // ── fixed layer: circle + label ──
-        `<svg style="position:absolute;top:0;left:0;"` +
-             ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-          `<circle cx="${cx}" cy="${cx}" r="${r}"` +
-                  ` fill="${color}" fill-opacity="0.95" stroke="${stroke}" stroke-width="2"/>` +
-          `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
+    const rotatingSvg =
+      `<svg style="position:absolute;top:0;left:0;` +
+      `transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
+      ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+        `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
+                 ` fill="${color}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>` +
+      `</svg>`;
+
+    let fixedSvg = `<svg style="position:absolute;top:0;left:0;" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+    if (dark) {
+      fixedSvg += `<circle cx="${cx}" cy="${cx}" r="${r + 4}" fill="${outerRingFill}"/>`;
+    }
+    fixedSvg += `<circle cx="${cx}" cy="${cx}" r="${r}"` +
+                ` fill="${color}" fill-opacity="${dark ? 1 : 0.95}" stroke="${stroke}" stroke-width="2"/>` +
+                `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
                 ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
                 ` fill="white" font-family="system-ui,sans-serif">${label}</text>` +
-        `</svg>` +
-      `</div>`;
+      `</svg>`;
+
+    const html = `<div style="position:relative;width:${size}px;height:${size}px;">` + rotatingSvg + fixedSvg + `</div>`;
 
     return L.divIcon({
       html,
@@ -73,14 +77,17 @@ export function makeVehicleIcon(
   const cx = size / 2; // 17
   const r = 12;
 
-  const html =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-      `<circle cx="${cx}" cy="${cx}" r="${r}"` +
-              ` fill="${color}" fill-opacity="0.85" stroke="${stroke}" stroke-width="2"/>` +
-      `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
-            ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
-            ` fill="white" font-family="system-ui,sans-serif">${label}</text>` +
-    `</svg>`;
+  let svgBody = '';
+  if (dark) {
+    svgBody += `<circle cx="${cx}" cy="${cx}" r="${r + 3}" fill="${outerRingFill}"/>`;
+  }
+  svgBody += `<circle cx="${cx}" cy="${cx}" r="${r}"` +
+             ` fill="${color}" fill-opacity="${dark ? 1 : 0.85}" stroke="${stroke}" stroke-width="2"/>` +
+             `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
+             ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
+             ` fill="white" font-family="system-ui,sans-serif">${label}</text>`;
+
+  const html = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` + svgBody + `</svg>`;
 
   return L.divIcon({
     html,
