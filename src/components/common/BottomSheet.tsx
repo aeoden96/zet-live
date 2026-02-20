@@ -31,10 +31,13 @@ export function BottomSheet({ children, isOpen }: BottomSheetProps) {
   const getSheetHeight = () => {
     if (snapPoint === 'collapsed') {
       return SNAP_POINTS.collapsed;
-    } else if (snapPoint === 'half') {
-      return (window.innerHeight * SNAP_POINTS.half) / 100;
     } else {
-      return (window.innerHeight * SNAP_POINTS.expanded) / 100;
+      // Try reading the runtime --svh CSS variable (1% of small viewport height in px)
+      const svh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--svh')) || (window.innerHeight * 0.01);
+      if (snapPoint === 'half') {
+        return svh * SNAP_POINTS.half;
+      }
+      return svh * SNAP_POINTS.expanded;
     }
   };
 
@@ -95,6 +98,7 @@ export function BottomSheet({ children, isOpen }: BottomSheetProps) {
         bottom: 0,
         height: `${sheetHeight}px`,
         transform: `translateY(${dragOffset}px)`,
+        paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
       {/* Drag handle */}

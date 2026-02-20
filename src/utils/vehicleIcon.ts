@@ -7,6 +7,25 @@
  */
 import L from 'leaflet';
 
+// Utility: darken a hex color by a fraction (0-1). Returns #rrggbb.
+function darkenHex(hex: string, amount: number): string {
+  const h = hex.replace('#', '');
+  const parse = (s: string) => parseInt(s, 16);
+  let r: number, g: number, b: number;
+  if (h.length === 3) {
+    r = parse(h[0] + h[0]);
+    g = parse(h[1] + h[1]);
+    b = parse(h[2] + h[2]);
+  } else {
+    r = parse(h.substring(0, 2));
+    g = parse(h.substring(2, 4));
+    b = parse(h.substring(4, 6));
+  }
+  const lerp = (v: number) => Math.max(0, Math.min(255, Math.round(v * (1 - amount))));
+  const toHex = (v: number) => v.toString(16).padStart(2, '0');
+  return `#${toHex(lerp(r))}${toHex(lerp(g))}${toHex(lerp(b))}`;
+}
+
 /**
  * Build a Leaflet DivIcon for a vehicle marker.
  *
@@ -25,6 +44,7 @@ export function makeVehicleIcon(
   const dark = darkBackground;
   const stroke = dark ? (isRealtime ? '#0b1220' : '#1f2937') : (isRealtime ? '#ffffff' : '#aaaaaa');
   const outerRingFill = dark ? 'rgba(255,255,255,0.04)' : 'transparent';
+  const fillColor = dark ? darkenHex(color, 0.36) : color;
   const len = label.length;
   const fontSize = len <= 1 ? 13 : len === 2 ? 11 : len === 3 ? 9 : 8;
 
@@ -47,7 +67,7 @@ export function makeVehicleIcon(
       `transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
       ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
         `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
-                 ` fill="${color}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>` +
+           ` fill="${fillColor}" stroke="${stroke}" stroke-width="1" stroke-linejoin="round"/>` +
       `</svg>`;
 
     let fixedSvg = `<svg style="position:absolute;top:0;left:0;" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
@@ -55,7 +75,7 @@ export function makeVehicleIcon(
       fixedSvg += `<circle cx="${cx}" cy="${cx}" r="${r + 4}" fill="${outerRingFill}"/>`;
     }
     fixedSvg += `<circle cx="${cx}" cy="${cx}" r="${r}"` +
-                ` fill="${color}" fill-opacity="${dark ? 1 : 0.95}" stroke="${stroke}" stroke-width="2"/>` +
+          ` fill="${fillColor}" fill-opacity="${dark ? 1 : 0.95}" stroke="${stroke}" stroke-width="2"/>` +
                 `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
                 ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
                 ` fill="white" font-family="system-ui,sans-serif">${label}</text>` +
@@ -82,7 +102,7 @@ export function makeVehicleIcon(
     svgBody += `<circle cx="${cx}" cy="${cx}" r="${r + 3}" fill="${outerRingFill}"/>`;
   }
   svgBody += `<circle cx="${cx}" cy="${cx}" r="${r}"` +
-             ` fill="${color}" fill-opacity="${dark ? 1 : 0.85}" stroke="${stroke}" stroke-width="2"/>` +
+             ` fill="${fillColor}" fill-opacity="${dark ? 1 : 0.85}" stroke="${stroke}" stroke-width="2"/>` +
              `<text x="${cx}" y="${cx + Math.round(fontSize * 0.38)}"` +
              ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
              ` fill="white" font-family="system-ui,sans-serif">${label}</text>`;
