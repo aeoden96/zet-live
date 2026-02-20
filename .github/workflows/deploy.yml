@@ -46,6 +46,8 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
           GITHUB_REPOSITORY: ${{ github.repository }}
+          VITE_GTFS_PROXY_URL: ${{ secrets.VITE_GTFS_PROXY_URL }}
+          VITE_GTFS_API_KEY: ${{ secrets.VITE_GTFS_API_KEY }}
         run: yarn build
 
       - name: Setup Pages
