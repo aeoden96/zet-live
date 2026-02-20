@@ -2,7 +2,7 @@
  * Render vehicle position markers on the map
  */
 
-import { Marker, Tooltip } from 'react-leaflet';
+import { Marker } from 'react-leaflet';
 import type { VehiclePosition } from '../../utils/vehicles';
 import { formatDelay, speedToKmh } from '../../utils/realtime';
 import { makeVehicleIcon } from '../../utils/vehicleIcon';
@@ -31,35 +31,7 @@ export function VehicleMarkers({ vehicles, routeType }: VehicleMarkersProps) {
             key={vehicle.tripId}
             position={[vehicle.lat, vehicle.lon]}
             icon={icon}
-          >
-            <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-              <div className="text-xs">
-                <div className="font-bold">{vehicle.headsign}</div>
-                <div className="text-gray-600">
-                  Smjer: {vehicle.direction === 0 ? 'A' : 'B'}
-                </div>
-                {vehicle.isRealtime && (
-                  <>
-                    {speedKmh !== undefined && (
-                      <div className="text-blue-600">{speedKmh} km/h</div>
-                    )}
-                    {delayStr && (
-                      <div
-                        className={
-                          vehicle.delay !== undefined && vehicle.delay > 60
-                            ? 'text-red-600'
-                            : 'text-green-600'
-                        }
-                      >
-                        {delayStr}
-                      </div>
-                    )}
-                    <div className="text-gray-400 italic">GPS uživo</div>
-                  </>
-                )}
-              </div>
-            </Tooltip>
-          </Marker>
+          />
         );
       })}
     </>
