@@ -1,22 +1,20 @@
 /**
- * Fixed stop info bar at the top - shows mini departure board
- * Replaces the inline map popup with a cleaner fixed UI
+ * Fixed stop info bar at the top - shows approaching vehicles (realtime + scheduled).
+ * Replaces the inline map popup with a cleaner fixed UI.
  */
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Maximize2, Clock, X, Star } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime } from '../../utils/gtfs';
-import { useStopDepartures } from '../../hooks/useStopDepartures';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
-import { useRealtimeAdjustedDepartures } from '../../hooks/useRealtimeAdjustedDepartures';
+import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { useDebug } from '../../contexts/DebugContext';
 
 interface StopInfoBarProps {
   stop: Stop;
   routesById: Map<string, Route>;
-  serviceId: string | null;
+  stopsById: Map<string, Stop>;
   onExpand: (stopId: string) => void;
   onClose: () => void;
   /** When true, shifts the bar down so it sits below the RouteInfoBar */
@@ -26,65 +24,32 @@ interface StopInfoBarProps {
 export function StopInfoBar({
   stop,
   routesById,
-  serviceId,
+  stopsById,
   onExpand,
   onClose,
   stackBelow = false,
 }: StopInfoBarProps) {
-  const { departures, loading } = useStopDepartures(stop.id);
   const currentTime = useCurrentTime();
-  const realtimeDelays = useRealtimeAdjustedDepartures(stop.id, departures);
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
-  const { isDebugMode } = useDebug();
   const isFav = favouriteStopIds.includes(stop.id);
-  const [, setTick] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
-  // Re-render every minute
+  // 1-second tick for live countdown
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    const interval = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const miniDepartures = useMemo(() => {
-    if (!departures || !serviceId || !departures.departures[serviceId]) return [];
-
-    const serviceDeps = departures.departures[serviceId];
-    const results: Array<{
-      route: Route;
-      nextTime: number;
-      formattedTime: string;
-      delaySeconds: number | null;
-      delaySource: 'stop' | 'trip' | null;
-      adjustedTime: number; // minutes (may be fractional)
-    }> = [];
-
-    for (const routeId of departures.routes) {
-      const times = serviceDeps[routeId] || [];
-      const route = routesById.get(routeId);
-      if (!route) continue;
-
-      const nextTime = times.find(t => t >= currentTime);
-      if (nextTime !== undefined) {
-        const delayInfo = realtimeDelays.get(routeId);
-        const delaySeconds = delayInfo?.delaySeconds ?? null;
-        const delaySource = delayInfo?.source ?? null;
-        // Adjust displayed time by delay if available
-        const adjustedTime = delaySeconds !== null ? nextTime + delaySeconds / 60 : nextTime;
-        const diff = Math.round(adjustedTime - currentTime);
-        let formatted: string;
-        if (diff <= 0) formatted = 'Sada';
-        else if (diff < 60) formatted = `${diff} min`;
-        else formatted = minutesToTime(adjustedTime);
-
-        results.push({ route, nextTime, formattedTime: formatted, delaySeconds, delaySource, adjustedTime });
-      }
-    }
-
-    return results.sort((a, b) => a.nextTime - b.nextTime).slice(0, 5);
-  }, [departures, serviceId, routesById, currentTime, realtimeDelays]);
+  const { vehicles: approachingVehicles, loading: vehiclesLoading } = useApproachingVehicles(
+    stop.id,
+    stopsById,
+    routesById,
+    nowMs
+  );
+  const topVehicles = approachingVehicles.slice(0, 4);
 
   return (
-    <div 
+    <div
       className={`fixed left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-base-100 rounded-xl shadow-2xl ${
         stackBelow ? 'top-36 sm:top-44' : 'top-16 sm:top-20'
       }`}
@@ -92,7 +57,7 @@ export function StopInfoBar({
     >
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-base leading-tight text-base-content mb-1">
               {stop.name}
@@ -118,7 +83,7 @@ export function StopInfoBar({
             <button
               onClick={() => onExpand(stop.id)}
               className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
-              title="Prikaži sve polaske"
+              title="Prikaži detalje"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
@@ -132,79 +97,120 @@ export function StopInfoBar({
           </div>
         </div>
 
-        {/* Current time indicator */}
-        <div className="flex items-center gap-1.5 text-xs text-base-content/60 mb-2 pb-2 border-b border-base-300">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{minutesToTime(currentTime)}</span>
+        {/* Current time */}
+        <div className="flex items-center justify-end mb-3 pb-2 border-b border-base-300">
+          <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{minutesToTime(currentTime)}</span>
+          </div>
         </div>
 
-        {/* Mini departures */}
-        {loading ? (
+        {/* Vehicle list */}
+        {vehiclesLoading ? (
           <div className="flex items-center gap-2 py-2">
             <span className="loading loading-spinner loading-sm"></span>
-            <span className="text-sm text-base-content/60">Učitavanje...</span>
+            <span className="text-sm text-base-content/60">Tražim vozila...</span>
           </div>
-        ) : miniDepartures.length > 0 ? (
+        ) : topVehicles.length === 0 ? (
+          <div className="text-sm text-base-content/50 py-2 text-center">
+            Nema vozila u sljedećih 30 min
+          </div>
+        ) : (
           <div className="space-y-2">
-            {miniDepartures.map(({ route, formattedTime, delaySeconds, delaySource, nextTime, adjustedTime }, idx) => {
-              const delaySec = delaySeconds ?? 0;
-              const delayMin = Math.round(delaySec / 60);
+            {topVehicles.map((vehicle) => {
+              const d = vehicle.distanceMeters;
+              const isScheduled = vehicle.confidence === 'scheduled';
+
+              // GPS proximity overrides timetable ETA at short range
+              let arriving = false;
+              let etaText: string;
+              if (d !== null && d < 15) {
+                arriving = true;
+                etaText = 'na stajalištu';
+              } else if (d !== null && d < 100) {
+                const estSecs = Math.round(d / 5);
+                etaText = `~${estSecs} sek`;
+              } else {
+                const secs = Math.round(vehicle.arrivingInSeconds);
+                arriving = secs <= 0;
+                if (arriving) {
+                  etaText = 'Sada';
+                } else if (secs < 120) {
+                  etaText = `${isScheduled ? '~' : ''}za ${secs} sek`;
+                } else {
+                  const mins = Math.round(secs / 60);
+                  if (mins < 60) {
+                    etaText = `${isScheduled ? '~' : ''}za ${mins} min`;
+                  } else {
+                    const adjusted = vehicle.etaMinutes + (vehicle.delaySeconds ?? 0) / 60;
+                    etaText = `${isScheduled ? '~' : ''}${minutesToTime(adjusted)}`;
+                  }
+                }
+              }
+
+              const delaySec = vehicle.delaySeconds ?? 0;
+              const delayMin = Math.round(Math.abs(delaySec) / 60);
               const isLate = delaySec > 90;
               const isEarly = delaySec < -90;
+
+              const stopsText =
+                vehicle.stopsAway === null
+                  ? null
+                  : vehicle.stopsAway === 0
+                  ? 'na stajalištu'
+                  : `${vehicle.stopsAway} ${vehicle.stopsAway === 1 ? 'stajalište' : 'stajališta'}`;
+              const distText = vehicle.distanceMeters !== null ? `~${vehicle.distanceMeters} m` : null;
+              const subText =
+                [stopsText, distText].filter(Boolean).join(' · ') ||
+                (isScheduled ? 'red vožnje' : 'GPS uživo');
+
               return (
                 <div
-                  key={`${route.id}-${idx}`}
-                  className="flex items-center justify-between gap-2"
+                  key={vehicle.tripId}
+                  className={`flex items-center gap-2 ${isScheduled ? 'opacity-60' : ''}`}
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span
-                      className={`badge ${
-                        route.type === 0 ? 'badge-primary' : 'badge-accent'
-                      } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0`}
-                    >
-                      {route.shortName}
-                    </span>
-                    <span className="text-xs text-base-content/80 truncate">
-                      {route.longName}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {delaySeconds !== null && (isLate || isEarly) && (
-                      <span
-                        className={`text-xs font-medium ${
-                          isLate ? 'text-error' : 'text-success'
-                        }`}
-                      >
-                        {isLate ? `+${delayMin}` : `${delayMin}`} min
-                      </span>
-                    )}
-
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`font-semibold text-sm whitespace-nowrap ${
-                            idx === 0 ? 'text-success' : 'text-base-content/70'
-                          }`}
-                        >
-                          {formattedTime}
-                        </span>
-                        {/* Debug info (only visible in sandbox/debug mode) */}
-                        {isDebugMode && (
-                          <span className="ml-2 text-[11px] text-base-content/50 whitespace-nowrap">
-                            calc: sched {minutesToTime(nextTime)} ({nextTime})
-                            {delaySeconds !== null ? ` + ${delaySec}s (${delaySource})` : ' (no-RT)'} → {minutesToTime(adjustedTime)} ({Math.round(adjustedTime - currentTime)}m)
-                          </span>
-                        )}
-                      </div>
+                  <span
+                    className={`badge ${
+                      vehicle.routeType === 0 ? 'badge-primary' : 'badge-accent'
+                    } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0`}
+                  >
+                    {vehicle.routeShortName}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-base-content/80 truncate">{vehicle.routeLongName}</div>
+                    <div className="text-[11px] text-base-content/45 leading-tight flex items-center gap-1">
+                      {vehicle.confidence === 'realtime' ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0 animate-pulse" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-base-content/30 shrink-0" />
+                      )}
+                      <span>{subText}</span>
                     </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div
+                      className={`font-bold text-sm tabular-nums whitespace-nowrap ${
+                        arriving
+                          ? 'text-success'
+                          : isScheduled
+                          ? 'text-base-content/50'
+                          : 'text-base-content'
+                      }`}
+                    >
+                      {etaText}
+                    </div>
+                    {vehicle.delaySeconds !== null && (isLate || isEarly) && (
+                      <div className={`text-xs font-medium ${isLate ? 'text-error' : 'text-success'}`}>
+                        {isLate ? `+${delayMin}` : `-${delayMin}`} min
+                      </div>
+                    )}
+                    {vehicle.delaySeconds !== null && !isLate && !isEarly && (
+                      <div className="text-xs text-success">Na vrij.</div>
+                    )}
                   </div>
                 </div>
               );
             })}
-          </div>
-        ) : (
-          <div className="text-sm text-base-content/50 py-2 text-center">
-            Nema nadolazećih polazaka
           </div>
         )}
       </div>

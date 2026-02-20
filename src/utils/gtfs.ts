@@ -51,6 +51,12 @@ export interface StopDepartures {
   departures: Record<string, Record<string, number[]>>; // service_id -> route_id -> times[]
 }
 
+/**
+ * Per-stop timetable index — `public/data/stop_timetables/{stopId}.json`.
+ * Keyed: routeId → tripId → { time (minutes from midnight), sequence (stop_sequence in trip) }
+ */
+export type StopTimetable = Record<string, Record<string, { time: number; sequence: number }>>;
+
 export interface ActiveTrip {
   id: string;
   headsign: string;
@@ -274,6 +280,16 @@ export async function fetchRouteStops(routeId: string): Promise<RouteStopsData> 
     const response = await fetch(`/data/route_stops/${routeId}.json`);
     if (!response.ok) {
       throw new Error(`Failed to fetch route stops for route ${routeId}: ${response.statusText}`);
+    }
+    return response.json();
+  });
+}
+
+export async function fetchStopTimetable(stopId: string): Promise<StopTimetable> {
+  return cachedFetch(`/data/stop_timetables/${stopId}.json`, async () => {
+    const response = await fetch(`/data/stop_timetables/${stopId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stop timetable for ${stopId}: ${response.statusText}`);
     }
     return response.json();
   });

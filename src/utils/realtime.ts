@@ -69,6 +69,7 @@ export interface ParsedVehiclePosition {
   speed?: number; // m/s
   timestamp: number; // POSIX timestamp
   currentStopId?: string;
+  currentStopSequence?: number; // stop_sequence of the current/next stop from GTFS-RT
   status?: VehicleStopStatus;
   congestionLevel?: CongestionLevel;
   occupancyStatus?: OccupancyStatus;
@@ -190,6 +191,7 @@ export function parseVehiclePositions(feed: GtfsRealtimeFeed): ParsedVehiclePosi
         speed: (vehicle.position?.speed > 0) ? vehicle.position.speed : undefined,
         timestamp: Number(vehicle.timestamp) || Math.floor(Date.now() / 1000),
         currentStopId: vehicle.stopId,
+        currentStopSequence: vehicle.currentStopSequence != null ? Number(vehicle.currentStopSequence) : undefined,
         status: vehicle.currentStatus,
         congestionLevel: vehicle.congestionLevel,
         occupancyStatus: vehicle.occupancyStatus,

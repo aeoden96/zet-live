@@ -14,7 +14,6 @@ import { ServiceAlerts } from './components/common/ServiceAlerts';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
-import { useStopDepartures } from './hooks/useStopDepartures';
 import { useSettingsStore } from './stores/settingsStore';
 import { useRealtimeStore } from './stores/realtimeStore';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
@@ -89,9 +88,6 @@ function App() {
     serviceId,
     routesById
   );
-
-  // Load stop departures
-  const { departures } = useStopDepartures(selectedStopId);
 
   // Handlers
   const handleSelectRoute = (routeId: string, routeType: number, df?: DirectionFilter | 'all') => {
@@ -393,7 +389,7 @@ function App() {
         <StopInfoBar
           stop={selectedStop}
           routesById={routesById}
-          serviceId={serviceId}
+          stopsById={stopsById}
           onExpand={handleExpandStop}
           onClose={handleCloseStopInfo}
           stackBelow={!!(selectedRoute && !routeModalOpen)}
@@ -493,9 +489,8 @@ function App() {
         <StopModal
           isOpen={stopModalOpen}
           stop={selectedStop}
-          departures={departures}
           routesById={routesById}
-          serviceId={serviceId}
+          stopsById={stopsById}
           onClose={handleCloseStop}
           onRouteClick={handleRouteClickFromStop}
         />

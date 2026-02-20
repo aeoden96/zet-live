@@ -1,22 +1,22 @@
 /**
- * Full-screen stop modal - expanded view of stop departures
+ * Full-screen stop modal - expanded view of approaching vehicles
  * Opened from the map popup expand button
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, Star } from 'lucide-react';
-import type { Stop, Route, StopDepartures } from '../../utils/gtfs';
+import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
-import { useRealtimeAdjustedDepartures } from '../../hooks/useRealtimeAdjustedDepartures';
+import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
+import { ApproachingVehicleCard } from './ApproachingVehicleCard';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 interface StopModalProps {
   isOpen: boolean;
   stop: Stop;
-  departures: StopDepartures | null;
   routesById: Map<string, Route>;
-  serviceId: string | null;
+  stopsById: Map<string, Stop>;
   onClose: () => void;
   onRouteClick: (routeId: string, routeType: number) => void;
 }
@@ -24,54 +24,30 @@ interface StopModalProps {
 export function StopModal({
   isOpen,
   stop,
-  departures,
   routesById,
-  serviceId,
+  stopsById,
   onClose,
-  onRouteClick
+  onRouteClick,
 }: StopModalProps) {
   const currentTime = useCurrentTime();
-  const realtimeDelays = useRealtimeAdjustedDepartures(isOpen ? stop.id : null, departures);
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);
-  const [, setTick] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
+  // 1-second tick for live countdown
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    if (!isOpen) return;
+    const interval = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isOpen]);
 
-  const routeDepartures = useMemo(() => {
-    if (!departures || !serviceId || !departures.departures[serviceId]) return [];
-
-    const serviceDepartures = departures.departures[serviceId];
-    const results: Array<{ routeId: string; route: Route; times: number[]; delaySeconds: number | null }> = [];
-
-    for (const routeId of departures.routes) {
-      const times = serviceDepartures[routeId] || [];
-      const route = routesById.get(routeId);
-      const delayInfo = realtimeDelays.get(routeId);
-      const delaySeconds = delayInfo?.delaySeconds ?? null;
-
-      if (route && times.length > 0) {
-        const upcomingTimes = times.filter((t) => t >= currentTime).slice(0, 8);
-        if (upcomingTimes.length > 0) {
-          results.push({ routeId, route, times: upcomingTimes, delaySeconds });
-        }
-      }
-    }
-
-    return results.sort((a, b) => a.times[0] - b.times[0]);
-  }, [departures, serviceId, routesById, currentTime, realtimeDelays]);
-
-  const formatDeparture = (time: number, delaySeconds: number | null = null) => {
-    const adjustedTime = delaySeconds !== null ? time + delaySeconds / 60 : time;
-    const diffMinutes = Math.round(adjustedTime - currentTime);
-    if (diffMinutes < 0) return minutesToTime(adjustedTime);
-    if (diffMinutes === 0) return 'Sada';
-    if (diffMinutes < 60) return `za ${diffMinutes} min`;
-    return minutesToTime(adjustedTime);
-  };
+  // Approaching vehicles data (only active when modal is open)
+  const { vehicles: approachingVehicles, loading: vehiclesLoading } = useApproachingVehicles(
+    isOpen ? stop.id : null,
+    stopsById,
+    routesById,
+    nowMs
+  );
 
   if (!isOpen) return null;
 
@@ -112,67 +88,33 @@ export function StopModal({
           </div>
         </div>
 
-        {/* Departures */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          {!serviceId ? (
-            <div className="p-8 text-center text-base-content/50">
-              Nema podataka o servisu za današnji dan
+          {vehiclesLoading ? (
+            <div className="flex items-center justify-center gap-3 p-8 text-base-content/50">
+              <span className="loading loading-spinner loading-sm" />
+              <span>Tražim vozila...</span>
             </div>
-          ) : routeDepartures.length === 0 ? (
+          ) : approachingVehicles.length === 0 ? (
             <div className="p-8 text-center text-base-content/50">
-              Nema nadolazećih polazaka
+              Nema vozila koja dolaze u sljedećih 30 min
             </div>
           ) : (
-            <div className="p-4 space-y-3">
-              <h3 className="font-semibold">Sljedeći polasci</h3>
-
-              {routeDepartures.map(({ routeId, route, times, delaySeconds }) => {
-                const delaySec = delaySeconds ?? 0;
-                const delayMin = Math.round(Math.abs(delaySec) / 60);
-                const isLate = delaySec > 90;
-                const isEarly = delaySec < -90;
-                return (
-                <div key={routeId} className="card bg-base-200">
-                  <div className="card-body p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => {
-                          onRouteClick(routeId, route.type);
-                          onClose();
-                        }}
-                        className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity flex-1 min-w-0"
-                      >
-                        <div className={`badge ${route.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold shrink-0`}>
-                          {route.shortName}
-                        </div>
-                        <div className="text-sm font-medium truncate">{route.longName}</div>
-                      </button>
-                      {delaySeconds !== null && (isLate || isEarly) && (
-                        <span className={`text-xs font-semibold shrink-0 ${
-                          isLate ? 'text-error' : 'text-success'
-                        }`}>
-                          {isLate ? `+${delayMin}` : `-${delayMin}`} min
-                        </span>
-                      )}
-                      {delaySeconds !== null && !isLate && !isEarly && (
-                        <span className="text-xs font-semibold text-success shrink-0">Na vrij.</span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {times.map((time, idx) => (
-                        <div
-                          key={idx}
-                          className={`badge ${idx === 0 ? 'badge-lg font-bold' : 'badge-md'}`}
-                        >
-                          {formatDeparture(time, delaySeconds)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                );
-              })}
+            <div className="p-4 space-y-2">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-semibold">Nadolazeća vozila</h3>
+                <span className="text-xs text-base-content/40">slj. 30 min</span>
+              </div>
+              {approachingVehicles.map((vehicle) => (
+                <ApproachingVehicleCard
+                  key={vehicle.tripId}
+                  vehicle={vehicle}
+                  onRouteClick={(routeId, routeType) => {
+                    onRouteClick(routeId, routeType);
+                    onClose();
+                  }}
+                />
+              ))}
             </div>
           )}
         </div>
