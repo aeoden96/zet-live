@@ -1,10 +1,6 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 permissions:
@@ -28,6 +24,20 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download GTFS data
+        run: curl -L https://www.zet.hr/gtfs-scheduled/latest -o gtfs.zip
+
+      - name: Extract GTFS data
+        run: unzip -o gtfs.zip -d data/
+
+      - name: Process GTFS data
+        run: bash scripts/run.sh
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
