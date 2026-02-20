@@ -2,9 +2,61 @@
  * Render stop markers on the map
  */
 
-import { CircleMarker, Marker } from 'react-leaflet';
+import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
+
+// ── Stop colour by service type ──────────────────────────────────────────────
+function stopFillColor(stop: Stop, isSelected: boolean, isHighlighted: boolean): string {
+  if (isSelected) return '#ff6b6b';
+  if (isHighlighted) return '#2337ff';
+  switch (stop.routeType) {
+    case 0: return '#2563eb';  // tram-only  → blue
+    case 3: return '#ea580c';  // bus-only   → orange
+    case 2: return '#8242be';  // mixed       → purple
+    default: return '#8242be'; // fallback    → purple
+  }
+}
+
+/**
+ * Build a DivIcon for a platform stop marker.
+ * When `bearing` is supplied a small directional triangle is rendered
+ * just outside the circle, pointing in the direction of travel.
+ */
+function makeStopIcon(
+  color: string,
+  bearing: number | undefined,
+  size: number,
+  r: number,
+  opacityFactor: number,
+): L.DivIcon {
+  const cx = size / 2;
+
+  if (bearing !== undefined) {
+    const pinTipY  = cx - r - 4;
+    const pinBaseY = cx - r;
+    const pinHalfW = 3;
+    const html =
+      `<div style="position:relative;width:${size}px;height:${size}px;opacity:${opacityFactor};">` +
+        `<svg style="position:absolute;top:0;left:0;transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
+             ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+          `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
+                   ` fill="${color}" stroke="white" stroke-width="1" stroke-linejoin="round"/>` +
+        `</svg>` +
+        `<svg style="position:absolute;top:0;left:0;" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+          `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
+        `</svg>` +
+      `</div>`;
+    return L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [cx, cx] });
+  }
+
+  const html =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"` +
+        ` style="opacity:${opacityFactor}">` +
+      `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
+    `</svg>`;
+  return L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [cx, cx] });
+}
 
 interface StopMarkersProps {
   stops: Array<Stop | ParentGroup>;
@@ -92,27 +144,24 @@ export function StopMarkers({
           );
         }
 
-        // Render regular platform stops as circle markers
+        // Render regular platform stops
         const stop = s as Stop;
         // Selected stops always remain fully visible regardless of opacityFactor
         const effectiveFactor = isSelected ? 1 : opacityFactor;
         // Skip rendering when fully transparent (perf optimisation)
         if (effectiveFactor === 0) return null;
+
+        const color = stopFillColor(stop, isSelected, isHighlighted);
+        const size  = isSelected ? 30 : isHighlighted ? 26 : 24;
+        const r     = isSelected ?  9 : isHighlighted ?  8 :  7;
+        const icon  = makeStopIcon(color, stop.bearing, size, r, effectiveFactor);
+
         return (
-          <CircleMarker
+          <Marker
             key={stop.id}
-            center={[stop.lat, stop.lon]}
-            radius={isSelected ? 8 : isHighlighted ? 6 : 5}
-            pathOptions={{
-              fillColor: isSelected ? '#ff6b6b' : isHighlighted ? '#2337ff' : '#8242be',
-              fillOpacity: (isSelected ? 1 : isHighlighted ? 0.9 : 0.7) * effectiveFactor,
-              color: 'white',
-              weight: isSelected ? 2 : 1,
-              opacity: effectiveFactor,
-            }}
-            eventHandlers={{
-              click: () => onStopClick(stop.id)
-            }}
+            position={[stop.lat, stop.lon]}
+            icon={icon}
+            eventHandlers={{ click: () => onStopClick(stop.id) }}
           />
         );
       })}

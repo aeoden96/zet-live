@@ -363,14 +363,36 @@ function App() {
 
               {/* Stops */}
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="14" height="14">
-                  <circle cx="0" cy="0" r="7" fill="#8242be" fillOpacity="0.7" stroke="white" strokeWidth="1.5" />
-                </svg>
-                <span className="text-base-content/80">Stanica</span>
+                <div style={{ position: 'relative', width: 18, height: 18, flexShrink: 0 }}>
+                  <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(45deg)', transformOrigin: '9px 9px' }} width="18" height="18" viewBox="0 0 18 18">
+                    <polygon points="9,1 6,4 12,4" fill="#2563eb" stroke="white" strokeWidth="1" strokeLinejoin="round" />
+                  </svg>
+                  <svg style={{ position: 'absolute', top: 0, left: 0 }} width="18" height="18" viewBox="0 0 18 18">
+                    <circle cx="9" cy="9" r="5" fill="#2563eb" fillOpacity="0.9" stroke="white" strokeWidth="1.5" />
+                  </svg>
+                </div>
+                <span className="text-base-content/80">Tramvajska stanica</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg viewBox="-10 -10 20 20" width="16" height="16">
-                  <circle cx="0" cy="0" r="7" fill="#ff6b6b" fillOpacity="1" stroke="white" strokeWidth="2" />
+                <div style={{ position: 'relative', width: 18, height: 18, flexShrink: 0 }}>
+                  <svg style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(0deg)', transformOrigin: '9px 9px' }} width="18" height="18" viewBox="0 0 18 18">
+                    <polygon points="9,1 6,4 12,4" fill="#ea580c" stroke="white" strokeWidth="1" strokeLinejoin="round" />
+                  </svg>
+                  <svg style={{ position: 'absolute', top: 0, left: 0 }} width="18" height="18" viewBox="0 0 18 18">
+                    <circle cx="9" cy="9" r="5" fill="#ea580c" fillOpacity="0.9" stroke="white" strokeWidth="1.5" />
+                  </svg>
+                </div>
+                <span className="text-base-content/80">Autobusna stanica</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <circle cx="9" cy="9" r="5" fill="#8242be" fillOpacity="0.9" stroke="white" strokeWidth="1.5" />
+                </svg>
+                <span className="text-base-content/80">Mješovita stanica</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <circle cx="9" cy="9" r="7" fill="#ff6b6b" fillOpacity="1" stroke="white" strokeWidth="2" />
                 </svg>
                 <span className="text-base-content/80">Odabrana stanica</span>
               </div>

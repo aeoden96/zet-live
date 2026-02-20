@@ -13,6 +13,10 @@ export interface Stop {
   lon: number;
   locationType: number;
   parentStation: string | null;
+  /** 0 = tram-only, 3 = bus-only, 2 = mixed tram+bus; undefined = parent station / unknown */
+  routeType?: number;
+  /** Compass bearing in degrees (0=N, 90=E) of the direction of travel leaving this platform */
+  bearing?: number;
 }
 
 export interface Route {

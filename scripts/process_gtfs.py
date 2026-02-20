@@ -58,6 +58,17 @@ def _haversine_meters(a_lat, a_lon, b_lat, b_lon):
     return 2.0 * R * asin(sqrt(h))
 
 
+def _compute_bearing(lat1, lon1, lat2, lon2):
+    """Compass bearing in degrees (0=N, 90=E, 180=S, 270=W) from point 1 to point 2."""
+    import math
+    lat1_r = math.radians(lat1)
+    lat2_r = math.radians(lat2)
+    dlon_r = math.radians(lon2 - lon1)
+    x = math.sin(dlon_r) * math.cos(lat2_r)
+    y = math.cos(lat1_r) * math.sin(lat2_r) - math.sin(lat1_r) * math.cos(lat2_r) * math.cos(dlon_r)
+    return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+
 def _cluster_parent_stops(parents, radius_meters=150):
     """Greedy single-pass clustering of parent stations by proximity.
 
@@ -481,6 +492,94 @@ def generate_stop_timetables_index(timetables_by_route, trip_lookup):
     print(f"    ✓ Wrote {len(stop_timetables)} stop timetable files")
 
 
+def enrich_stops_with_metadata(timetables_by_route, trip_lookup):
+    """Add routeType and bearing to every platform stop in initial.json.
+
+    routeType: 0 = tram-only, 3 = bus-only, 2 = mixed tram+bus
+    bearing:   compass degrees (0=N, 90=E) of the direction of travel
+               when a vehicle leaves that platform
+    """
+    print("\U0001f9ed  Enriching stops with route type and bearing...")
+
+    initial_file = OUTPUT_DIR / 'initial.json'
+    with open(initial_file, 'r', encoding='utf-8') as f:
+        initial_data = json.load(f)
+
+    # Route type lookup: route_id -> route_type (0=tram, 3=bus)
+    routes_raw = read_csv("routes.txt")
+    route_type_map = {r['route_id']: int(r['route_type']) for r in routes_raw}
+
+    # Stop coordinate lookup: stop_id -> (lat, lon)
+    stops_by_id = {s['id']: (s['lat'], s['lon']) for s in initial_data['stops']}
+
+    # 1. Collect which route types serve each platform stop
+    stop_route_types = defaultdict(set)          # stop_id -> {route_type, ...}
+    for route_id, trips_data in timetables_by_route.items():
+        rtype = route_type_map.get(route_id, 3)
+        for trip_id, trip_stops in trips_data.items():
+            for stop_id, seq, time in trip_stops:
+                stop_route_types[stop_id].add(rtype)
+
+    # 2. Compute bearing for each stop from its canonical trip
+    #    For each route+direction pick the most-frequent shape trip, then
+    #    record bearing from each stop to the next one (first-seen wins).
+    stop_bearing = {}                           # stop_id -> bearing float
+
+    for route_id, trips_data in timetables_by_route.items():
+        # Count trips per (direction, shape_id)
+        shape_counts = defaultdict(int)
+        for trip_id in trips_data:
+            if trip_id not in trip_lookup:
+                continue
+            _, _, _, direction, shape_id = trip_lookup[trip_id]
+            shape_counts[(direction, shape_id)] += 1
+
+        for direction in set(d for d, _ in shape_counts.keys()):
+            dir_shapes = [(k, v) for k, v in shape_counts.items() if k[0] == direction]
+            best_shape = max(dir_shapes, key=lambda x: x[1])[0][1]
+
+            # Find a representative canonical trip
+            for trip_id, trip_stops in trips_data.items():
+                if trip_id not in trip_lookup:
+                    continue
+                _, _, _, d, s = trip_lookup[trip_id]
+                if d == direction and s == best_shape:
+                    sorted_stops = sorted(trip_stops, key=lambda x: x[1])
+                    for i in range(len(sorted_stops) - 1):
+                        sid_a = sorted_stops[i][0]
+                        sid_b = sorted_stops[i + 1][0]
+                        if sid_a not in stop_bearing and sid_a in stops_by_id and sid_b in stops_by_id:
+                            lat1, lon1 = stops_by_id[sid_a]
+                            lat2, lon2 = stops_by_id[sid_b]
+                            stop_bearing[sid_a] = round(_compute_bearing(lat1, lon1, lat2, lon2), 1)
+                    break
+
+    # 3. Write routeType and bearing back into initial.json
+    bearing_count = 0
+    type_count = 0
+    for stop in initial_data['stops']:
+        types = stop_route_types.get(stop['id'], set())
+        if 0 in types and 3 in types:
+            stop['routeType'] = 2   # mixed tram + bus
+            type_count += 1
+        elif 0 in types:
+            stop['routeType'] = 0   # tram only
+            type_count += 1
+        elif 3 in types:
+            stop['routeType'] = 3   # bus only
+            type_count += 1
+        # else: parent station or unserved stop — omit routeType
+
+        b = stop_bearing.get(stop['id'])
+        if b is not None:
+            stop['bearing'] = b
+            bearing_count += 1
+
+    write_json(initial_file, initial_data)
+    print(f"    \u2713 Classified {type_count} stops by route type")
+    print(f"    \u2713 Added bearing to {bearing_count} stops")
+
+
 def generate_route_active_trips_index(timetables_by_route, trip_lookup):
     """Generate optimized index for vehicle position estimation (B1 optimization)."""
     print("🚗 Generating route active trips index...")
@@ -774,22 +873,25 @@ def main():
     # Step 4: Stop times (streaming)
     timetables_by_route = process_stop_times(trip_lookup)
     
-    # Step 5: Route stops index (B2 optimization)
+    # Step 5: Enrich stops with routeType + bearing
+    enrich_stops_with_metadata(timetables_by_route, trip_lookup)
+
+    # Step 6: Route stops index (B2 optimization)
     generate_route_stops_index(timetables_by_route, trip_lookup)
     
-    # Step 6: Stop timetables index (A2 optimization)
+# Step 7: Stop timetables index (A2 optimization)
     generate_stop_timetables_index(timetables_by_route, trip_lookup)
-    
-    # Step 7: Route active trips index (B1 optimization)
+
+    # Step 8: Route active trips index (B1 optimization)
     generate_route_active_trips_index(timetables_by_route, trip_lookup)
-    
-    # Step 8: All active trips index (show all vehicles feature)
+
+    # Step 9: All active trips index (show all vehicles feature)
     generate_all_active_trips_index(timetables_by_route, trip_lookup)
-    
-    # Step 9: Manifest
+
+    # Step 10: Manifest
     generate_manifest()
-    
-    # Step 10: Stats
+
+    # Step 11: Stats
     calculate_stats()
     
     print("\n✅ Done! Output in ./public/data/")
