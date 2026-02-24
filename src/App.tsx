@@ -100,6 +100,9 @@ function App() {
     else setDirectionFilter('A');
     setSearchModalOpen(false);
     addRecentRoute(routeId);
+    // Clear any previously-selected stop when entering route view
+    setSelectedStopId(null);
+    setStopModalOpen(false);
     // Default to small route info bar; user can expand to full RouteModal
     setRouteModalOpen(false);
   };

@@ -2,7 +2,7 @@
  * Component that renders different stops based on zoom level
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
@@ -49,6 +49,20 @@ export function ZoomBasedStops({
     };
   }, [map]);
 
+  // Pre-compute sets for route-based filtering (must be before any early return)
+  const highlightSet = useMemo(() => new Set(highlightStopIds), [highlightStopIds]);
+
+  // When a route is selected (highlightStopIds is populated) derive the parent
+  // station IDs that belong to that route so grouped-mode can filter correctly.
+  const routeParentIds = useMemo<Set<string> | null>(() => {
+    if (highlightSet.size === 0) return null;
+    const parents = new Set<string>();
+    platformStops.forEach((s) => {
+      if (highlightSet.has(s.id) && s.parentStation) parents.add(s.parentStation);
+    });
+    return parents;
+  }, [highlightSet, platformStops]);
+
   // ── Individual mode ──────────────────────────────────────────────────────
   // Always show platform stops; opacity scales with zoom.
   // zoom >= 17  → factor 1.0 (fully visible)
@@ -63,7 +77,13 @@ export function ZoomBasedStops({
         ? 0
         : (zoom - FADE_MIN) / (FADE_MAX - FADE_MIN);
 
-    const visiblePlatforms = platformStops.filter((s) => bounds.contains([s.lat, s.lon]));
+    let visiblePlatforms = platformStops.filter((s) => bounds.contains([s.lat, s.lon]));
+    // When a route is selected, only show stops on that route (always keep the selected stop).
+    if (routeParentIds) {
+      visiblePlatforms = visiblePlatforms.filter(
+        (s) => highlightSet.has(s.id) || s.id === selectedStopId
+      );
+    }
 
     return (
       <StopMarkers
@@ -94,7 +114,23 @@ export function ZoomBasedStops({
   stopsToShow = stopsToShow.filter((s) => {
     const lat = (s as any).lat as number;
     const lon = (s as any).lon as number;
-    return bounds.contains([lat, lon]);
+    if (!bounds.contains([lat, lon])) return false;
+
+    // When a route is selected, hide stops not belonging to it
+    if (routeParentIds) {
+      const isGroup = (s as ParentGroup).childIds !== undefined;
+      if (isGroup) {
+        // Show cluster if any of its child parent-stations has route stops
+        return (s as ParentGroup).childIds.some((id) => routeParentIds.has(id));
+      }
+      const id = (s as any).id as string;
+      // Always keep the currently selected stop visible
+      if (id === selectedStopId) return true;
+      // Platform stops are in highlightSet; parent stations are in routeParentIds
+      return highlightSet.has(id) || routeParentIds.has(id);
+    }
+
+    return true;
   });
 
   const showParentStations = zoom < parentSplitZoom;

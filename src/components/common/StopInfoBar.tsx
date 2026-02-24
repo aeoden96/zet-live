@@ -70,7 +70,7 @@ export function StopInfoBar({
   return (
     <div
       className={`fixed left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-base-100 rounded-xl shadow-2xl ${
-        stackBelow ? 'top-36 sm:top-44' : 'top-16 sm:top-20'
+        stackBelow ? 'top-44 sm:top-44' : 'top-16 sm:top-20'
       }`}
       style={{ animation: 'modal-fade-in 0.2s ease-out' }}
     >
