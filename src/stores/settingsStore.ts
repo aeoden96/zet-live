@@ -23,6 +23,10 @@ interface SettingsState {
   onboardingStep: number;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
+  /** Show BAJS (Nextbike) bike station layer */
+  showBikeStations: boolean;
+  /** Show Zagreb open-data road closures layer */
+  showRoadClosures: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
   detailedMap: boolean;
   appMode: AppMode;
@@ -43,6 +47,8 @@ interface SettingsState {
   setOnboardingStep: (step: number) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
+  setShowBikeStations: (show: boolean) => void;
+  setShowRoadClosures: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
@@ -72,6 +78,8 @@ export const useSettingsStore = create<SettingsState>()(
       onboardingStep: 0,
       stopDisplayMode: 'individual',
       showAllVehicles: true,
+      showBikeStations: false,
+      showRoadClosures: false,
       appMode: 'map',
       favouriteRouteIds: [],
       favouriteStopIds: [],
@@ -104,6 +112,8 @@ export const useSettingsStore = create<SettingsState>()(
       setOnboardingStep: (step) => set({ onboardingStep: step }),
       setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
       setShowAllVehicles: (show) => set({ showAllVehicles: show }),
+      setShowBikeStations: (show) => set({ showBikeStations: show }),
+      setShowRoadClosures: (show) => set({ showRoadClosures: show }),
       setAppMode: (mode) => set({ appMode: mode }),
 
       toggleFavouriteRoute: (id) =>

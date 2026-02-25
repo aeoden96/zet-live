@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Settings, Search, X, LocateFixed, HelpCircle } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useSelectionParams } from './hooks/useSelectionParams';
 import type { DirectionFilter } from './hooks/useSelectionParams';
 import { MapView } from './components/Map/MapView';
@@ -13,6 +12,7 @@ import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingWizard } from './components/common/OnboardingWizard';
 import { NearbyStopsModal } from './components/common/NearbyStopsModal';
 import { ServiceAlerts } from './components/common/ServiceAlerts';
+import { MapLayerSelector } from './components/MapLayerSelector';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
@@ -469,33 +469,16 @@ function App() {
         </div>
       </div>
 
-      {/* Map controls (top-right) */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000] flex flex-col items-end gap-2">
-        <button
-          onClick={() => {
+      {/* Map controls (top-right): single spider menu */}
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000]">
+        <MapLayerSelector
+          onHelpClick={() => {
             setOnboardingStep(0);
             setOnboardingCompleted(false);
           }}
-          className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg"
-          title="Pomoć / Uvod"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
-        <Link to="/settings" className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg">
-          <Settings className="w-5 h-5" />
-        </Link>
-        <button
-          onClick={handleLocateMe}
-          disabled={locating}
-          className="btn btn-circle btn-sm sm:btn-md min-h-[40px] min-w-[40px] shadow-lg"
-          title="Moja lokacija"
-        >
-          {locating ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            <LocateFixed className="w-5 h-5" />
-          )}
-        </button>
+          onLocateClick={handleLocateMe}
+          locating={locating}
+        />
       </div>
 
       {/* Locate error toast */}
