@@ -267,6 +267,7 @@ function App() {
         selectedStopId={selectedStopId}
         routeShapes={shapes}
         routeStops={routeStops}
+        orderedStops={orderedStops}
         vehicles={vehicles}
         routeType={selectedRouteType}
         routeShortName={selectedRoute?.shortName}
@@ -316,6 +317,7 @@ function App() {
             selectedRouteId={selectedRouteId}
             onRouteClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
           />
+          
           {/* Legend popup */}
           {legendOpen && (
             <div className="bg-base-100 rounded-xl shadow-xl border border-base-200 p-3 w-52 text-xs space-y-2">
@@ -421,6 +423,8 @@ function App() {
         <RouteInfoBar
           route={selectedRoute}
           vehicles={vehicles}
+          orderedStops={orderedStops}
+          stopsById={stopsById}
           onExpand={handleExpandRoute}
           onClose={handleClearRoute}
         />

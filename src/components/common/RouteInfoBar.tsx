@@ -5,6 +5,7 @@
  */
 
 import { Maximize2, X, Train, Bus, Star } from 'lucide-react';
+import { DirectionLegend } from '../Map/DirectionLegend';
 import type { Route } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -14,12 +15,14 @@ interface RouteInfoBarProps {
   vehicles: VehiclePosition[];
   onExpand: () => void;
   onClose: () => void;
+  orderedStops?: Record<string, string[]>;
+  stopsById?: Map<string, Stop>;
 }
 
 const TRAM_COLOR = '#2563eb'; // blue-600
 const BUS_COLOR  = '#ea580c'; // orange-600
 
-export function RouteInfoBar({ route, vehicles, onExpand, onClose }: RouteInfoBarProps) {
+export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops, stopsById }: RouteInfoBarProps) {
   const color = route.type === 0 ? TRAM_COLOR : BUS_COLOR;
   const isTram = route.type === 0;
   const { favouriteRouteIds, toggleFavouriteRoute } = useSettingsStore();
@@ -97,6 +100,25 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose }: RouteInfoBa
           </span>
           {vehicleCount > 0 && (
             <span className="w-2 h-2 rounded-full bg-success animate-pulse ml-0.5" />
+          )}
+          {/* Inline compact direction legend (single-line) */}
+          {orderedStops && stopsById && (
+            <div className="ml-3 hidden sm:flex items-center">
+              <div className="text-xs text-base-content/70 mr-2">Smjer:</div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {/* use DirectionLegend inline */}
+                  <div className="flex items-center gap-2">
+                    {/* render via component for consistency */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {/* DirectionLegend inline compact */}
+                      {/* @ts-expect-error: DirectionLegend is valid here */}
+                      <DirectionLegend orderedStops={orderedStops} stopsById={stopsById} routeType={route.type} compact inline />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

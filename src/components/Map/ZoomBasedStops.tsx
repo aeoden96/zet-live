@@ -19,6 +19,8 @@ interface ZoomBasedStopsProps {
   onStopClick: (stopId: string) => void;
   parentClusterZoom?: number; // zoom below which we show clusters
   parentSplitZoom?: number;   // zoom at/above which parent -> platforms split
+  /** Optional ordered stops mapping from useRouteData (direction -> stop ids) */
+  orderedStops?: Record<string, string[]>;
 }
 
 export function ZoomBasedStops({ 
@@ -29,6 +31,7 @@ export function ZoomBasedStops({
   selectedStopId, 
   highlightStopIds,
   onStopClick,
+  orderedStops,
   parentClusterZoom = 15,
   parentSplitZoom = 17
 }: ZoomBasedStopsProps) {
@@ -51,6 +54,17 @@ export function ZoomBasedStops({
 
   // Pre-compute sets for route-based filtering (must be before any early return)
   const highlightSet = useMemo(() => new Set(highlightStopIds), [highlightStopIds]);
+
+  // Build a mapping stopId -> direction index (0,1,...) if orderedStops provided
+  const stopDirectionMap = useMemo<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    if (!orderedStops) return map;
+    Object.entries(orderedStops).forEach(([dirKey, ids]) => {
+      const idx = Number.parseInt(dirKey, 10) || 0;
+      ids.forEach((sid) => { map[sid] = idx; });
+    });
+    return map;
+  }, [orderedStops]);
 
   // When a route is selected (highlightStopIds is populated) derive the parent
   // station IDs that belong to that route so grouped-mode can filter correctly.
@@ -92,6 +106,7 @@ export function ZoomBasedStops({
         parentChildCounts={parentChildCounts}
         selectedStopId={selectedStopId}
         highlightStopIds={highlightStopIds}
+        stopDirectionMap={stopDirectionMap}
         onStopClick={onStopClick}
         opacityFactor={opacityFactor}
       />
@@ -142,6 +157,7 @@ export function ZoomBasedStops({
       parentChildCounts={parentChildCounts}
       selectedStopId={selectedStopId}
       highlightStopIds={highlightStopIds}
+      stopDirectionMap={stopDirectionMap}
       onStopClick={onStopClick}
     />
   );

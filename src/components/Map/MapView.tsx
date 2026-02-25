@@ -26,6 +26,7 @@ interface MapViewProps {
   selectedStopId: string | null;
   routeShapes: Record<string, [number, number][]>;
   routeStops: string[];
+  orderedStops?: Record<string, string[]>;
   vehicles: VehiclePosition[];
   routeType: number | null;
   routeShortName?: string;
@@ -68,6 +69,7 @@ export function MapView({
   selectedStopId,
   routeShapes,
   routeStops,
+  orderedStops,
   vehicles,
   routeType,
   routeShortName,
@@ -122,6 +124,7 @@ export function MapView({
         parentChildCounts={parentChildCounts}
         selectedStopId={selectedStopId}
         highlightStopIds={selectedRouteId ? routeStops : []}
+          orderedStops={orderedStops}
         onStopClick={onStopClick}
       />
 
@@ -146,6 +149,7 @@ export function MapView({
           <RouteShape 
             shapes={routeShapes}
             routeType={routeType}
+             orderedStops={orderedStops}
           />
           <VehicleMarkers 
             vehicles={vehicles}

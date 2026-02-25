@@ -12,6 +12,8 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, X, Train, Bus } from 'lucide-react';
 import type { Route, Stop } from '../../utils/gtfs';
+import { DirectionLegend } from '../Map/DirectionLegend';
+import { getDirectionColor } from '../Map/directionColors';
 import type { VehiclePosition } from '../../utils/vehicles';
 import {
   RouteLineDiagram,
@@ -44,30 +46,46 @@ export function RouteModal({
   orderedStops,
   stopsById,
   vehicles,
-  initialDirectionFilter = 'A',
+  // initialDirectionFilter = 'A', // unused
   onClose,
   onStopClick,
 }: RouteModalProps) {
-  const [direction, setDirection] = useState<DirectionFilter>(initialDirectionFilter);
 
-  const color = route.type === 0 ? TRAM_COLOR : BUS_COLOR;
+  // Compute direction keys and labels from orderedStops
+  const directionKeys = orderedStops
+    ? Object.keys(orderedStops).sort((a, b) => Number(a) - Number(b))
+    : ['0', '1'];
+
+  // For each direction, get the ending stop name and color
+  const directionLabels = directionKeys.map((key, idx) => {
+    const ids = orderedStops?.[key] || [];
+    const endId = ids[ids.length - 1] || ids[0] || null;
+    const stopName = endId ? (stopsById.get(endId)?.name || endId) : key;
+    return {
+      key,
+      label: stopName,
+      color: getDirectionColor(route.type ?? null, idx),
+    };
+  });
+
+  // Track selected direction by key (default to first key)
+  const [directionKey, setDirectionKey] = useState<string>(directionLabels[0]?.key || '0');
 
   // Ordered stop IDs for the active direction
   const orderedStopIds: string[] = useMemo(() => {
-    const key = direction === 'A' ? '0' : '1';
-    if (orderedStops?.[key]?.length) return orderedStops[key];
-    const fallbackKey = direction === 'A' ? '1' : '0';
-    if (orderedStops?.[fallbackKey]?.length) return orderedStops[fallbackKey];
+    if (orderedStops?.[directionKey]?.length) return orderedStops[directionKey];
     return routeStops;
-  }, [direction, orderedStops, routeStops]);
+  }, [directionKey, orderedStops, routeStops]);
 
-  // Vehicles for this direction (direction 0 = A, 1 = B)
-  const directionIndex = direction === 'A' ? 0 : 1;
+  // Vehicles for this direction (direction 0 = A, 1 = B, fallback to all)
+  const directionIndex = directionKeys.indexOf(directionKey);
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const filteredVehicles: VehiclePosition[] = useMemo(() => {
     const dir = vehicles.filter((v) => v.direction === directionIndex);
-    // If no vehicles match direction, show all (direction may be unreported)
     return dir.length > 0 ? dir : vehicles;
   }, [vehicles, directionIndex]);
+
+  const color = directionLabels[directionIndex]?.color || (route.type === 0 ? TRAM_COLOR : BUS_COLOR);
 
   const headsigns = Array.from(
     new Set(filteredVehicles.map((v) => v.headsign).filter(Boolean))
@@ -134,22 +152,23 @@ export function RouteModal({
 
           {/* Row 2: direction A/B toggle + vehicle count */}
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Direction toggle with real stop names and colors */}
             <div className="flex rounded-lg overflow-hidden border border-base-300">
-              {(['A', 'B'] as DirectionFilter[]).map((dir) => (
-                <button
-                  key={dir}
-                  onClick={() => setDirection(dir)}
-                  className={[
-                    'px-4 py-1 text-sm font-semibold transition-colors',
-                    direction === dir
-                      ? 'text-white'
-                      : 'bg-base-100 text-base-content/60 hover:bg-base-200',
-                  ].join(' ')}
-                  style={direction === dir ? { backgroundColor: color } : undefined}
-                >
-                  {dir}
-                </button>
-              ))}
+              {directionLabels.map((dir) => (
+                  <button
+                    key={dir.key}
+                    onClick={() => setDirectionKey(dir.key)}
+                    className={[
+                      'px-4 py-1 text-sm font-semibold transition-colors',
+                      directionKey === dir.key
+                        ? 'text-white'
+                        : 'bg-base-100 text-base-content/60 hover:bg-base-200',
+                    ].join(' ')}
+                    style={directionKey === dir.key ? { backgroundColor: dir.color } : undefined}
+                  >
+                    {dir.label}
+                  </button>
+                ))}
             </div>
 
             {filteredVehicles.length > 0 && (
@@ -171,6 +190,13 @@ export function RouteModal({
                 ))}
               </div>
             )}
+            
+            {/* Compact direction legend inside the modal header */}
+            {orderedStops && (
+              <div className="ml-auto mt-2 sm:mt-0">
+                <DirectionLegend orderedStops={orderedStops} stopsById={stopsById} routeType={route.type} compact />
+              </div>
+            )}
           </div>
         </div>
 
@@ -187,8 +213,8 @@ export function RouteModal({
 
             {/* Stop name list */}
             <div className="flex-1 min-w-0">
-              {stopRows.map(({ stopId, stop, idx }) => {
-                const isEndpoint = idx === 0 || idx === stopRows.length - 1;
+              {stopRows.map(({ stopId, stop }) => {
+                const isEndpoint = stopRows[0]?.stopId === stopId || stopRows[stopRows.length - 1]?.stopId === stopId;
                 const name = stop?.name ?? stopId;
                 return (
                   <button

@@ -5,6 +5,7 @@
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
+import { getDirectionColor } from './directionColors';
 
 // ── Stop colour by service type ──────────────────────────────────────────────
 function stopFillColor(stop: Stop, isSelected: boolean, isHighlighted: boolean): string {
@@ -64,6 +65,8 @@ interface StopMarkersProps {
   parentChildCounts: Map<string, number>; // platform-counts per parent station id
   selectedStopId: string | null;
   highlightStopIds: string[];
+  /** Optional mapping stopId -> direction index (0,1,...) for highlighted stops */
+  stopDirectionMap?: Record<string, number>;
   onStopClick: (stopId: string) => void;
   /** 0-1 factor applied to all marker opacity (individual mode zoom fading). Selected stops always stay at 1. */
   opacityFactor?: number;
@@ -75,6 +78,7 @@ export function StopMarkers({
   parentChildCounts,
   selectedStopId, 
   highlightStopIds,
+  stopDirectionMap,
   onStopClick,
   opacityFactor = 1
 }: StopMarkersProps) {
@@ -151,7 +155,12 @@ export function StopMarkers({
         // Skip rendering when fully transparent (perf optimisation)
         if (effectiveFactor === 0) return null;
 
-        const color = stopFillColor(stop, isSelected, isHighlighted);
+        // If highlighted and a direction map is available, use the direction color
+        let color = stopFillColor(stop, isSelected, isHighlighted);
+        if (isHighlighted && stopDirectionMap && stopDirectionMap[id] !== undefined) {
+          const dirIdx = stopDirectionMap[id];
+          color = getDirectionColor(stop.routeType ?? null, dirIdx);
+        }
         const size  = isSelected ? 30 : isHighlighted ? 26 : 24;
         const r     = isSelected ?  9 : isHighlighted ?  8 :  7;
         const icon  = makeStopIcon(color, stop.bearing, size, r, effectiveFactor);
