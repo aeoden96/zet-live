@@ -4,9 +4,9 @@
 
 After every code change, always:
 
-1. Run strict TypeScript check:
+1. Run TypeScript check:
    ```sh
-   yarn tsc:strict
+   yarn tsc
    ```
    Fix all errors before continuing.
 

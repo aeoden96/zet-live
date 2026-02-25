@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "tsc:strict": "tsc --noEmit --strict",
+    "tsc": "tsc -b --noEmit",
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {

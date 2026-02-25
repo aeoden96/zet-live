@@ -6,7 +6,7 @@
 
 import { Maximize2, X, Train, Bus, Star } from 'lucide-react';
 import { DirectionLegend } from '../Map/DirectionLegend';
-import type { Route } from '../../utils/gtfs';
+import type { Route, Stop } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
 import { useSettingsStore } from '../../stores/settingsStore';
 
@@ -112,7 +112,7 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops,
                     {/* render via component for consistency */}
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       {/* DirectionLegend inline compact */}
-                      {/* @ts-expect-error: DirectionLegend is valid here */}
+                      {/* DirectionLegend is valid here */}
                       <DirectionLegend orderedStops={orderedStops} stopsById={stopsById} routeType={route.type} compact inline />
                     </div>
                   </div>
