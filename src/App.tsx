@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings, Search, X, LocateFixed, HelpCircle } from 'lucide-react';
+import { useSelectionParams } from './hooks/useSelectionParams';
+import type { DirectionFilter } from './hooks/useSelectionParams';
 import { MapView } from './components/Map/MapView';
 import { SearchModal } from './components/common/SearchModal';
 import { RouteModal } from './components/common/RouteModal';
@@ -20,8 +22,6 @@ import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
 import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useRealtimeData } from './hooks/useRealtimeData';
 
-type DirectionFilter = 'A' | 'B';
-
 function App() {
   // Modal states
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -32,11 +32,17 @@ function App() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locateError, setLocateError] = useState<string | null>(null);
 
-  // Selection states
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-  const [selectedRouteType, setSelectedRouteType] = useState<number | null>(null);
-  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
-  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('A');
+  // URL-backed selection state (route, stop, direction)
+  const {
+    selectedRouteId,
+    selectedStopId,
+    directionFilter,
+    selectRoute,
+    clearRoute,
+    selectStop,
+    clearStop,
+  } = useSelectionParams();
+
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
@@ -91,20 +97,19 @@ function App() {
     routesById
   );
 
+  // Derive route type from loaded data (no need to store separately)
+  const selectedRouteType = selectedRouteId ? (routesById.get(selectedRouteId)?.type ?? null) : null;
+
   // Handlers
-  const handleSelectRoute = (routeId: string, routeType: number, df?: DirectionFilter | 'all') => {
-    setSelectedRouteId(routeId);
-    setSelectedRouteType(routeType);
+  const handleSelectRoute = (routeId: string, _routeType: number, df?: DirectionFilter | 'all') => {
     // Coerce 'all' (from SearchModal) to 'A'
-    if (df === 'A' || df === 'B') setDirectionFilter(df);
-    else setDirectionFilter('A');
+    const dir: DirectionFilter = df === 'A' || df === 'B' ? df : 'A';
+    selectRoute(routeId, { dir });
     setSearchModalOpen(false);
     addRecentRoute(routeId);
-    // Clear any previously-selected stop when entering route view
-    setSelectedStopId(null);
-    setStopModalOpen(false);
     // Default to small route info bar; user can expand to full RouteModal
     setRouteModalOpen(false);
+    setStopModalOpen(false);
   };
 
   const handleStopClickFromMap = (stopId: string) => {
@@ -118,7 +123,7 @@ function App() {
         // Select first platform under the first parent in the group (if available)
         const firstParentId = group.childIds[0];
         const childPlatform = stops.find(s => s.parentStation === firstParentId && s.locationType === 0);
-        setSelectedStopId(childPlatform ? childPlatform.id : firstParentId);
+        selectStop(childPlatform ? childPlatform.id : firstParentId);
       }
       return;
     }
@@ -127,20 +132,15 @@ function App() {
     if (stop && stop.locationType === 1) {
       // Parent station clicked - trigger zoom
       setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: 17 });
-      
+
       const childPlatform = stops.find(
         (s) => s.parentStation === stopId && s.locationType === 0
       );
-      if (childPlatform) {
-        setSelectedStopId(childPlatform.id);
-      } else {
-        setSelectedStopId(stopId);
-      }
+      selectStop(childPlatform ? childPlatform.id : stopId);
     } else {
-      setSelectedStopId(stopId);
+      selectStop(stopId);
       addRecentStop(stopId);
     }
-    // Show fixed stop info bar at top
   };
 
   const handleExpandStop = (stopId: string) => {
@@ -149,25 +149,23 @@ function App() {
       const childPlatform = stops.find(
         (s) => s.parentStation === stopId && s.locationType === 0
       );
-      setSelectedStopId(childPlatform ? childPlatform.id : stopId);
+      selectStop(childPlatform ? childPlatform.id : stopId);
     } else {
-      setSelectedStopId(stopId);
+      selectStop(stopId);
     }
     addRecentStop(stopId);
     setStopModalOpen(true);
   };
 
   const handleStopClickFromRoute = (stopId: string) => {
-    setSelectedStopId(stopId);
+    selectStop(stopId);
     setRouteModalOpen(false);
     // Keep stopModalOpen false — stop appears as small StopInfoBar below the RouteInfoBar
   };
 
-  const handleRouteClickFromStop = (routeId: string, routeType: number) => {
-    setSelectedRouteId(routeId);
-    setSelectedRouteType(routeType);
+  const handleRouteClickFromStop = (routeId: string, _routeType: number) => {
+    selectRoute(routeId);
     setStopModalOpen(false);
-    setSelectedStopId(null);
     // Default to small route info bar
     setRouteModalOpen(false);
   };
@@ -182,19 +180,17 @@ function App() {
   };
 
   const handleClearRoute = () => {
-    setSelectedRouteId(null);
-    setSelectedRouteType(null);
-    setDirectionFilter('A');
+    clearRoute();
   };
 
   const handleCloseStop = () => {
     setStopModalOpen(false);
-    setSelectedStopId(null);
+    clearStop();
   };
 
   const handleSelectStop = (stopId: string) => {
     const stop = stopsById.get(stopId);
-    setSelectedStopId(stopId);
+    selectStop(stopId);
     addRecentStop(stopId);
     if (stop) {
       setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: 17 });
@@ -226,7 +222,7 @@ function App() {
   };
 
   const handleCloseStopInfo = () => {
-    setSelectedStopId(null);
+    clearStop();
   };
 
   // Loading state
