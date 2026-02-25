@@ -5,9 +5,9 @@
  */
 
 import { Maximize2, X, Train, Bus, Star } from 'lucide-react';
-import { DirectionLegend } from '../Map/DirectionLegend';
 import type { Route, Stop } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
+import { getDirectionColor } from '../Map/directionColors';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 interface RouteInfoBarProps {
@@ -28,13 +28,13 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops,
   const { favouriteRouteIds, toggleFavouriteRoute } = useSettingsStore();
   const isFav = favouriteRouteIds.includes(route.id);
 
-  const vehicleCount = vehicles.length;
-  const vehicleLabel =
-    vehicleCount === 0
-      ? 'Nema aktivnih vozila'
-      : vehicleCount === 1
-      ? `1 vozilo aktivno`
-      : `${vehicleCount} vozila aktivna`;
+  // Group vehicles by direction
+  const vehiclesByDirection: Record<string, VehiclePosition[]> = {};
+  if (orderedStops) {
+    Object.keys(orderedStops).forEach((dir) => {
+      vehiclesByDirection[dir] = vehicles.filter((v) => String(v.direction) === dir);
+    });
+  }
 
   return (
     <div
@@ -88,39 +88,47 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops,
           </div>
         </div>
 
-        {/* Vehicle status */}
-        <div className="flex items-center gap-1.5 text-xs text-base-content/60">
-          {isTram ? (
-            <Train className="w-3.5 h-3.5 shrink-0" />
-          ) : (
-            <Bus className="w-3.5 h-3.5 shrink-0" />
-          )}
-          <span className={vehicleCount > 0 ? 'text-success font-medium' : ''}>
-            {vehicleLabel}
-          </span>
-          {vehicleCount > 0 && (
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse ml-0.5" />
-          )}
-          {/* Inline compact direction legend (single-line) */}
-          {orderedStops && stopsById && (
-            <div className="ml-3 hidden sm:flex items-center">
-              <div className="text-xs text-base-content/70 mr-2">Smjer:</div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  {/* use DirectionLegend inline */}
-                  <div className="flex items-center gap-2">
-                    {/* render via component for consistency */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {/* DirectionLegend inline compact */}
-                      {/* DirectionLegend is valid here */}
-                      <DirectionLegend orderedStops={orderedStops} stopsById={stopsById} routeType={route.type} compact inline />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Vehicle status per direction */}
+        {orderedStops && stopsById ? (
+          <div className="flex items-center gap-3 text-xs flex-wrap">
+            {isTram ? (
+              <Train className="w-3.5 h-3.5 shrink-0 text-base-content/50" />
+            ) : (
+              <Bus className="w-3.5 h-3.5 shrink-0 text-base-content/50" />
+            )}
+            {Object.keys(orderedStops).sort((a, b) => Number(a) - Number(b)).map((dir, idx) => {
+              const count = vehiclesByDirection[dir]?.length || 0;
+              const ids = orderedStops[dir] || [];
+              const endId = ids[ids.length - 1] || ids[0] || null;
+              const stopName = endId ? (stopsById.get(endId)?.name || endId) : '—';
+              const active = count > 0;
+              return (
+                <span key={dir} className="flex items-center gap-1">
+                  <span style={{
+                    display: 'inline-block',
+                    width: 10,
+                    height: 10,
+                    borderRadius: 2,
+                    background: getDirectionColor(route.type, idx),
+                    flexShrink: 0,
+                  }} />
+                  <span className="text-base-content/70 truncate max-w-[110px]">{stopName}</span>
+                  <span className={active ? 'font-semibold text-success' : 'text-base-content/40'}>{count}</span>
+                  {active && <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />}
+                </span>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+            {isTram ? (
+              <Train className="w-3.5 h-3.5 shrink-0" />
+            ) : (
+              <Bus className="w-3.5 h-3.5 shrink-0" />
+            )}
+            <span>Nema aktivnih vozila</span>
+          </div>
+        )}
       </div>
     </div>
   );

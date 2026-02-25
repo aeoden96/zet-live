@@ -9,10 +9,9 @@
  * the dots on the line always align with the corresponding stop rows.
  */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, X, Train, Bus } from 'lucide-react';
 import type { Route, Stop } from '../../utils/gtfs';
-import { DirectionLegend } from '../Map/DirectionLegend';
 import { getDirectionColor } from '../Map/directionColors';
 import type { VehiclePosition } from '../../utils/vehicles';
 import {
@@ -72,25 +71,16 @@ export function RouteModal({
   const [directionKey, setDirectionKey] = useState<string>(directionLabels[0]?.key || '0');
 
   // Ordered stop IDs for the active direction
-  const orderedStopIds: string[] = useMemo(() => {
-    if (orderedStops?.[directionKey]?.length) return orderedStops[directionKey];
-    return routeStops;
-  }, [directionKey, orderedStops, routeStops]);
+  const orderedStopIds: string[] = orderedStops?.[directionKey]?.length
+    ? orderedStops[directionKey]
+    : routeStops;
 
   // Vehicles for this direction (direction 0 = A, 1 = B, fallback to all)
   const directionIndex = directionKeys.indexOf(directionKey);
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const filteredVehicles: VehiclePosition[] = useMemo(() => {
-    const dir = vehicles.filter((v) => v.direction === directionIndex);
-    return dir.length > 0 ? dir : vehicles;
-  }, [vehicles, directionIndex]);
+  const dirVehicles = vehicles.filter((v) => v.direction === directionIndex);
+  const filteredVehicles: VehiclePosition[] = dirVehicles.length > 0 ? dirVehicles : vehicles;
 
   const color = directionLabels[directionIndex]?.color || (route.type === 0 ? TRAM_COLOR : BUS_COLOR);
-
-  const headsigns = Array.from(
-    new Set(filteredVehicles.map((v) => v.headsign).filter(Boolean))
-  );
-  const vehicleLabel = `${filteredVehicles.length} vozil${filteredVehicles.length === 1 ? 'o' : 'a'}`;
 
   if (!isOpen) return null;
 
@@ -150,53 +140,39 @@ export function RouteModal({
             </button>
           </div>
 
-          {/* Row 2: direction A/B toggle + vehicle count */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Direction toggle with real stop names and colors */}
-            <div className="flex rounded-lg overflow-hidden border border-base-300">
-              {directionLabels.map((dir) => (
-                  <button
-                    key={dir.key}
-                    onClick={() => setDirectionKey(dir.key)}
-                    className={[
-                      'px-4 py-1 text-sm font-semibold transition-colors',
-                      directionKey === dir.key
-                        ? 'text-white'
-                        : 'bg-base-100 text-base-content/60 hover:bg-base-200',
-                    ].join(' ')}
-                    style={directionKey === dir.key ? { backgroundColor: dir.color } : undefined}
-                  >
-                    {dir.label}
-                  </button>
-                ))}
-            </div>
-
-            {filteredVehicles.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="inline-block w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="text-xs font-medium text-base-content/70">
-                  {vehicleLabel} u prometu
-                </span>
-              </div>
-            )}
-
-            {headsigns.length > 0 && (
-              <div className="flex flex-wrap gap-1 w-full mt-0.5">
-                {headsigns.map((h) => (
-                  <span key={h} className="badge badge-xs opacity-70">{h}</span>
-                ))}
-              </div>
-            )}
-            
-            {/* Compact direction legend inside the modal header */}
-            {orderedStops && (
-              <div className="ml-auto mt-2 sm:mt-0">
-                <DirectionLegend orderedStops={orderedStops} stopsById={stopsById} routeType={route.type} compact />
-              </div>
-            )}
+          {/* Row 2: full-width direction toggle with live vehicle counts */}
+          <div className="flex rounded-lg overflow-hidden border border-base-300 w-full">
+            {directionLabels.map((dir, idx) => {
+              const dirCount = vehicles.filter((v) => v.direction === idx).length;
+              const isActive = directionKey === dir.key;
+              const VehicleIcon = route.type === 0 ? Train : Bus;
+              return (
+                <button
+                  key={dir.key}
+                  onClick={() => setDirectionKey(dir.key)}
+                  className={[
+                    'flex-1 flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-semibold transition-colors min-w-0',
+                    isActive ? 'text-white' : 'bg-base-100 text-base-content/60 hover:bg-base-200',
+                  ].join(' ')}
+                  style={isActive ? { backgroundColor: dir.color } : undefined}
+                >
+                  <span className="truncate">{dir.label}</span>
+                  <span className={[
+                    'flex items-center gap-1 shrink-0 text-xs font-bold tabular-nums',
+                    isActive ? 'text-white/90' : dirCount > 0 ? 'text-success' : 'opacity-30',
+                  ].join(' ')}>
+                    {dirCount > 0 && (
+                      <span className={[
+                        'w-1.5 h-1.5 rounded-full animate-pulse',
+                        isActive ? 'bg-white/80' : 'bg-success',
+                      ].join(' ')} />
+                    )}
+                    <VehicleIcon className="w-3 h-3" />
+                    {dirCount}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
