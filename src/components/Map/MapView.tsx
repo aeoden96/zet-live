@@ -14,6 +14,7 @@ import { ParentStationZoomController } from './ParentStationZoomController';
 import { OffScreenStopIndicator } from './OffScreenStopIndicator';
 import { SpiderfierProvider } from './SpiderfierContext';
 import { SpiderfierManager } from './SpiderfierManager';
+import { BikeStations } from './BikeStations';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
@@ -35,6 +36,7 @@ interface MapViewProps {
   onStopClick: (stopId: string) => void;
   onVehicleClick?: (routeId: string, routeType: number) => void;
   showAllVehicles?: boolean;
+  showBikeStations?: boolean;
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
@@ -78,6 +80,7 @@ export function MapView({
   onStopClick,
   onVehicleClick,
   showAllVehicles = false,
+  showBikeStations = false,
   allVehicles = [],
   userLocation,
   // routesById and serviceId are declared in the interface for future use
@@ -96,74 +99,76 @@ export function MapView({
 
   return (
     <SpiderfierProvider>
-    <MapContainer
-      center={ZAGREB_CENTER}
-      zoom={DEFAULT_ZOOM}
-      minZoom={11}
-      maxZoom={18}
-      className="w-full h-full"
-      style={{ width: '100%', height: '100%' }}
-      zoomControl={false}
-    >
-      <TileLayer
-        key={providerId}
-        attribution={tileConfig.attribution}
-        url={tileConfig.url}
-      />
-
-      <SpiderfierManager />
-      
-      <ParentStationZoomController
-        zoomTarget={parentStationZoomTarget}
-        onZoomComplete={onZoomComplete}
-      />
-
-      {selectedStop && onFlyToStop && (
-        <OffScreenStopIndicator stop={selectedStop} onFlyTo={onFlyToStop} />
-      )}
-      
-      <ZoomBasedStops 
-        parentStations={parentStations}
-        groupedParentStations={groupedParentStations}
-        platformStops={platformStops}
-        parentChildCounts={parentChildCounts}
-        selectedStopId={selectedStopId}
-        highlightStopIds={selectedRouteId ? routeStops : []}
-          orderedStops={orderedStops}
-        onStopClick={onStopClick}
-      />
-
-      {userLocation && (
-        <Marker
-          position={[userLocation.lat, userLocation.lon]}
-          icon={L.divIcon({
-            html: `<div class="user-location-marker"><span class="pulse"></span><span class="dot"></span></div>`,
-            className: 'user-location-icon',
-            iconSize: [44, 44],
-            iconAnchor: [22, 22],
-          })}
+      <MapContainer
+        center={ZAGREB_CENTER}
+        zoom={DEFAULT_ZOOM}
+        minZoom={11}
+        maxZoom={18}
+        className="w-full h-full"
+        style={{ width: '100%', height: '100%' }}
+        zoomControl={false}
+      >
+        <TileLayer
+          key={providerId}
+          attribution={tileConfig.attribution}
+          url={tileConfig.url}
         />
-      )}
-      
-      {showAllVehicles && (
-        <AllVehicleMarkers vehicles={allVehicles} onVehicleClick={onVehicleClick} />
-      )}
-      
-      {selectedRouteId && (
-        <>
-          <RouteShape 
-            shapes={routeShapes}
-            routeType={routeType}
-             orderedStops={orderedStops}
+
+        <SpiderfierManager />
+
+        <ParentStationZoomController
+          zoomTarget={parentStationZoomTarget}
+          onZoomComplete={onZoomComplete}
+        />
+
+        {selectedStop && onFlyToStop && (
+          <OffScreenStopIndicator stop={selectedStop} onFlyTo={onFlyToStop} />
+        )}
+
+        <ZoomBasedStops
+          parentStations={parentStations}
+          groupedParentStations={groupedParentStations}
+          platformStops={platformStops}
+          parentChildCounts={parentChildCounts}
+          selectedStopId={selectedStopId}
+          highlightStopIds={selectedRouteId ? routeStops : []}
+          orderedStops={orderedStops}
+          onStopClick={onStopClick}
+        />
+
+        {userLocation && (
+          <Marker
+            position={[userLocation.lat, userLocation.lon]}
+            icon={L.divIcon({
+              html: `<div class="user-location-marker"><span class="pulse"></span><span class="dot"></span></div>`,
+              className: 'user-location-icon',
+              iconSize: [44, 44],
+              iconAnchor: [22, 22],
+            })}
           />
-          <VehicleMarkers 
-            vehicles={vehicles}
-            routeType={routeType}
-            routeShortName={routeShortName}
-          />
-        </>
-      )}
-    </MapContainer>
+        )}
+
+        {showAllVehicles && (
+          <AllVehicleMarkers vehicles={allVehicles} onVehicleClick={onVehicleClick} />
+        )}
+
+        <BikeStations show={showBikeStations} />
+
+        {selectedRouteId && (
+          <>
+            <RouteShape
+              shapes={routeShapes}
+              routeType={routeType}
+              orderedStops={orderedStops}
+            />
+            <VehicleMarkers
+              vehicles={vehicles}
+              routeType={routeType}
+              routeShortName={routeShortName}
+            />
+          </>
+        )}
+      </MapContainer>
     </SpiderfierProvider>
   );
 }

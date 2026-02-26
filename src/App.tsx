@@ -44,6 +44,7 @@ function App() {
   } = useSelectionParams();
 
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
+  const showBikeStations = useSettingsStore((s) => s.showBikeStations);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
   const setOnboardingStep = useSettingsStore((s) => s.setOnboardingStep);
@@ -53,13 +54,13 @@ function App() {
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
 
   // Load initial data
-  const { 
+  const {
     stops,
-    routes, 
-    stopsById, 
-    routesById, 
+    routes,
+    stopsById,
+    routesById,
     groupedParentStations,
-    calendar, 
+    calendar,
     loading: initialLoading,
     error: initialError
   } = useInitialData();
@@ -270,6 +271,7 @@ function App() {
         onStopClick={handleStopClickFromMap}
         onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}
+        showBikeStations={showBikeStations}
         allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}
         serviceId={serviceId}
@@ -313,7 +315,7 @@ function App() {
             selectedRouteId={selectedRouteId}
             onRouteClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
           />
-          
+
           {/* Legend popup */}
           {legendOpen && (
             <div className="bg-base-100 rounded-xl shadow-xl border border-base-200 p-3 w-52 text-xs space-y-2">
