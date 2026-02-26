@@ -2,7 +2,9 @@
  * Render stop markers on the map
  */
 
-import { Marker, Polyline } from 'react-leaflet';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { Marker, Polyline, useMap } from 'react-leaflet';
+import { useSpiderfierContext } from './SpiderfierContext';
 import L from 'leaflet';
 import type { Stop, ParentGroup } from '../../utils/gtfs';
 import { getDirectionColor } from './directionColors';
@@ -66,6 +68,69 @@ function makeStopIcon(
       `${safeLabel ? `<span class="stop-label">${safeLabel}</span>` : ''}` +
     `</div>`;
   return L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [cx, cx] });
+}
+
+// ── Platform stop sub-component (registers with spiderfier) ────────────────
+
+interface PlatformStopMarkerProps {
+  stop: Stop;
+  isSelected: boolean;
+  isHighlighted: boolean;
+  color: string;
+  effectiveFactor: number;
+  onStopClick: (id: string) => void;
+}
+
+function PlatformStopMarker({
+  stop,
+  isSelected,
+  isHighlighted,
+  color,
+  effectiveFactor,
+  onStopClick,
+}: PlatformStopMarkerProps) {
+  const map = useMap();
+  const ctx = useSpiderfierContext();
+
+  // Compute icon before hooks/effects so iconRef always holds the latest value
+  const size = isSelected ? 30 : isHighlighted ? 26 : 24;
+  const r    = isSelected ?  9 : isHighlighted ?  8 :  7;
+  const icon = makeStopIcon(color, stop.bearing, size, r, effectiveFactor);
+  const iconRef = useRef(icon);
+  useLayoutEffect(() => { iconRef.current = icon; });
+
+  useEffect(() => {
+    if (!ctx) return;
+    ctx.register({
+      id: stop.id,
+      lat: stop.lat,
+      lon: stop.lon,
+      label: stop.name,
+      onClick: () => onStopClick(stop.id),
+      getIcon: () => iconRef.current,
+    });
+    return () => ctx.unregister(stop.id);
+  }, [stop.id, stop.lat, stop.lon, stop.name, onStopClick, ctx]);
+
+  // Hide when the SpiderfierManager is rendering this marker in the fan
+  if (ctx?.isHidden(stop.id)) return null;
+
+  return (
+    <Marker
+      position={[stop.lat, stop.lon]}
+      icon={icon}
+      eventHandlers={{
+        click: (e) => {
+          e.originalEvent.stopPropagation();
+          if (ctx) {
+            ctx.triggerSpiderfy(stop.id, map);
+          } else {
+            onStopClick(stop.id);
+          }
+        },
+      }}
+    />
+  );
 }
 
 interface StopMarkersProps {
@@ -143,7 +208,7 @@ export function StopMarkers({
     };
 
     const MERGE_THRESHOLD_METERS = 60; // parents within this distance will share a label
-    nameGroups.forEach((entry, key) => {
+    nameGroups.forEach((entry, _key) => {
       if (entry.parents.length === 1) {
         const p = entry.parents[0];
         parentLabelGroups.push({ label: p.name, lat: p.lat, lon: p.lon, children: entry.children });
@@ -245,17 +310,15 @@ export function StopMarkers({
           const dirIdx = stopDirectionMap[id];
           color = getDirectionColor(stop.routeType ?? null, dirIdx);
         }
-        const size  = isSelected ? 30 : isHighlighted ? 26 : 24;
-        const r     = isSelected ?  9 : isHighlighted ?  8 :  7;
-        // Platform stops should not have inline labels; parent station labels are rendered separately.
-        const icon  = makeStopIcon(color, stop.bearing, size, r, effectiveFactor);
-
         return (
-          <Marker
+          <PlatformStopMarker
             key={stop.id}
-            position={[stop.lat, stop.lon]}
-            icon={icon}
-            eventHandlers={{ click: () => onStopClick(stop.id) }}
+            stop={stop}
+            isSelected={isSelected}
+            isHighlighted={isHighlighted}
+            color={color}
+            effectiveFactor={effectiveFactor}
+            onStopClick={onStopClick}
           />
         );
       })}
@@ -264,14 +327,19 @@ export function StopMarkers({
         <span key={`parent-label-${idx}`}>
           <Marker
             position={[lat, lon]}
-            icon={L.divIcon({ html: `<span class="parent-station-label">${String(label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`, className: '', iconSize: [0, 0], iconAnchor: [0, 0] })}
+            icon={L.divIcon({
+              html: `<span class="parent-station-label">${String(label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`,
+              className: '',
+              iconSize: [0, 0],
+              iconAnchor: [0, 0],
+            })}
             interactive={false}
           />
           {children.map((c) => (
             <Polyline
               key={`line-${idx}-${c.id}`}
               positions={[[lat, lon], [c.lat, c.lon]]}
-              pathOptions={{ color: '#6b7280', weight: 1, opacity: 0.9 }}
+              pathOptions={{ color: '#9ca3af', weight: 0.8, opacity: 0.45, dashArray: '3 4' }}
             />
           ))}
         </span>

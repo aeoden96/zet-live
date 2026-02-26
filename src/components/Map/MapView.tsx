@@ -12,6 +12,8 @@ import { VehicleMarkers } from './VehicleMarkers';
 import { AllVehicleMarkers } from './AllVehicleMarkers';
 import { ParentStationZoomController } from './ParentStationZoomController';
 import { OffScreenStopIndicator } from './OffScreenStopIndicator';
+import { SpiderfierProvider } from './SpiderfierContext';
+import { SpiderfierManager } from './SpiderfierManager';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
@@ -93,6 +95,7 @@ export function MapView({
   const tileConfig = TILE_PROVIDERS[providerId];
 
   return (
+    <SpiderfierProvider>
     <MapContainer
       center={ZAGREB_CENTER}
       zoom={DEFAULT_ZOOM}
@@ -107,6 +110,8 @@ export function MapView({
         attribution={tileConfig.attribution}
         url={tileConfig.url}
       />
+
+      <SpiderfierManager />
       
       <ParentStationZoomController
         zoomTarget={parentStationZoomTarget}
@@ -159,5 +164,6 @@ export function MapView({
         </>
       )}
     </MapContainer>
+    </SpiderfierProvider>
   );
 }

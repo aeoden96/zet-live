@@ -318,8 +318,10 @@ html, body {
 .parent-station-label {
   position: absolute;
   left: 50%;
-  top: -8px;
-  transform: translate(-50%, -100%);
+  /* Center label at the anchor point and nudge 5 px down so it sits
+     exactly where connector lines converge */
+  top: 0;
+  transform: translate(-50%, calc(-50% + 5px));
   background: rgba(255,255,255,0.95);
   color: #111827;
   padding: 3px 8px;
@@ -329,4 +331,117 @@ html, body {
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 3px 8px rgba(0,0,0,0.14);
+}
+
+/* ── Spiderfier ──────────────────────────────────────────────────────────── */
+
+/**
+ * .spider-node-wrap  – animated envelope placed around real marker icons.
+ *   Each item gets a staggered scale-in via --spider-idx CSS var.
+ * .spider-node-dot   – fallback small dot when no base icon is available.
+ * .spider-leg        – SVG path element of the dashed leg line (fade-in).
+ */
+
+.spider-node-wrap {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  animation: spider-expand-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--spider-idx, 0) * 35ms);
+  transform-origin: center;
+}
+
+@keyframes spider-expand-in {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Fallback neutral dot rendered when no base icon was found */
+.spider-node-dot {
+  width: 14px;
+  height: 14px;
+  background: #374151;
+  border: 2.5px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+}
+.spider-node-dot:hover {
+  background: #111827;
+}
+
+/* Leg lines: fade in slightly after expansion starts */
+.spider-leg {
+  animation: spider-leg-fadein 0.35s ease-out both;
+  animation-delay: 30ms;
+}
+
+@keyframes spider-leg-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Single encompassing background circle behind all spider fan nodes */
+.spider-bg-circle {
+  animation: spider-bg-fadein 0.22s ease-out both;
+}
+
+@keyframes spider-bg-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Scrollable list popup for large clusters (> MAX_SPIDER_FAN items) */
+.spider-list-popup {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.20);
+  padding: 6px 4px;
+  min-width: 176px;
+  max-width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
+  /* Ensure the popup floats above all map layers */
+  position: relative;
+  z-index: 1300;
+}
+.dark .spider-list-popup {
+  background: #1f2937;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+}
+
+.spider-list-header {
+  font-size: 11px;
+  color: #6b7280;
+  padding: 3px 10px 5px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 2px;
+}
+.dark .spider-list-header {
+  color: #9ca3af;
+  border-bottom-color: #374151;
+}
+
+.spider-list-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #111827;
+  font-size: 13px;
+  line-height: 1.3;
+  transition: background 0.1s ease;
+}
+.spider-list-item:hover {
+  background: #f3f4f6;
+}
+.dark .spider-list-item {
+  color: #f9fafb;
+}
+.dark .spider-list-item:hover {
+  background: #374151;
 }
