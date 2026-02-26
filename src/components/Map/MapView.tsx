@@ -15,7 +15,9 @@ import { OffScreenStopIndicator } from './OffScreenStopIndicator';
 import { SpiderfierProvider } from './SpiderfierContext';
 import { SpiderfierManager } from './SpiderfierManager';
 import { BikeStations } from './BikeStations';
+import { RoadClosures } from './RoadClosures';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useRoadClosures } from '../../hooks/useRoadClosures';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
 const DEFAULT_ZOOM = 13;
@@ -37,6 +39,7 @@ interface MapViewProps {
   onVehicleClick?: (routeId: string, routeType: number) => void;
   showAllVehicles?: boolean;
   showBikeStations?: boolean;
+  showRoadClosures?: boolean;
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
@@ -81,6 +84,7 @@ export function MapView({
   onVehicleClick,
   showAllVehicles = false,
   showBikeStations = false,
+  showRoadClosures = false,
   allVehicles = [],
   userLocation,
   // routesById and serviceId are declared in the interface for future use
@@ -96,6 +100,9 @@ export function MapView({
     ? (theme === 'dark' ? 'dark-matter' : 'osm')
     : (theme === 'dark' ? 'dark-matter' : 'positron');
   const tileConfig = TILE_PROVIDERS[providerId];
+
+  // Fetch road closures if enabled
+  const { closures } = useRoadClosures(showRoadClosures);
 
   return (
     <SpiderfierProvider>
@@ -155,6 +162,7 @@ export function MapView({
         )}
 
         <BikeStations show={showBikeStations} />
+        <RoadClosures show={showRoadClosures} closures={closures} />
 
         {selectedRouteId && (
           <>

@@ -45,6 +45,7 @@ function App() {
 
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
   const showBikeStations = useSettingsStore((s) => s.showBikeStations);
+  const showRoadClosures = useSettingsStore((s) => s.showRoadClosures);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
   const setOnboardingStep = useSettingsStore((s) => s.setOnboardingStep);
@@ -272,6 +273,7 @@ function App() {
         onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}
         showBikeStations={showBikeStations}
+        showRoadClosures={showRoadClosures}
         allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}
         serviceId={serviceId}
