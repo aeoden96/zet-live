@@ -297,3 +297,36 @@ html, body {
   70% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
   100% { opacity: 0; }
 }
+
+/* Platform stop label shown at max zoom */
+.stop-label {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translate(-50%, -100%);
+  background: rgba(255,255,255,0.92);
+  color: #111827;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Parent station label (same visual style but slightly bolder) */
+.parent-station-label {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  transform: translate(-50%, -100%);
+  background: rgba(255,255,255,0.95);
+  color: #111827;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.14);
+}

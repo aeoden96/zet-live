@@ -55,6 +55,9 @@ export function ZoomBasedStops({
   // Pre-compute sets for route-based filtering (must be before any early return)
   const highlightSet = useMemo(() => new Set(highlightStopIds), [highlightStopIds]);
 
+  // Show labels when the map is at (or above) its max zoom.
+  const showLabels = Math.round(zoom) >= map.getMaxZoom();
+
   // Build a mapping stopId -> direction index (0,1,...) if orderedStops provided
   const stopDirectionMap = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {};
@@ -104,11 +107,13 @@ export function ZoomBasedStops({
         stops={visiblePlatforms}
         isParentStationView={false}
         parentChildCounts={parentChildCounts}
+        parentStations={parentStations}
         selectedStopId={selectedStopId}
         highlightStopIds={highlightStopIds}
         stopDirectionMap={stopDirectionMap}
         onStopClick={onStopClick}
         opacityFactor={opacityFactor}
+        showLabels={showLabels}
       />
     );
   }
@@ -159,6 +164,7 @@ export function ZoomBasedStops({
       highlightStopIds={highlightStopIds}
       stopDirectionMap={stopDirectionMap}
       onStopClick={onStopClick}
+      showLabels={showLabels}
     />
   );
 }
