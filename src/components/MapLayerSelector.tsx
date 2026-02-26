@@ -121,7 +121,7 @@ export function MapLayerSelector({ onHelpClick, onLocateClick, locating = false 
     },
     {
       key: 'vehicles',
-      label: 'Sva vozila',
+      label: 'Javni prijevoz',
       icon: <Bus className="w-5 h-5" />,
       angle: 270,
       active: showAllVehicles,
@@ -176,144 +176,144 @@ export function MapLayerSelector({ onHelpClick, onLocateClick, locating = false 
 
   const overlay = visible
     ? createPortal(
-        <>
-          {/* Backdrop — click to close */}
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9998,
-              backdropFilter: hubAtCenter ? 'blur(6px)' : 'blur(0px)',
-              backgroundColor: hubAtCenter ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0)',
-              transition: 'backdrop-filter 320ms ease, background-color 320ms ease',
-            }}
-            onPointerDown={() => setOpen(false)}
-          />
+      <>
+        {/* Backdrop — click to close */}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9998,
+            backdropFilter: hubAtCenter ? 'blur(6px)' : 'blur(0px)',
+            backgroundColor: hubAtCenter ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0)',
+            transition: 'backdrop-filter 320ms ease, background-color 320ms ease',
+          }}
+          onPointerDown={() => setOpen(false)}
+        />
 
-          {/* Hub container — flows from corner to center and back */}
-          <div
+        {/* Hub container — flows from corner to center and back */}
+        <div
+          style={{
+            position: 'fixed',
+            zIndex: 9999,
+            left: hubX,
+            top: hubY,
+            width: HUB_SIZE,
+            height: HUB_SIZE,
+            transition: 'left 370ms cubic-bezier(0.34,1.4,0.64,1), top 370ms cubic-bezier(0.34,1.4,0.64,1)',
+          }}
+        >
+          {/* SVG spoke lines */}
+          <svg
             style={{
-              position: 'fixed',
-              zIndex: 9999,
-              left: hubX,
-              top: hubY,
-              width: HUB_SIZE,
-              height: HUB_SIZE,
-              transition: 'left 370ms cubic-bezier(0.34,1.4,0.64,1), top 370ms cubic-bezier(0.34,1.4,0.64,1)',
+              position: 'absolute',
+              left: -(RADIUS + 32),
+              top: -(RADIUS + 32),
+              width: (RADIUS + 32) * 2 + HUB_SIZE,
+              height: (RADIUS + 32) * 2 + HUB_SIZE,
+              pointerEvents: 'none',
+              overflow: 'visible',
             }}
+            aria-hidden="true"
           >
-            {/* SVG spoke lines */}
-            <svg
-              style={{
-                position: 'absolute',
-                left: -(RADIUS + 32),
-                top: -(RADIUS + 32),
-                width: (RADIUS + 32) * 2 + HUB_SIZE,
-                height: (RADIUS + 32) * 2 + HUB_SIZE,
-                pointerEvents: 'none',
-                overflow: 'visible',
-              }}
-              aria-hidden="true"
-            >
-              {items.map((item, i) => {
-                const rad = degToRad(item.angle);
-                const dx = Math.cos(rad) * RADIUS;
-                const dy = -Math.sin(rad) * RADIUS;
-                const ox = RADIUS + 32 + hubCenter;
-                const oy = RADIUS + 32 + hubCenter;
-                return (
-                  <line
-                    key={item.key}
-                    x1={ox}
-                    y1={oy}
-                    x2={ox + dx}
-                    y2={oy + dy}
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 3"
-                    style={{
-                      transition: `opacity 250ms ease ${50 + i * 30}ms`,
-                      opacity: expanded ? 0.35 : 0,
-                    }}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Radial items */}
             {items.map((item, i) => {
               const rad = degToRad(item.angle);
               const dx = Math.cos(rad) * RADIUS;
               const dy = -Math.sin(rad) * RADIUS;
-              const delay = expanded ? i * 40 : (items.length - 1 - i) * 30;
-              const isToggle = item.onToggle != null;
-
+              const ox = RADIUS + 32 + hubCenter;
+              const oy = RADIUS + 32 + hubCenter;
               return (
-                <div
+                <line
                   key={item.key}
+                  x1={ox}
+                  y1={oy}
+                  x2={ox + dx}
+                  y2={oy + dy}
+                  stroke="white"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 3"
                   style={{
-                    position: 'absolute',
-                    left: hubCenter + (expanded ? dx : 0),
-                    top: hubCenter + (expanded ? dy : 0),
-                    transform: 'translate(-50%, -50%)',
-                    transition: `left ${expanded ? 210 + delay : 150}ms ease,
-                                 top ${expanded ? 210 + delay : 150}ms ease,
-                                 opacity ${expanded ? 190 + delay : 110}ms ease`,
-                    opacity: expanded ? 1 : 0,
-                    pointerEvents: expanded ? 'auto' : 'none',
+                    transition: `opacity 250ms ease ${50 + i * 30}ms`,
+                    opacity: expanded ? 0.35 : 0,
                   }}
-                >
-                  <div className="flex flex-col items-center gap-0.5">
-                    <button
-                      className={`btn btn-circle btn-sm w-11 h-11 shadow-md border-2 transition-colors
-                        ${isToggle && item.active
-                          ? `${item.activeClass} border-transparent`
-                          : !isToggle
-                            ? `btn-neutral border-transparent hover:${item.activeClass}`
-                            : 'btn-neutral border-transparent'
-                        }`}
-                      onClick={() => {
-                        if (item.onAction) item.onAction();
-                        else if (item.onToggle) item.onToggle();
-                      }}
-                      title={item.label}
-                    >
-                      {item.icon}
-                    </button>
-                    <span
-                      className="text-[9px] font-semibold leading-tight whitespace-nowrap
-                        bg-base-100/85 backdrop-blur-sm text-base-content px-1.5 py-0.5 rounded-full
-                        border border-base-200/50 shadow-sm"
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                </div>
+                />
               );
             })}
+          </svg>
 
-            {/* Center close button */}
-            <button
-              className="btn btn-primary btn-circle shadow-xl"
-              style={{
-                width: HUB_SIZE,
-                height: HUB_SIZE,
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                transition: 'opacity 200ms ease',
-                opacity: hubAtCenter ? 1 : 0,
-                pointerEvents: hubAtCenter ? 'auto' : 'none',
-              }}
-              onClick={() => setOpen(false)}
-              title="Zatvori izbornik"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </>,
-        document.body,
-      )
+          {/* Radial items */}
+          {items.map((item, i) => {
+            const rad = degToRad(item.angle);
+            const dx = Math.cos(rad) * RADIUS;
+            const dy = -Math.sin(rad) * RADIUS;
+            const delay = expanded ? i * 40 : (items.length - 1 - i) * 30;
+            const isToggle = item.onToggle != null;
+
+            return (
+              <div
+                key={item.key}
+                style={{
+                  position: 'absolute',
+                  left: hubCenter + (expanded ? dx : 0),
+                  top: hubCenter + (expanded ? dy : 0),
+                  transform: 'translate(-50%, -50%)',
+                  transition: `left ${expanded ? 210 + delay : 150}ms ease,
+                                 top ${expanded ? 210 + delay : 150}ms ease,
+                                 opacity ${expanded ? 190 + delay : 110}ms ease`,
+                  opacity: expanded ? 1 : 0,
+                  pointerEvents: expanded ? 'auto' : 'none',
+                }}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <button
+                    className={`btn btn-circle btn-sm w-11 h-11 shadow-md border-2 transition-colors
+                        ${isToggle && item.active
+                        ? `${item.activeClass} border-transparent`
+                        : !isToggle
+                          ? `btn-neutral border-transparent hover:${item.activeClass}`
+                          : 'btn-neutral border-transparent'
+                      }`}
+                    onClick={() => {
+                      if (item.onAction) item.onAction();
+                      else if (item.onToggle) item.onToggle();
+                    }}
+                    title={item.label}
+                  >
+                    {item.icon}
+                  </button>
+                  <span
+                    className="text-[9px] font-semibold leading-tight whitespace-nowrap
+                        bg-base-100/85 backdrop-blur-sm text-base-content px-1.5 py-0.5 rounded-full
+                        border border-base-200/50 shadow-sm"
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Center close button */}
+          <button
+            className="btn btn-primary btn-circle shadow-xl"
+            style={{
+              width: HUB_SIZE,
+              height: HUB_SIZE,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              transition: 'opacity 200ms ease',
+              opacity: hubAtCenter ? 1 : 0,
+              pointerEvents: hubAtCenter ? 'auto' : 'none',
+            }}
+            onClick={() => setOpen(false)}
+            title="Zatvori izbornik"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </>,
+      document.body,
+    )
     : null;
 
   return (

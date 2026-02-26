@@ -166,9 +166,9 @@ export function SettingsPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-base-content/70" />
-                  <p className="font-medium">Prikaži sva vozila</p>
+                  <p className="font-medium">Javni prijevoz</p>
                 </div>
-                <p className="text-sm text-base-content/70 mt-0.5">Prikazuje GPS položaje svih vozila na karti</p>
+                <p className="text-sm text-base-content/70 mt-0.5">Prikazuje stanice, linije, pretragu i GPS položaje vozila</p>
               </div>
               <input
                 type="checkbox"

@@ -125,16 +125,18 @@ export function MapView({
           <OffScreenStopIndicator stop={selectedStop} onFlyTo={onFlyToStop} />
         )}
 
-        <ZoomBasedStops
-          parentStations={parentStations}
-          groupedParentStations={groupedParentStations}
-          platformStops={platformStops}
-          parentChildCounts={parentChildCounts}
-          selectedStopId={selectedStopId}
-          highlightStopIds={selectedRouteId ? routeStops : []}
-          orderedStops={orderedStops}
-          onStopClick={onStopClick}
-        />
+        {showAllVehicles && (
+          <ZoomBasedStops
+            parentStations={parentStations}
+            groupedParentStations={groupedParentStations}
+            platformStops={platformStops}
+            parentChildCounts={parentChildCounts}
+            selectedStopId={selectedStopId}
+            highlightStopIds={selectedRouteId ? routeStops : []}
+            orderedStops={orderedStops}
+            onStopClick={onStopClick}
+          />
+        )}
 
         {userLocation && (
           <Marker

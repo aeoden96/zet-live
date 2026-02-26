@@ -88,7 +88,7 @@ function App() {
   const vehicles = useVehiclePositions(activeTripsData, serviceId);
 
   // Start polling the GTFS Realtime proxy worker (feeds realtimeStore)
-  const { error: realtimeError, stats: realtimeStats } = useRealtimeData();
+  const { error: realtimeError, stats: realtimeStats } = useRealtimeData(showAllVehicles);
   const serviceAlerts = useRealtimeStore((s) => s.serviceAlerts);
 
   // Calculate all vehicle positions (when enabled)
@@ -306,7 +306,7 @@ function App() {
           </div>
         </div>
       )}
-      {realtimeStats && !realtimeError && (
+      {showAllVehicles && realtimeStats && !realtimeError && (
         <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
           {/* Service Alerts */}
           <ServiceAlerts
@@ -441,35 +441,37 @@ function App() {
       )}
 
       {/* Floating search bar */}
-      <div className="absolute top-2 left-2 right-2 sm:left-4 sm:right-auto sm:top-4 z-[1000]">
-        <div className="w-full sm:w-80 flex items-center gap-2 bg-base-100 rounded-xl px-4 py-3 shadow-lg">
-          <button
-            onClick={() => setSearchModalOpen(true)}
-            className="flex-1 flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
-          >
-            <Search className="w-5 h-5 text-base-content/50 shrink-0" />
-            {selectedRoute && routeModalOpen ? (
-              <span className="text-sm flex-1">
-                <span className={`badge ${selectedRoute.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold mr-2`}>
-                  {selectedRoute.shortName}
-                </span>
-                <span className="text-base-content/70">{selectedRoute.longName}</span>
-              </span>
-            ) : (
-              <span className="text-base-content/50 text-sm flex-1">Pretraži linije...</span>
-            )}
-          </button>
-          {selectedRoute && routeModalOpen && (
+      {showAllVehicles && (
+        <div className="absolute top-2 left-2 right-2 sm:left-4 sm:right-auto sm:top-4 z-[1000]">
+          <div className="w-full sm:w-80 flex items-center gap-2 bg-base-100 rounded-xl px-4 py-3 shadow-lg">
             <button
-              onClick={handleClearRoute}
-              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
-              aria-label="Očisti odabir"
+              onClick={() => setSearchModalOpen(true)}
+              className="flex-1 flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             >
-              <X className="w-4 h-4" />
+              <Search className="w-5 h-5 text-base-content/50 shrink-0" />
+              {selectedRoute && routeModalOpen ? (
+                <span className="text-sm flex-1">
+                  <span className={`badge ${selectedRoute.type === 0 ? 'badge-primary' : 'badge-accent'} font-bold mr-2`}>
+                    {selectedRoute.shortName}
+                  </span>
+                  <span className="text-base-content/70">{selectedRoute.longName}</span>
+                </span>
+              ) : (
+                <span className="text-base-content/50 text-sm flex-1">Pretraži linije...</span>
+              )}
             </button>
-          )}
+            {selectedRoute && routeModalOpen && (
+              <button
+                onClick={handleClearRoute}
+                className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+                aria-label="Očisti odabir"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Map controls (top-right): single spider menu */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000]">
