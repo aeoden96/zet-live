@@ -45,7 +45,6 @@ function App() {
   } = useSelectionParams();
 
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
-  const showBikeStations = useSettingsStore((s) => s.showBikeStations);
   const showRoadClosures = useSettingsStore((s) => s.showRoadClosures);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const [legendOpen, setLegendOpen] = useState(false);
@@ -284,7 +283,6 @@ function App() {
         onStopClick={handleStopClickFromMap}
         onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}
-        showBikeStations={showBikeStations}
         showRoadClosures={showRoadClosures}
         allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}

@@ -23,7 +23,13 @@ export function SpiderMenu() {
         setOnboardingStep,
         setOnboardingCompleted,
         appMode,
-        setAppMode
+        setAppMode,
+        showBikeStations,
+        setShowBikeStations,
+        showBikeParkings,
+        setShowBikeParkings,
+        showBikePaths,
+        setShowBikePaths
     } = useSettingsStore();
     const { onLocateClick, locating } = useNavigationStore();
 
@@ -149,6 +155,55 @@ export function SpiderMenu() {
                                         >
                                             <List className="w-3 h-3" />
                                             POPIS
+                                        </button>
+                                    </div>
+                                )}
+                                {item.to === "/cycling" && (
+                                    <div
+                                        className="flex p-0.5 bg-neutral/90 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl animate-spider-reveal overflow-hidden"
+                                        style={{ animationDelay: `${index * 50 + 50}ms` }}
+                                    >
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowBikeStations(!showBikeStations);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showBikeStations
+                                                    ? 'bg-info text-info-content shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            NEXTBIKE
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowBikeParkings(!showBikeParkings);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showBikeParkings
+                                                    ? 'bg-success text-success-content shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            PARKING
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowBikePaths(!showBikePaths);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showBikePaths
+                                                    ? 'bg-warning text-warning-content shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            STAZE
                                         </button>
                                     </div>
                                 )}

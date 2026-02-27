@@ -23,10 +23,11 @@ interface SettingsState {
   onboardingStep: number;
   stopDisplayMode: StopDisplayMode;
   showAllVehicles: boolean;
-  /** Show BAJS (Nextbike) bike station layer */
-  showBikeStations: boolean;
   /** Show Zagreb open-data road closures layer */
   showRoadClosures: boolean;
+  showBikeStations: boolean;
+  showBikeParkings: boolean;
+  showBikePaths: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
   detailedMap: boolean;
   appMode: AppMode;
@@ -47,8 +48,10 @@ interface SettingsState {
   setOnboardingStep: (step: number) => void;
   setStopDisplayMode: (mode: StopDisplayMode) => void;
   setShowAllVehicles: (show: boolean) => void;
-  setShowBikeStations: (show: boolean) => void;
   setShowRoadClosures: (show: boolean) => void;
+  setShowBikeStations: (show: boolean) => void;
+  setShowBikeParkings: (show: boolean) => void;
+  setShowBikePaths: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
@@ -74,79 +77,83 @@ export const useSettingsStore = create<SettingsState>()(
         mapTileProvider: initialTheme === 'dark' ? 'dark-matter' : 'osm',
         theme: initialTheme,
         detailedMap: true,
-      onboardingCompleted: false,
-      onboardingStep: 0,
-      stopDisplayMode: 'individual',
-      showAllVehicles: true,
-      showBikeStations: false,
-      showRoadClosures: false,
-      appMode: 'map',
-      favouriteRouteIds: [],
-      favouriteStopIds: [],
-      recentRoutes: [],
-      recentStops: [],
+        onboardingCompleted: false,
+        onboardingStep: 0,
+        stopDisplayMode: 'individual',
+        showAllVehicles: true,
+        showRoadClosures: false,
+        showBikeStations: true,
+        showBikeParkings: true,
+        showBikePaths: true,
+        appMode: 'map',
+        favouriteRouteIds: [],
+        favouriteStopIds: [],
+        recentRoutes: [],
+        recentStops: [],
 
-      setSandboxVisible: (visible) => set({ sandboxVisible: visible }),
-      setDetailedMap: (detailed) => set({ detailedMap: detailed }),
-      setMapTileProvider: (provider) => {
-        const themeForProvider: Theme = provider === 'dark-matter' ? 'dark' : 'light';
-        set({ mapTileProvider: provider, theme: themeForProvider });
-        try {
-          document.documentElement.setAttribute('data-theme', themeForProvider);
-        } catch (_e) {
-          void _e;
-        }
-        localStorage.setItem('theme', themeForProvider);
-      },
-      setTheme: (theme) => {
-        const providerForTheme: MapTileProvider = theme === 'dark' ? 'dark-matter' : 'osm';
-        set({ theme, mapTileProvider: providerForTheme });
-        try {
-          document.documentElement.setAttribute('data-theme', theme);
-        } catch (_e) {
-          void _e;
-        }
-        localStorage.setItem('theme', theme);
-      },
-      setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
-      setOnboardingStep: (step) => set({ onboardingStep: step }),
-      setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
-      setShowAllVehicles: (show) => set({ showAllVehicles: show }),
-      setShowBikeStations: (show) => set({ showBikeStations: show }),
-      setShowRoadClosures: (show) => set({ showRoadClosures: show }),
-      setAppMode: (mode) => set({ appMode: mode }),
+        setSandboxVisible: (visible) => set({ sandboxVisible: visible }),
+        setDetailedMap: (detailed) => set({ detailedMap: detailed }),
+        setMapTileProvider: (provider) => {
+          const themeForProvider: Theme = provider === 'dark-matter' ? 'dark' : 'light';
+          set({ mapTileProvider: provider, theme: themeForProvider });
+          try {
+            document.documentElement.setAttribute('data-theme', themeForProvider);
+          } catch (_e) {
+            void _e;
+          }
+          localStorage.setItem('theme', themeForProvider);
+        },
+        setTheme: (theme) => {
+          const providerForTheme: MapTileProvider = theme === 'dark' ? 'dark-matter' : 'osm';
+          set({ theme, mapTileProvider: providerForTheme });
+          try {
+            document.documentElement.setAttribute('data-theme', theme);
+          } catch (_e) {
+            void _e;
+          }
+          localStorage.setItem('theme', theme);
+        },
+        setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+        setOnboardingStep: (step) => set({ onboardingStep: step }),
+        setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
+        setShowAllVehicles: (show) => set({ showAllVehicles: show }),
+        setShowRoadClosures: (show) => set({ showRoadClosures: show }),
+        setShowBikeStations: (show) => set({ showBikeStations: show }),
+        setShowBikeParkings: (show) => set({ showBikeParkings: show }),
+        setShowBikePaths: (show) => set({ showBikePaths: show }),
+        setAppMode: (mode) => set({ appMode: mode }),
 
-      toggleFavouriteRoute: (id) =>
-        set((s) => ({
-          favouriteRouteIds: s.favouriteRouteIds.includes(id)
-            ? s.favouriteRouteIds.filter((r) => r !== id)
-            : [...s.favouriteRouteIds, id],
-        })),
+        toggleFavouriteRoute: (id) =>
+          set((s) => ({
+            favouriteRouteIds: s.favouriteRouteIds.includes(id)
+              ? s.favouriteRouteIds.filter((r) => r !== id)
+              : [...s.favouriteRouteIds, id],
+          })),
 
-      toggleFavouriteStop: (id) =>
-        set((s) => ({
-          favouriteStopIds: s.favouriteStopIds.includes(id)
-            ? s.favouriteStopIds.filter((r) => r !== id)
-            : [...s.favouriteStopIds, id],
-        })),
+        toggleFavouriteStop: (id) =>
+          set((s) => ({
+            favouriteStopIds: s.favouriteStopIds.includes(id)
+              ? s.favouriteStopIds.filter((r) => r !== id)
+              : [...s.favouriteStopIds, id],
+          })),
 
-      addRecentRoute: (id) =>
-        set((s) => {
-          const filtered = s.recentRoutes.filter((r) => r.id !== id);
-          return {
-            recentRoutes: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
-          };
-        }),
+        addRecentRoute: (id) =>
+          set((s) => {
+            const filtered = s.recentRoutes.filter((r) => r.id !== id);
+            return {
+              recentRoutes: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
+            };
+          }),
 
-      addRecentStop: (id) =>
-        set((s) => {
-          const filtered = s.recentStops.filter((r) => r.id !== id);
-          return {
-            recentStops: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
-          };
-        }),
+        addRecentStop: (id) =>
+          set((s) => {
+            const filtered = s.recentStops.filter((r) => r.id !== id);
+            return {
+              recentStops: [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS),
+            };
+          }),
 
-      clearRecents: () => set({ recentRoutes: [], recentStops: [] }),
+        clearRecents: () => set({ recentRoutes: [], recentStops: [] }),
       };
     },
     {

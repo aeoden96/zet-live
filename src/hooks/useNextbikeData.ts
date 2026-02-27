@@ -110,5 +110,14 @@ export function useNextbikeData(enabled: boolean) {
         };
     }, [enabled]);
 
-    return { stations, loading, error };
+    // We can just return the actual timestamp we have in cache or newly set
+    const lastFetchedStr = localStorage.getItem(CACHE_KEY);
+    let lastFetched = 0;
+    try {
+        if (lastFetchedStr) {
+            lastFetched = JSON.parse(lastFetchedStr).timestamp;
+        }
+    } catch (e) { }
+
+    return { stations, loading, error, lastFetched };
 }
