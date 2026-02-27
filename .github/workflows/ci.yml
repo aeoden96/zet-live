@@ -43,3 +43,22 @@ jobs:
 
       - name: Lint
         run: yarn lint
+
+  knip:
+    name: Knip (unused exports, files & deps)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Knip
+        run: yarn knip
