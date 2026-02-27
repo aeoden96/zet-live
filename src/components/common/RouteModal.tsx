@@ -36,7 +36,7 @@ interface RouteModalProps {
 type DirectionFilter = 'A' | 'B';
 
 const TRAM_COLOR = '#2563eb'; // blue-600
-const BUS_COLOR  = '#ea580c'; // orange-600
+const BUS_COLOR = '#ea580c'; // orange-600
 
 export function RouteModal({
   isOpen,
@@ -94,14 +94,14 @@ export function RouteModal({
     <>
       {/* Mobile-only backdrop */}
       <div
-        className="fixed inset-0 z-[1090] bg-black/50 backdrop-blur-sm sm:hidden"
+        className="fixed inset-0 z-[3000] bg-black/50 backdrop-blur-sm sm:hidden"
         style={{ animation: 'backdrop-fade-in 0.15s ease-out' }}
         onClick={onClose}
       />
 
       {/* Panel */}
       <div
-        className="fixed inset-0 z-[1100] flex flex-col bg-base-100 overflow-hidden sm:inset-auto sm:left-0 sm:top-0 sm:bottom-0 sm:w-[380px] sm:shadow-2xl sm:border-r sm:border-base-300"
+        className="fixed inset-0 z-[3100] flex flex-col bg-base-100 overflow-hidden sm:inset-auto sm:left-0 sm:top-0 sm:bottom-0 sm:w-[380px] sm:shadow-2xl sm:border-r sm:border-base-300"
         style={{ animation: 'modal-fade-in 0.2s ease-out' }}
       >
         {/* Header */}
@@ -125,7 +125,7 @@ export function RouteModal({
 
             {route.type === 0
               ? <Train className="w-3.5 h-3.5 opacity-40 shrink-0" />
-              : <Bus   className="w-3.5 h-3.5 opacity-40 shrink-0" />}
+              : <Bus className="w-3.5 h-3.5 opacity-40 shrink-0" />}
 
             <h2 className="font-bold text-sm leading-snug flex-1 min-w-0 line-clamp-2">
               {route.longName}

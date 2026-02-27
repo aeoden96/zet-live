@@ -170,7 +170,7 @@ export function SearchModal({
   const badgeClass = isTram ? 'badge-primary' : 'badge-accent';
 
   return (
-    <div className="fixed inset-0 z-[1100] flex items-start justify-center">
+    <div className="fixed inset-0 z-[3000] flex items-start justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -325,9 +325,8 @@ export function SearchModal({
                 <button
                   key={`recent-r-${route.id}`}
                   onClick={() => handleSelectRoute(route)}
-                  className={`badge ${
-                    isRouteTypeTram(route.type) ? 'badge-primary' : 'badge-accent'
-                  } badge-md font-bold hover:opacity-80 transition-opacity cursor-pointer`}
+                  className={`badge ${isRouteTypeTram(route.type) ? 'badge-primary' : 'badge-accent'
+                    } badge-md font-bold hover:opacity-80 transition-opacity cursor-pointer`}
                 >
                   {route.shortName}
                 </button>

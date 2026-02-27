@@ -51,29 +51,26 @@ body {
 
 [data-theme="dark"] body {
   background: linear-gradient(to bottom, #323232 0%, #3f3f3f 40%, #1c1c1c 150%),
-    linear-gradient(
-      to top,
+    linear-gradient(to top,
       rgba(255, 255, 255, 0.4) 0%,
-      rgba(0, 0, 0, 0.25) 200%
-    );
+      rgba(0, 0, 0, 0.25) 200%);
   background-blend-mode: multiply;
   color: var(--color-light);
 }
 
 [data-theme="light"] body {
   background: linear-gradient(to bottom, #d5dee7 0%, #e8ebf2 50%, #e2e7ed 100%),
-    linear-gradient(
-      to bottom,
+    linear-gradient(to bottom,
       rgba(0, 0, 0, 0.02) 50%,
       rgba(255, 255, 255, 0.02) 61%,
-      rgba(0, 0, 0, 0.02) 73%
-    ),
+      rgba(0, 0, 0, 0.02) 73%),
     linear-gradient(33deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%);
   background-blend-mode: normal, color-burn;
   color: var(--color-dark);
 }
 
-html, body {
+html,
+body {
   overflow-x: hidden;
   max-width: 100vw;
 }
@@ -138,6 +135,7 @@ html, body {
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -145,8 +143,13 @@ html, body {
 }
 
 @keyframes backdrop-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes spider-reveal {
@@ -155,6 +158,7 @@ html, body {
     transform: translateY(-1rem) scale(0.9);
     filter: blur(4px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -229,6 +233,49 @@ html, body {
   background-color: #374151 !important;
 }
 
+/* Leaflet tooltip styling theme-aware */
+.leaflet-tooltip {
+  border-radius: 12px !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  font-family: inherit !important;
+}
+
+[data-theme="light"] .leaflet-tooltip {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="dark"] .leaflet-tooltip {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  display: none !important;
+}
+
+.custom-tooltip {
+  /* Base classes are handled by .leaflet-tooltip above */
+}
+
+/* Hover effects for bike markers */
+.bajs-station-icon:hover>div,
+.bike-parking-icon:hover>div {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+}
+
+.bajs-station-icon.selected>div {
+  transform: scale(1.2) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+}
+
 /* Parent station marker styles */
 .parent-station-icon {
   background: transparent !important;
@@ -286,6 +333,7 @@ html, body {
   position: relative;
   pointer-events: none;
 }
+
 .user-location-marker .pulse {
   position: absolute;
   left: 50%;
@@ -294,9 +342,11 @@ html, body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(34,197,94,0.12); /* green pulse */
+  background: rgba(34, 197, 94, 0.12);
+  /* green pulse */
   animation: user-location-pulse 1.6s ease-out infinite;
 }
+
 .user-location-marker .dot {
   position: absolute;
   left: 50%;
@@ -305,14 +355,26 @@ html, body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #22c55e; /* green */
+  background: #22c55e;
+  /* green */
   border: 2px solid white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
+
 @keyframes user-location-pulse {
-  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.6; }
-  70% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
-  100% { opacity: 0; }
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.6;
+  }
+
+  70% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Platform stop label shown at max zoom */
@@ -321,14 +383,14 @@ html, body {
   left: 50%;
   top: -6px;
   transform: translate(-50%, -100%);
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   color: #111827;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 /* Parent station label (same visual style but slightly bolder) */
@@ -339,7 +401,7 @@ html, body {
      exactly where connector lines converge */
   top: 0;
   transform: translate(-50%, calc(-50% + 5px));
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   color: #111827;
   padding: 3px 8px;
   border-radius: 4px;
@@ -347,7 +409,7 @@ html, body {
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.14);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
 }
 
 /* ── Spiderfier ──────────────────────────────────────────────────────────── */
@@ -369,8 +431,15 @@ html, body {
 }
 
 @keyframes spider-expand-in {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Fallback neutral dot rendered when no base icon was found */
@@ -381,8 +450,9 @@ html, body {
   border: 2.5px solid white;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
+
 .spider-node-dot:hover {
   background: #111827;
 }
@@ -394,8 +464,13 @@ html, body {
 }
 
 @keyframes spider-leg-fadein {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Single encompassing background circle behind all spider fan nodes */
@@ -404,15 +479,20 @@ html, body {
 }
 
 @keyframes spider-bg-fadein {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Scrollable list popup for large clusters (> MAX_SPIDER_FAN items) */
 .spider-list-popup {
   background: white;
   border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.20);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.20);
   padding: 6px 4px;
   min-width: 176px;
   max-width: 260px;
@@ -422,9 +502,10 @@ html, body {
   position: relative;
   z-index: 1300;
 }
+
 .dark .spider-list-popup {
   background: #1f2937;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
 }
 
 .spider-list-header {
@@ -434,6 +515,7 @@ html, body {
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 2px;
 }
+
 .dark .spider-list-header {
   color: #9ca3af;
   border-bottom-color: #374151;
@@ -453,12 +535,15 @@ html, body {
   line-height: 1.3;
   transition: background 0.1s ease;
 }
+
 .spider-list-item:hover {
   background: #f3f4f6;
 }
+
 .dark .spider-list-item {
   color: #f9fafb;
 }
+
 .dark .spider-list-item:hover {
   background: #374151;
 }
