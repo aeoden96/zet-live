@@ -277,11 +277,12 @@ export function PublicTransportMode() {
         </div>
       )}
 
-      {/* Realtime status badge */}
+      {/* Realtime error badge — bottom-right, compact */}
       {realtimeError && (
-        <div className="absolute top-16 right-2 sm:right-4 z-[1000]">
-          <div className="alert alert-error py-2 px-4 shadow-lg text-xs max-w-64">
-            <span>GPS uživo: {realtimeError.message}</span>
+        <div className="absolute bottom-6 right-4 z-[1000]">
+          <div className="badge badge-error gap-1 shadow text-[10px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+            GPS uživo: {realtimeError.message}
           </div>
         </div>
       )}

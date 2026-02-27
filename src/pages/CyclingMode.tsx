@@ -1,40 +1,21 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BaseMap } from '../components/Map/BaseMap';
 import { BikeStations } from '../components/Map/BikeStations';
 import { BikeParkings } from '../components/Map/BikeParkings';
 import { BikePaths } from '../components/Map/BikePaths';
-import { useNextbikeData, type BajsStation } from '../hooks/useNextbikeData';
+import { useNextbikeData } from '../hooks/useNextbikeData';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useSettingsStore } from '../stores/settingsStore';
-import { BikeStationInfoBar } from '../components/common/BikeStationInfoBar';
-import { ParentStationZoomController } from '../components/Map/ParentStationZoomController';
 
 export function CyclingMode() {
     const { userLocation } = useGeolocation();
     const [legendOpen, setLegendOpen] = useState(false);
-    const [selectedStation, setSelectedStation] = useState<BajsStation | null>(null);
-    const [zoomTarget, setZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
     const showBikeStations = useSettingsStore(s => s.showBikeStations);
     const showBikeParkings = useSettingsStore(s => s.showBikeParkings);
     const showBikePaths = useSettingsStore(s => s.showBikePaths);
 
     const { lastFetched } = useNextbikeData(showBikeStations);
-
-    const handleStationClick = useCallback((station: BajsStation) => {
-        setSelectedStation(station);
-        setZoomTarget({ lat: station.lat, lon: station.lng, zoom: 17 });
-    }, []);
-
-    const handleCloseInfoBar = useCallback(() => {
-        setSelectedStation(null);
-    }, []);
-
-    const handleFlyToStation = useCallback(() => {
-        if (selectedStation) {
-            setZoomTarget({ lat: selectedStation.lat, lon: selectedStation.lng, zoom: 17 });
-        }
-    }, [selectedStation]);
 
     const [timeAgo, setTimeAgo] = useState(0);
 
@@ -56,27 +37,10 @@ export function CyclingMode() {
     return (
         <div className="h-full w-full relative">
             <BaseMap userLocation={userLocation}>
-                <ParentStationZoomController
-                    zoomTarget={zoomTarget}
-                    onZoomComplete={() => setZoomTarget(null)}
-                />
-                <BikeStations
-                    show={showBikeStations}
-                    selectedStationId={selectedStation?.uid}
-                    onStationClick={handleStationClick}
-                />
+                <BikeStations show={showBikeStations} />
                 <BikeParkings show={showBikeParkings} />
                 <BikePaths show={showBikePaths} />
             </BaseMap>
-
-            {/* Station details bar */}
-            {selectedStation && (
-                <BikeStationInfoBar
-                    station={selectedStation}
-                    onClose={handleCloseInfoBar}
-                    onFlyTo={handleFlyToStation}
-                />
-            )}
 
             {/* Floating Badges */}
             <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
@@ -122,5 +86,3 @@ export function CyclingMode() {
         </div>
     );
 }
-
-

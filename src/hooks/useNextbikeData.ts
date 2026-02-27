@@ -27,7 +27,15 @@ export function useNextbikeData(enabled: boolean) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    // Ref to hold the latest interval ID
+    // Initialise from localStorage so the timestamp survives page re-mounts
+    const [lastFetched, setLastFetched] = useState<number>(() => {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) return (JSON.parse(cached) as CacheData).timestamp;
+        } catch { /* ignore */ }
+        return 0;
+    });
+
     const intervalRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -51,7 +59,7 @@ export function useNextbikeData(enabled: boolean) {
                         if (Date.now() - cache.timestamp < CACHE_DURATION_MS) {
                             if (isMounted) {
                                 setStations(cache.stations);
-                                // Don't set loading if we have valid cache
+                                setLastFetched(cache.timestamp);
                             }
                             return;
                         }
@@ -75,15 +83,18 @@ export function useNextbikeData(enabled: boolean) {
                     newStations = data.countries[0].cities[0].places || [];
                 }
 
+                const now = Date.now();
+
                 if (isMounted) {
                     setStations(newStations);
+                    setLastFetched(now);
                     setLoading(false);
                     setError(null);
                 }
 
                 // Update cache
                 localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    timestamp: Date.now(),
+                    timestamp: now,
                     stations: newStations
                 }));
 
@@ -95,10 +106,7 @@ export function useNextbikeData(enabled: boolean) {
             }
         };
 
-        // Fetch immediately
         fetchData();
-
-        // Set up polling interval
         intervalRef.current = window.setInterval(fetchData, CACHE_DURATION_MS);
 
         return () => {
@@ -109,17 +117,6 @@ export function useNextbikeData(enabled: boolean) {
             }
         };
     }, [enabled]);
-
-    // We can just return the actual timestamp we have in cache or newly set
-    const lastFetchedStr = localStorage.getItem(CACHE_KEY);
-    let lastFetched = 0;
-    try {
-        if (lastFetchedStr) {
-            lastFetched = JSON.parse(lastFetchedStr).timestamp;
-        }
-    } catch {
-        // Ignore parsing errors
-    }
 
     return { stations, loading, error, lastFetched };
 }
