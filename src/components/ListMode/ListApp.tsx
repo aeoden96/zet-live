@@ -110,7 +110,7 @@ export function ListApp() {
   // Loading state
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-svh flex items-center justify-center">
         <div className="text-center">
           <div className="loading loading-spinner loading-lg" />
           <div className="mt-4">Učitavanje podataka...</div>
@@ -122,7 +122,7 @@ export function ListApp() {
   // Error state
   if (initialError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-svh flex items-center justify-center p-4">
         <div className="alert alert-error max-w-md">
           <span>Greška pri učitavanju podataka: {initialError.message}</span>
         </div>
@@ -146,7 +146,7 @@ export function ListApp() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-base-200">
+    <div className="h-svh flex flex-col bg-base-200">
       {/* Header */}
       <header className="bg-base-100 border-b border-base-300 px-4 py-3 flex items-center gap-3 shrink-0">
         <h1 className="text-lg font-bold flex-1">ZET Live</h1>
@@ -206,11 +206,10 @@ export function ListApp() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 transition-colors relative ${
-                  isActive
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 transition-colors relative ${isActive
                     ? 'text-primary'
                     : 'text-base-content/50 hover:text-base-content/70'
-                }`}
+                  }`}
               >
                 <div className="relative">
                   <Icon className="w-5 h-5" />

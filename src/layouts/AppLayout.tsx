@@ -3,7 +3,7 @@ import { SpiderMenu } from '../components/Navigation/SpiderMenu';
 
 export function AppLayout() {
     return (
-        <div className="h-screen w-screen overflow-hidden flex flex-col bg-base-100 relative">
+        <div className="h-svh w-screen overflow-hidden flex flex-col bg-base-100 relative">
             <div className="flex-1 relative overflow-hidden">
                 <Outlet />
             </div>

@@ -209,7 +209,7 @@ export function PublicTransportMode() {
   // Loading state
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-svh flex items-center justify-center">
         <div className="text-center">
           <div className="loading loading-spinner loading-lg"></div>
           <div className="mt-4">Učitavanje podataka...</div>
@@ -221,7 +221,7 @@ export function PublicTransportMode() {
   // Error state
   if (initialError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-svh flex items-center justify-center p-4">
         <div className="alert alert-error max-w-md">
           <span>Greška pri učitavanju podataka: {initialError.message}</span>
         </div>
@@ -233,7 +233,7 @@ export function PublicTransportMode() {
   const selectedStop = selectedStopId ? stopsById.get(selectedStopId) : null;
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative">
+    <div className="h-svh w-screen overflow-hidden relative">
       {/* Full-screen map */}
       <MapView
         parentStations={parentStations}

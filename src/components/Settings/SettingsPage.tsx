@@ -51,7 +51,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-svh bg-base-200">
       {/* Header */}
       <div className="bg-base-100 border-b border-base-300">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
