@@ -73,30 +73,30 @@ html,
 body {
   overflow-x: hidden;
   max-width: 100vw;
-  /* Use svh so the root never exceeds the visible area on mobile */
-  height: 100svh;
+  /* dvh = dynamic viewport height — fills the real visible area as browser chrome shows/hides */
+  height: 100dvh;
 }
 
-/* ── SVH viewport utilities ─────────────────────────────────────────────── */
-/* 100svh = "small viewport height" — excludes retractable browser chrome   */
-/* Falls back to 100vh for browsers without svh support (Safari < 15.4)     */
+/* ── DVH viewport utilities ─────────────────────────────────────────────── */
+/* 100dvh = "dynamic viewport height" — always matches the real visible area */
+/* Falls back to 100vh for browsers without dvh support (Safari < 15.4)     */
 
 .h-svh {
   height: 100vh;
   /* fallback */
-  height: 100svh;
+  height: 100dvh;
 }
 
 .min-h-svh {
   min-height: 100vh;
   /* fallback */
-  min-height: 100svh;
+  min-height: 100dvh;
 }
 
 .max-h-svh {
   max-height: 100vh;
   /* fallback */
-  max-height: 100svh;
+  max-height: 100dvh;
 }
 
 .sr-only {
