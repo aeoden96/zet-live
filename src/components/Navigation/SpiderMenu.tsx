@@ -202,7 +202,7 @@ export function SpiderMenu() {
                                                     : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
                                             `}
                                         >
-                                            NEXTBIKE
+                                            BAJS
                                         </button>
                                         <button
                                             onClick={(e) => {
