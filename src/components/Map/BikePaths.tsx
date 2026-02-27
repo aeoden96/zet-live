@@ -12,7 +12,7 @@ export const BikePaths = memo(function BikePaths({ show }: BikePathsProps) {
     useEffect(() => {
         if (!show || geoData) return;
 
-        fetch('/static_data/bike_paths.geojson')
+        fetch(`${import.meta.env.BASE_URL}static_data/bike_paths.geojson`)
             .then(res => res.json())
             .then(data => setGeoData(data))
             .catch(err => console.error('Failed to load bike paths:', err));

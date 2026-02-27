@@ -117,7 +117,9 @@ export function useNextbikeData(enabled: boolean) {
         if (lastFetchedStr) {
             lastFetched = JSON.parse(lastFetchedStr).timestamp;
         }
-    } catch (e) { }
+    } catch {
+        // Ignore parsing errors
+    }
 
     return { stations, loading, error, lastFetched };
 }

@@ -13,7 +13,7 @@ export const PublicFountainsMap = memo(function PublicFountainsMap({ show }: Pub
     useEffect(() => {
         if (!show || geoData) return;
 
-        fetch('/static_data/javni_zdenci.json')
+        fetch(`${import.meta.env.BASE_URL}static_data/javni_zdenci.json`)
             .then(res => res.json())
             .then(data => setGeoData(data))
             .catch(err => console.error('Failed to load public fountains:', err));

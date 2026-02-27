@@ -21,7 +21,7 @@ export const BikeParkings = memo(function BikeParkings({ show }: BikeParkingsPro
     useEffect(() => {
         if (!show || parkings.length > 0) return;
 
-        fetch('/static_data/bike_parkings.json')
+        fetch(`${import.meta.env.BASE_URL}static_data/bike_parkings.json`)
             .then(res => res.json())
             .then(data => setParkings(data))
             .catch(err => console.error('Failed to load bike parkings:', err));

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BaseMap } from '../components/Map/BaseMap';
 import { BikeStations } from '../components/Map/BikeStations';
 import { BikeParkings } from '../components/Map/BikeParkings';
@@ -36,9 +36,22 @@ export function CyclingMode() {
         }
     }, [selectedStation]);
 
-    const timeAgo = lastFetched
-        ? Math.round((Date.now() - lastFetched) / 60000)
-        : 0;
+    const [timeAgo, setTimeAgo] = useState(0);
+
+    useEffect(() => {
+        if (!lastFetched) {
+            setTimeAgo(0);
+            return;
+        }
+
+        const updateTimeAgo = () => {
+            setTimeAgo(Math.round((Date.now() - lastFetched) / 60000));
+        };
+
+        updateTimeAgo();
+        const interval = setInterval(updateTimeAgo, 60000);
+        return () => clearInterval(interval);
+    }, [lastFetched]);
 
     return (
         <div className="h-full w-full relative">

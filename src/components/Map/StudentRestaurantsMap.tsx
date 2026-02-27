@@ -13,7 +13,7 @@ export const StudentRestaurantsMap = memo(function StudentRestaurantsMap({ show 
     useEffect(() => {
         if (!show || geoData) return;
 
-        fetch('/static_data/studentski_restorani.json')
+        fetch(`${import.meta.env.BASE_URL}static_data/studentski_restorani.json`)
             .then(res => res.json())
             .then(data => setGeoData(data))
             .catch(err => console.error('Failed to load student restaurants:', err));

@@ -12,7 +12,7 @@ export const PedestrianZonesMap = memo(function PedestrianZonesMap({ show }: Ped
     useEffect(() => {
         if (!show || geoData) return;
 
-        fetch('/static_data/pjesacka_zona.geojson')
+        fetch(`${import.meta.env.BASE_URL}static_data/pjesacka_zona.geojson`)
             .then(res => res.json())
             .then(data => setGeoData(data))
             .catch(err => console.error('Failed to load pedestrian zones:', err));

@@ -15,7 +15,7 @@ export const FreeWifiMap = memo(function FreeWifiMap({ show }: FreeWifiMapProps)
     useEffect(() => {
         if (!show || geoData) return;
 
-        fetch('/static_data/besplatna_wifi_mreza.json')
+        fetch(`${import.meta.env.BASE_URL}static_data/besplatna_wifi_mreza.json`)
             .then(res => res.json())
             .then(data => setGeoData(data))
             .catch(err => console.error('Failed to load free wifi:', err));
