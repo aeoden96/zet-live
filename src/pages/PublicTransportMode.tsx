@@ -1,37 +1,33 @@
 import { useState, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
-import { useSelectionParams } from './hooks/useSelectionParams';
-import type { DirectionFilter } from './hooks/useSelectionParams';
-import { MapView } from './components/Map/MapView';
-import { SearchModal } from './components/common/SearchModal';
-import { RouteModal } from './components/common/RouteModal';
-import { StopModal } from './components/common/StopModal';
-import { StopInfoBar } from './components/common/StopInfoBar';
-import { RouteInfoBar } from './components/common/RouteInfoBar';
-import { DebugPanel } from './components/common/DebugPanel';
-import { OnboardingWizard } from './components/common/OnboardingWizard';
-import { NearbyStopsModal } from './components/common/NearbyStopsModal';
-import { ServiceAlerts } from './components/common/ServiceAlerts';
-import { useInitialData } from './hooks/useInitialData';
-import { useCurrentService } from './hooks/useCurrentService';
-import { useRouteData } from './hooks/useRouteData';
-import { useSettingsStore } from './stores/settingsStore';
-import { useRealtimeStore } from './stores/realtimeStore';
-import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
-import { useVehiclePositions } from './hooks/useVehiclePositions';
-import { useRealtimeData } from './hooks/useRealtimeData';
-import { useNavigationStore } from './stores/navigationStore';
-import { useEffect } from 'react';
+import { useSelectionParams } from '../hooks/useSelectionParams';
+import type { DirectionFilter } from '../hooks/useSelectionParams';
+import { MapView } from '../components/Map/MapView';
+import { SearchModal } from '../components/common/SearchModal';
+import { RouteModal } from '../components/common/RouteModal';
+import { StopModal } from '../components/common/StopModal';
+import { StopInfoBar } from '../components/common/StopInfoBar';
+import { RouteInfoBar } from '../components/common/RouteInfoBar';
+import { DebugPanel } from '../components/common/DebugPanel';
+import { OnboardingWizard } from '../components/common/OnboardingWizard';
+import { NearbyStopsModal } from '../components/common/NearbyStopsModal';
+import { ServiceAlerts } from '../components/common/ServiceAlerts';
+import { useInitialData } from '../hooks/useInitialData';
+import { useCurrentService } from '../hooks/useCurrentService';
+import { useRouteData } from '../hooks/useRouteData';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useRealtimeStore } from '../stores/realtimeStore';
+import { useAllVehiclePositions } from '../hooks/useAllVehiclePositions';
+import { useVehiclePositions } from '../hooks/useVehiclePositions';
+import { useRealtimeData } from '../hooks/useRealtimeData';
+import { useGeolocation } from '../hooks/useGeolocation';
 
-function App() {
+export function PublicTransportMode() {
   // Modal states
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [stopModalOpen, setStopModalOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [locateError, setLocateError] = useState<string | null>(null);
 
   // URL-backed selection state (route, stop, direction)
   const {
@@ -100,18 +96,12 @@ function App() {
   // Derive route type from loaded data (no need to store separately)
   const selectedRouteType = selectedRouteId ? (routesById.get(selectedRouteId)?.type ?? null) : null;
 
-  // Register locate action globally for SpiderMenu
-  const setLocateAction = useNavigationStore(s => s.setLocateAction);
-  const setLocatingStore = useNavigationStore(s => s.setLocating);
+  const onLocateSuccess = useCallback((lat: number, lon: number) => {
+    setParentStationZoomTarget({ lat, lon, zoom: 16 });
+    setNearbyOpen(true);
+  }, []);
 
-  useEffect(() => {
-    setLocateAction(handleLocateMe);
-    return () => setLocateAction(null);
-  }, [setLocateAction]);
-
-  useEffect(() => {
-    setLocatingStore(locating);
-  }, [locating, setLocatingStore]);
+  const { userLocation, setUserLocation, locateError } = useGeolocation(onLocateSuccess);
 
   // Handlers
   const handleSelectRoute = (routeId: string, _routeType: number, df?: DirectionFilter | 'all') => {
@@ -210,29 +200,7 @@ function App() {
     }
   };
 
-  const handleLocateMe = () => {
-    if (!navigator.geolocation) {
-      setLocateError('Geolokacija nije dostupna u ovom pregledniku.');
-      return;
-    }
-    setLocating(true);
-    setLocateError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lon: longitude });
-        setParentStationZoomTarget({ lat: latitude, lon: longitude, zoom: 16 });
-        setLocating(false);
-        setNearbyOpen(true);
-      },
-      () => {
-        setLocateError('Lokacija nije dostupna. Provjerite dozvole preglednika.');
-        setLocating(false);
-        setTimeout(() => setLocateError(null), 4000);
-      },
-      { timeout: 8000, maximumAge: 30000 }
-    );
-  };
+
 
   const handleCloseStopInfo = () => {
     clearStop();
@@ -557,4 +525,3 @@ function App() {
   );
 }
 
-export default App;

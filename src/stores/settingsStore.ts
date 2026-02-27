@@ -3,9 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export type MapTileProvider = 'osm' | 'positron' | 'dark-matter';
 export type Theme = 'light' | 'dark';
-/** 'individual' – show only platform stops with zoom-based opacity (default)
- *  'grouped'   – classic grouped parents / parent-station / platform view */
-export type StopDisplayMode = 'individual' | 'grouped';
+
 export type AppMode = 'map' | 'list';
 
 export interface RecentItem {
@@ -21,7 +19,7 @@ interface SettingsState {
   theme: Theme;
   onboardingCompleted: boolean;
   onboardingStep: number;
-  stopDisplayMode: StopDisplayMode;
+
   showAllVehicles: boolean;
   /** Show Zagreb open-data road closures layer */
   showRoadClosures: boolean;
@@ -46,7 +44,7 @@ interface SettingsState {
   setDetailedMap: (detailed: boolean) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setOnboardingStep: (step: number) => void;
-  setStopDisplayMode: (mode: StopDisplayMode) => void;
+
   setShowAllVehicles: (show: boolean) => void;
   setShowRoadClosures: (show: boolean) => void;
   setShowBikeStations: (show: boolean) => void;
@@ -79,7 +77,7 @@ export const useSettingsStore = create<SettingsState>()(
         detailedMap: true,
         onboardingCompleted: false,
         onboardingStep: 0,
-        stopDisplayMode: 'individual',
+
         showAllVehicles: true,
         showRoadClosures: false,
         showBikeStations: true,
@@ -115,7 +113,7 @@ export const useSettingsStore = create<SettingsState>()(
         },
         setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
         setOnboardingStep: (step) => set({ onboardingStep: step }),
-        setStopDisplayMode: (mode) => set({ stopDisplayMode: mode }),
+
         setShowAllVehicles: (show) => set({ showAllVehicles: show }),
         setShowRoadClosures: (show) => set({ showRoadClosures: show }),
         setShowBikeStations: (show) => set({ showBikeStations: show }),

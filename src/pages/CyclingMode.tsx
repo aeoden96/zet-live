@@ -1,18 +1,15 @@
+import { useState } from 'react';
 import { BaseMap } from '../components/Map/BaseMap';
 import { BikeStations } from '../components/Map/BikeStations';
 import { BikeParkings } from '../components/Map/BikeParkings';
 import { BikePaths } from '../components/Map/BikePaths';
-import { useNavigationStore } from '../stores/navigationStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { useState, useEffect } from 'react';
 import { useNextbikeData } from '../hooks/useNextbikeData';
+import { useGeolocation } from '../hooks/useGeolocation';
+import { useSettingsStore } from '../stores/settingsStore';
 
 export function CyclingMode() {
-    const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+    const { userLocation } = useGeolocation();
     const [legendOpen, setLegendOpen] = useState(false);
-
-    const setLocateAction = useNavigationStore(s => s.setLocateAction);
-    const setLocatingStore = useNavigationStore(s => s.setLocating);
 
     const showBikeStations = useSettingsStore(s => s.showBikeStations);
     const showBikeParkings = useSettingsStore(s => s.showBikeParkings);
@@ -23,24 +20,6 @@ export function CyclingMode() {
     const timeAgo = lastFetched
         ? Math.round((Date.now() - lastFetched) / 60000)
         : 0;
-
-    const handleLocateMe = () => {
-        if (!navigator.geolocation) return;
-        setLocatingStore(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-                setLocatingStore(false);
-            },
-            () => setLocatingStore(false),
-            { timeout: 8000, maximumAge: 30000 }
-        );
-    };
-
-    useEffect(() => {
-        setLocateAction(handleLocateMe);
-        return () => setLocateAction(null);
-    }, [setLocateAction]);
 
     return (
         <div className="h-full w-full relative">
@@ -94,4 +73,5 @@ export function CyclingMode() {
         </div>
     );
 }
+
 

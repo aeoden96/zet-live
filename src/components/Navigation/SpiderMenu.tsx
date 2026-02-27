@@ -90,8 +90,8 @@ export function SpiderMenu() {
 
     const activeItem = menuItems.find(item => item.to === location.pathname) || menuItems[0];
 
-    // Only show locate button on map page
-    const showLocate = location.pathname === '/' && onLocateClick;
+    // Show locate button on modes that support it (any that register an action)
+    const showLocate = !!onLocateClick;
 
     return (
         <div className="fixed top-4 right-4 z-[2000] flex flex-col items-end">

@@ -3,17 +3,14 @@
  */
 
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin, List } from 'lucide-react';
-import { useSettingsStore, type StopDisplayMode } from '../../stores/settingsStore';
+import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin } from 'lucide-react';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
 
 // Map tile providers handled automatically via theme + detailedMap setting
 
-const STOP_DISPLAY_MODES: { id: StopDisplayMode; name: string; description: string }[] = [
-  { id: 'individual', name: 'Individualne stanice', description: 'Prikazuje svaku platformu zasebno; prozirnost se smanjuje pri manjem uvećanju' },
-  { id: 'grouped', name: 'Grupirane stanice', description: 'Klasični prikaz s grupiranim roditeljskim stanicama i platformama po uvećanju' },
-];
+
 
 export function SettingsPage() {
   const theme = useSettingsStore((state) => state.theme);
@@ -22,12 +19,8 @@ export function SettingsPage() {
   const setSandboxVisible = useSettingsStore((state) => state.setSandboxVisible);
   const detailedMap = useSettingsStore((state) => state.detailedMap);
   const setDetailedMap = useSettingsStore((state) => state.setDetailedMap);
-  const stopDisplayMode = useSettingsStore((state) => state.stopDisplayMode);
-  const setStopDisplayMode = useSettingsStore((state) => state.setStopDisplayMode);
   const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
   const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
-  const appMode = useSettingsStore((state) => state.appMode);
-  const setAppMode = useSettingsStore((state) => state.setAppMode);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -97,46 +90,7 @@ export function SettingsPage() {
           </div>
         </div>
 
-        {/* App Mode Section */}
-        <div className="card bg-base-100 shadow-sm">
-          <div className="card-body">
-            <h2 className="card-title text-lg flex items-center gap-2">
-              {appMode === 'map' ? <Map className="w-5 h-5" /> : <List className="w-5 h-5" />}
-              Način rada
-            </h2>
-            <p className="text-sm text-base-content/70 mb-2">
-              Karta prikazuje vozila i stanice na karti. Popis prikazuje favorite, linije i stanice u obliku liste.
-            </p>
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="app-mode"
-                  className="radio radio-primary mt-1"
-                  checked={appMode === 'map'}
-                  onChange={() => setAppMode('map')}
-                />
-                <div className="flex-1">
-                  <p className="font-medium flex items-center gap-1.5"><Map className="w-4 h-4" /> Karta</p>
-                  <p className="text-sm text-base-content/70">Puni prikaz s interaktivnom kartom, GPS vozilima i stanicama</p>
-                </div>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="app-mode"
-                  className="radio radio-primary mt-1"
-                  checked={appMode === 'list'}
-                  onChange={() => setAppMode('list')}
-                />
-                <div className="flex-1">
-                  <p className="font-medium flex items-center gap-1.5"><List className="w-4 h-4" /> Popis</p>
-                  <p className="text-sm text-base-content/70">Lagan način rada bez karte — favoriti, linije, obližnje stanice i obavijesti</p>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
+
 
         {/* Map Section */}
         <div className="card bg-base-100 shadow-sm">
@@ -178,26 +132,7 @@ export function SettingsPage() {
               />
             </div>
 
-            <div className="divider my-2" />
 
-            <div className="space-y-3">
-              <p className="font-medium">Prikaz stanica</p>
-              {STOP_DISPLAY_MODES.map((mode) => (
-                <label key={mode.id} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="stop-display-mode"
-                    className="radio radio-primary mt-1"
-                    checked={stopDisplayMode === mode.id}
-                    onChange={() => setStopDisplayMode(mode.id)}
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium">{mode.name}</p>
-                    <p className="text-sm text-base-content/70">{mode.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
           </div>
         </div>
 
