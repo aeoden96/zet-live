@@ -149,6 +149,23 @@ html, body {
   to { opacity: 1; }
 }
 
+@keyframes spider-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(-1rem) scale(0.9);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-spider-reveal {
+  animation: spider-reveal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Leaflet popup styling for enhanced stop popups */
 .leaflet-popup-content-wrapper {
   border-radius: 16px !important;

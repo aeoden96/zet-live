@@ -12,7 +12,6 @@ import { DebugPanel } from './components/common/DebugPanel';
 import { OnboardingWizard } from './components/common/OnboardingWizard';
 import { NearbyStopsModal } from './components/common/NearbyStopsModal';
 import { ServiceAlerts } from './components/common/ServiceAlerts';
-import { MapLayerSelector } from './components/MapLayerSelector';
 import { useInitialData } from './hooks/useInitialData';
 import { useCurrentService } from './hooks/useCurrentService';
 import { useRouteData } from './hooks/useRouteData';
@@ -21,6 +20,8 @@ import { useRealtimeStore } from './stores/realtimeStore';
 import { useAllVehiclePositions } from './hooks/useAllVehiclePositions';
 import { useVehiclePositions } from './hooks/useVehiclePositions';
 import { useRealtimeData } from './hooks/useRealtimeData';
+import { useNavigationStore } from './stores/navigationStore';
+import { useEffect } from 'react';
 
 function App() {
   // Modal states
@@ -47,8 +48,6 @@ function App() {
   const showBikeStations = useSettingsStore((s) => s.showBikeStations);
   const showRoadClosures = useSettingsStore((s) => s.showRoadClosures);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
-  const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
-  const setOnboardingStep = useSettingsStore((s) => s.setOnboardingStep);
   const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
 
@@ -101,6 +100,19 @@ function App() {
 
   // Derive route type from loaded data (no need to store separately)
   const selectedRouteType = selectedRouteId ? (routesById.get(selectedRouteId)?.type ?? null) : null;
+
+  // Register locate action globally for SpiderMenu
+  const setLocateAction = useNavigationStore(s => s.setLocateAction);
+  const setLocatingStore = useNavigationStore(s => s.setLocating);
+
+  useEffect(() => {
+    setLocateAction(handleLocateMe);
+    return () => setLocateAction(null);
+  }, [setLocateAction]);
+
+  useEffect(() => {
+    setLocatingStore(locating);
+  }, [locating, setLocatingStore]);
 
   // Handlers
   const handleSelectRoute = (routeId: string, _routeType: number, df?: DirectionFilter | 'all') => {
@@ -475,17 +487,6 @@ function App() {
         </div>
       )}
 
-      {/* Map controls (top-right): single spider menu */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000]">
-        <MapLayerSelector
-          onHelpClick={() => {
-            setOnboardingStep(0);
-            setOnboardingCompleted(false);
-          }}
-          onLocateClick={handleLocateMe}
-          locating={locating}
-        />
-      </div>
 
       {/* Locate error toast */}
       {locateError && (
