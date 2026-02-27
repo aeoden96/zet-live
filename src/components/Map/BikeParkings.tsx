@@ -1,9 +1,6 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
-
-// Import our static parsed parkings data
-import parkings from '../../data/bike_parkings.json';
 
 interface ParkingData {
     id: number;
@@ -19,11 +16,22 @@ interface BikeParkingsProps {
 }
 
 export const BikeParkings = memo(function BikeParkings({ show }: BikeParkingsProps) {
+    const [parkings, setParkings] = useState<ParkingData[]>([]);
+
+    useEffect(() => {
+        if (!show || parkings.length > 0) return;
+
+        fetch('/static_data/bike_parkings.json')
+            .then(res => res.json())
+            .then(data => setParkings(data))
+            .catch(err => console.error('Failed to load bike parkings:', err));
+    }, [show, parkings]);
+
     if (!show || !parkings.length) return null;
 
     return (
         <>
-            {(parkings as ParkingData[]).map((parking) => {
+            {parkings.map((parking) => {
                 // Determine icon based on stands or capacity
                 const hasStands = parking.stands > 0;
 

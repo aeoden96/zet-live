@@ -137,12 +137,12 @@ export function formatTime24h(minutes: number): string {
 export function getCurrentServiceId(calendar: Record<string, string>): string | null {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const serviceId = calendar[today];
-  
+
   // If service exists for today, return it
   if (serviceId) {
     return serviceId;
   }
-  
+
   // Fallback for dates outside feed range: use day-of-week default
   // 0_20 = weekday, 0_21 = Saturday, 0_22 = Sunday
   const dayOfWeek = new Date().getDay();
@@ -321,15 +321,7 @@ export async function fetchStopTimetable(stopId: string): Promise<StopTimetable>
   });
 }
 
-export async function fetchAllActiveTrips(): Promise<AllActiveTripsData> {
-  return cachedFetch(`${BASE_URL}data/all_active_trips.json`, async () => {
-    const response = await fetch(`${BASE_URL}data/all_active_trips.json`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch all active trips: ${response.statusText}`);
-    }
-    return response.json();
-  });
-}
+
 
 // Timetable parsing helpers
 export function parseTimetableEntry(entry: [string, number, number]): StopTime {
