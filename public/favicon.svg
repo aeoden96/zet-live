@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="12" fill="#1e3a5f"/>
+  
+  <!-- Tram body -->
+  <rect x="8" y="28" width="38" height="22" rx="3" fill="white"/>
+  
+  <!-- Tram roof / pantograph area -->
+  <rect x="10" y="24" width="34" height="6" rx="2" fill="white"/>
+  
+  <!-- Pantograph -->
+  <line x1="22" y1="16" x2="18" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="22" y1="16" x2="26" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="18" y1="16" x2="26" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Tram windows -->
+  <rect x="11" y="31" width="8" height="7" rx="1" fill="#1e3a5f"/>
+  <rect x="22" y="31" width="8" height="7" rx="1" fill="#1e3a5f"/>
+  <rect x="33" y="31" width="8" height="7" rx="1" fill="#1e3a5f"/>
+
+  <!-- Tram door line -->
+  <line x1="27" y1="42" x2="27" y2="50" stroke="#1e3a5f" stroke-width="1"/>
+  
+  <!-- Tram wheels -->
+  <circle cx="16" cy="51" r="3.5" fill="#1e3a5f"/>
+  <circle cx="16" cy="51" r="2" fill="white"/>
+  <circle cx="38" cy="51" r="3.5" fill="#1e3a5f"/>
+  <circle cx="38" cy="51" r="2" fill="white"/>
+
+  <!-- Location pin (red) -->
+  <circle cx="50" cy="18" r="8" fill="#e53e3e"/>
+  <circle cx="50" cy="16" r="3" fill="white"/>
+  <path d="M50 26 L46 20 Q50 28 54 20 Z" fill="#e53e3e"/>
+  <polygon points="50,28 46.5,21 53.5,21" fill="#e53e3e"/>
+</svg>

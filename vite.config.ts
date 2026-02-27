@@ -17,11 +17,11 @@ const getBasePath = () => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(), 
+    react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['favicon.svg', 'favicon.png', 'pwa-192x192.png'],
       devOptions: {
         enabled: true,
         type: 'module',
@@ -30,7 +30,7 @@ export default defineConfig({
         name: 'ZET Live — Zagreb javni prijevoz',
         short_name: 'ZET Live',
         description: 'Live tracking of Zagreb public transport',
-        theme_color: '#2563eb',
+        theme_color: '#1e3a5f',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: getBasePath(),
@@ -76,7 +76,7 @@ export default defineConfig({
         // Precache app shell (HTML, JS, CSS, static assets)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         globIgnores: ['**/node_modules/**', '**/dev-dist/**'],
-        
+
         // Runtime caching for GTFS data JSON files
         runtimeCaching: [
           {
