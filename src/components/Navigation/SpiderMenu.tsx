@@ -29,7 +29,15 @@ export function SpiderMenu() {
         showBikeParkings,
         setShowBikeParkings,
         showBikePaths,
-        setShowBikePaths
+        setShowBikePaths,
+        showStudentRestaurants,
+        setShowStudentRestaurants,
+        showPublicFountains,
+        setShowPublicFountains,
+        showPedestrianZones,
+        setShowPedestrianZones,
+        showFreeWifi,
+        setShowFreeWifi
     } = useSettingsStore();
     const { onLocateClick, locating } = useNavigationStore();
 
@@ -94,7 +102,7 @@ export function SpiderMenu() {
     const showLocate = !!onLocateClick;
 
     return (
-        <div className="fixed top-4 right-4 z-[2000] flex flex-col items-end">
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[2000] flex flex-col items-end">
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1999]"
@@ -102,26 +110,45 @@ export function SpiderMenu() {
                 />
             )}
 
-            <div className="relative z-[2000] flex flex-col items-end gap-3">
-                {/* HUB BUTTON */}
-                <button
-                    onClick={toggleMenu}
-                    className={`relative flex items-center justify-center w-14 h-14 text-white rounded-full shadow-2xl transition-all duration-300 ease-in-out border border-white/20 active:scale-95 backdrop-blur-xl ${isOpen ? 'bg-zinc-900 rotate-0' : `${activeItem.color} hover:brightness-110`}`}
-                >
-                    <div className={`absolute transition-all duration-300 ${isOpen ? 'rotate-180 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}>
-                        {activeItem.icon}
-                    </div>
-                    <div className={`absolute transition-all duration-300 ${isOpen ? 'rotate-0 scale-100 opacity-100' : '-rotate-180 scale-0 opacity-0'}`}>
-                        <X className="w-6 h-6" />
-                    </div>
-                </button>
+            <div className={`relative z-[2000] flex flex-col items-end ${isOpen ? 'gap-3' : 'gap-0'}`}>
+                <div className="flex items-center gap-2">
+                    {/* Locate Button */}
+                    {showLocate && !isOpen && (
+                        <button
+                            onClick={onLocateClick}
+                            disabled={locating}
+                            style={{ width: 48, height: 48 }}
+                            className="btn btn-circle sm:w-14 sm:h-14 bg-neutral text-neutral-content border-white/10 shadow-lg hover:bg-neutral/80 transition-all duration-300"
+                            title="Moja lokacija"
+                        >
+                            {locating ? (
+                                <span className="loading loading-spinner loading-sm" />
+                            ) : (
+                                <LocateFixed className="w-6 h-6" />
+                            )}
+                        </button>
+                    )}
+
+                    {/* HUB BUTTON */}
+                    <button
+                        onClick={toggleMenu}
+                        className={`relative flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 text-white rounded-full shadow-2xl transition-all duration-300 ease-in-out border border-white/20 active:scale-95 backdrop-blur-xl ${isOpen ? 'bg-zinc-900 rotate-0' : `${activeItem.color} hover:brightness-110`}`}
+                    >
+                        <div className={`absolute transition-all duration-300 ${isOpen ? 'rotate-180 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}>
+                            {activeItem.icon}
+                        </div>
+                        <div className={`absolute transition-all duration-300 ${isOpen ? 'rotate-0 scale-100 opacity-100' : '-rotate-180 scale-0 opacity-0'}`}>
+                            <X className="w-6 h-6" />
+                        </div>
+                    </button>
+                </div>
 
                 {/* MENU ITEMS (STACKED VERTICALLY) */}
                 {isOpen && (
                     <div className="flex flex-col items-end gap-3 pointer-events-auto">
                         {menuItems.map((item, index) => (
                             <div key={item.to} className="flex items-center gap-3">
-                                {item.to === "/" && (
+                                {location.pathname === "/" && item.to === "/" && (
                                     <div
                                         className="flex p-0.5 bg-neutral/90 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl animate-spider-reveal overflow-hidden"
                                         style={{ animationDelay: `${index * 50 + 50}ms` }}
@@ -158,7 +185,7 @@ export function SpiderMenu() {
                                         </button>
                                     </div>
                                 )}
-                                {item.to === "/cycling" && (
+                                {location.pathname === "/cycling" && item.to === "/cycling" && (
                                     <div
                                         className="flex p-0.5 bg-neutral/90 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl animate-spider-reveal overflow-hidden"
                                         style={{ animationDelay: `${index * 50 + 50}ms` }}
@@ -207,9 +234,71 @@ export function SpiderMenu() {
                                         </button>
                                     </div>
                                 )}
+                                {location.pathname === "/city" && item.to === "/city" && (
+                                    <div
+                                        className="flex p-0.5 bg-neutral/90 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl animate-spider-reveal overflow-hidden"
+                                        style={{ animationDelay: `${index * 50 + 50}ms` }}
+                                    >
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowStudentRestaurants(!showStudentRestaurants);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showStudentRestaurants
+                                                    ? 'bg-orange-500 text-white shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            MENZE
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowPublicFountains(!showPublicFountains);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showPublicFountains
+                                                    ? 'bg-blue-500 text-white shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            ZDENCI
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowPedestrianZones(!showPedestrianZones);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showPedestrianZones
+                                                    ? 'bg-pink-500 text-white shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            ZONA
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowFreeWifi(!showFreeWifi);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showFreeWifi
+                                                    ? 'bg-purple-500 text-white shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            WIFI
+                                        </button>
+                                    </div>
+                                )}
                                 <NavLink
                                     to={item.to}
-                                    onClick={() => setIsOpen(false)}
                                     className={({ isActive }) => `
                                         flex items-center gap-3 px-4 py-2 rounded-full shadow-xl transition-all duration-300
                                         text-white backdrop-blur-md border border-white/20 animate-spider-reveal
@@ -249,25 +338,11 @@ export function SpiderMenu() {
                             ))}
                         </div>
                     </div>
-                )}
+                )
+                }
 
-                {/* Locate Button closer to the hub */}
-                {showLocate && !isOpen && (
-                    <button
-                        onClick={onLocateClick}
-                        disabled={locating}
-                        className="btn btn-circle bg-neutral text-neutral-content border-white/10 shadow-lg hover:bg-neutral/80 transition-all duration-300 mt-3"
-                        style={{ width: 56, height: 56 }}
-                        title="Moja lokacija"
-                    >
-                        {locating ? (
-                            <span className="loading loading-spinner loading-sm" />
-                        ) : (
-                            <LocateFixed className="w-6 h-6" />
-                        )}
-                    </button>
-                )}
-            </div>
-        </div>
+
+            </div >
+        </div >
     );
 }

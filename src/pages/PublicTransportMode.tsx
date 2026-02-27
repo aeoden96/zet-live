@@ -422,7 +422,7 @@ export function PublicTransportMode() {
 
       {/* Floating search bar */}
       {showAllVehicles && (
-        <div className="absolute top-2 left-2 right-2 sm:left-4 sm:right-auto sm:top-4 z-[1000]">
+        <div className="absolute top-2 left-2 right-32 sm:left-4 sm:right-auto sm:top-4 z-[1000]">
           <div className="w-full sm:w-80 flex items-center gap-2 bg-base-100 rounded-xl px-4 py-3 shadow-lg">
             <button
               onClick={() => setSearchModalOpen(true)}

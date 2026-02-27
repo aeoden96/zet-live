@@ -26,6 +26,11 @@ interface SettingsState {
   showBikeStations: boolean;
   showBikeParkings: boolean;
   showBikePaths: boolean;
+  /** Zagreb city data toggles */
+  showStudentRestaurants: boolean;
+  showPublicFountains: boolean;
+  showPedestrianZones: boolean;
+  showFreeWifi: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
   detailedMap: boolean;
   appMode: AppMode;
@@ -50,6 +55,10 @@ interface SettingsState {
   setShowBikeStations: (show: boolean) => void;
   setShowBikeParkings: (show: boolean) => void;
   setShowBikePaths: (show: boolean) => void;
+  setShowStudentRestaurants: (show: boolean) => void;
+  setShowPublicFountains: (show: boolean) => void;
+  setShowPedestrianZones: (show: boolean) => void;
+  setShowFreeWifi: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
@@ -83,6 +92,10 @@ export const useSettingsStore = create<SettingsState>()(
         showBikeStations: true,
         showBikeParkings: true,
         showBikePaths: true,
+        showStudentRestaurants: true,
+        showPublicFountains: true,
+        showPedestrianZones: true,
+        showFreeWifi: true,
         appMode: 'map',
         favouriteRouteIds: [],
         favouriteStopIds: [],
@@ -119,6 +132,10 @@ export const useSettingsStore = create<SettingsState>()(
         setShowBikeStations: (show) => set({ showBikeStations: show }),
         setShowBikeParkings: (show) => set({ showBikeParkings: show }),
         setShowBikePaths: (show) => set({ showBikePaths: show }),
+        setShowStudentRestaurants: (show) => set({ showStudentRestaurants: show }),
+        setShowPublicFountains: (show) => set({ showPublicFountains: show }),
+        setShowPedestrianZones: (show) => set({ showPedestrianZones: show }),
+        setShowFreeWifi: (show) => set({ showFreeWifi: show }),
         setAppMode: (mode) => set({ appMode: mode }),
 
         toggleFavouriteRoute: (id) =>
