@@ -237,7 +237,6 @@ export function PublicTransportMode() {
       {/* Full-screen map */}
       <MapView
         parentStations={parentStations}
-        groupedParentStations={groupedParentStations}
         platformStops={platformStops}
         parentChildCounts={parentChildCounts}
         selectedRouteId={selectedRouteId}

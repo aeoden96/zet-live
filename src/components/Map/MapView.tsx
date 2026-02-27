@@ -3,7 +3,7 @@
  */
 
 import { BaseMap } from './BaseMap';
-import type { Stop, Route, ParentGroup } from '../../utils/gtfs';
+import type { Stop, Route } from '../../utils/gtfs';
 import type { VehiclePosition, AllVehiclePosition } from '../../utils/vehicles';
 import { ZoomBasedStops } from './ZoomBasedStops';
 import { RouteShape } from './RouteShape';
@@ -19,7 +19,6 @@ import { useRoadClosures } from '../../hooks/useRoadClosures';
 
 interface MapViewProps {
   parentStations: Stop[];
-  groupedParentStations?: ParentGroup[];
   platformStops: Stop[];
   parentChildCounts: Map<string, number>;
   selectedRouteId: string | null;
@@ -48,7 +47,6 @@ interface MapViewProps {
 
 export function MapView({
   parentStations,
-  groupedParentStations,
   platformStops,
   parentChildCounts,
   selectedRouteId,
@@ -92,7 +90,7 @@ export function MapView({
         {showAllVehicles && (
           <ZoomBasedStops
             parentStations={parentStations}
-            groupedParentStations={groupedParentStations}
+
             platformStops={platformStops}
             parentChildCounts={parentChildCounts}
             selectedStopId={selectedStopId}
