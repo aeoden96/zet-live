@@ -129,11 +129,14 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
       const clicked = registry.get(id);
       if (!clicked) return;
 
-      // If this group is already open, collapse it
+      // Always collapse any existing spider first.
+      // If we clicked an ID that is already part of the current spider, 
+      // collapse() will handles it and we return early.
       if (spiderfiedIdsRef.current.has(id)) {
         collapse();
         return;
       }
+      collapse();
 
       const clickedPx = map.latLngToContainerPoint([clicked.lat, clicked.lon]);
 

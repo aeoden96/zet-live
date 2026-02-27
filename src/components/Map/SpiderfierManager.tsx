@@ -1,16 +1,8 @@
-/**
- * SpiderfierManager – lives inside a react-leaflet MapContainer.
- *
- * Responsibilities:
- *  1. Collapse the active spider on map background click or zoom.
- *  2. Render the radial fan (leg lines + node markers) or a scrollable
- *     list-popup when the group is too large to fan out.
- */
-
 import { Fragment, useEffect } from 'react';
 import { Circle, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useSpiderfierContext, type SpiderfiedItem } from './SpiderfierContext';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 // ── Icon factories ────────────────────────────────────────────────────────────
 
@@ -37,6 +29,7 @@ function animatedSpiderIcon(
   const html =
     `<div class="spider-node-wrap" style="--spider-idx:${index}">` +
     innerHtml +
+    `<span class="spider-node-label">${safe}</span>` +
     `</div>`;
 
   // Preserve the source icon's anchor so the animated copy sits exactly on top
@@ -75,6 +68,8 @@ function listPopupIcon(items: SpiderfiedItem[]): L.DivIcon {
 export function SpiderfierManager() {
   const map = useMap();
   const ctx = useSpiderfierContext();
+  const theme = useSettingsStore((s) => s.theme);
+  const isDark = theme === 'dark';
 
   // Create custom panes once so we can control z-depth precisely:
   //   spiderBgPane  (610) – bg circle + leg lines, above regular markerPane (600)
@@ -83,7 +78,7 @@ export function SpiderfierManager() {
     if (!map.getPane('spiderBgPane')) {
       const bg = map.createPane('spiderBgPane');
       bg.style.zIndex = '610';
-      bg.style.pointerEvents = 'none';
+      // bg.style.pointerEvents = 'none'; // Removed so it can block clicks on underlying markers
     }
     if (!map.getPane('spiderNodePane')) {
       map.createPane('spiderNodePane').style.zIndex = '620';
@@ -91,14 +86,28 @@ export function SpiderfierManager() {
   }, [map]);
 
   // Collapse spider on background map click or zoom start
+  // Plus a mousedown listener to catch clicks on other markers
   useEffect(() => {
     if (!ctx) return;
     const collapse = () => ctx.collapse();
+
+    // Catch-all mousedown to collapse if clicking outside any spider node
+    const handleGlobalMousedown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // If a spider is open and we click something that isn't a spider node or the list popup
+      if (ctx.spiderfied && !target.closest('.spider-node-wrap, .spider-list-popup')) {
+        collapse();
+      }
+    };
+
     map.on('click', collapse);
     map.on('zoomstart', collapse);
+    window.addEventListener('mousedown', handleGlobalMousedown, true);
+
     return () => {
       map.off('click', collapse);
       map.off('zoomstart', collapse);
+      window.removeEventListener('mousedown', handleGlobalMousedown, true);
     };
   }, [map, ctx]);
 
@@ -132,14 +141,13 @@ export function SpiderfierManager() {
   // ── Radial fan ─────────────────────────────────────────────────────────────
 
   // Compute encompassing radius: farthest item distance from center + padding.
-  // Padding = ~20px in map-meters at current zoom (standard Web Mercator formula).
   const center = L.latLng(centerLat, centerLon);
   const maxMeters = items.reduce((max, item) => {
     const d = center.distanceTo(L.latLng(item.spiderfiedLat, item.spiderfiedLon));
     return d > max ? d : max;
   }, 0);
   const mPerPx = 40075016.686 * Math.abs(Math.cos(centerLat * Math.PI / 180)) / Math.pow(2, map.getZoom() + 8);
-  const bgRadius = maxMeters + mPerPx * 20;
+  const bgRadius = maxMeters + mPerPx * 24; // slightly more padding for labels
 
   return (
     <>
@@ -150,12 +158,18 @@ export function SpiderfierManager() {
         pane="spiderBgPane"
         pathOptions={{
           color: 'transparent',
-          fillColor: '#ffffff',
-          fillOpacity: 0.72,
+          fillColor: isDark ? '#1f2937' : '#ffffff',
+          fillOpacity: 0.85,
           weight: 0,
           className: 'spider-bg-circle',
         }}
-        interactive={false}
+        interactive={true}
+        eventHandlers={{
+          click: (e) => {
+            L.DomEvent.stopPropagation(e.originalEvent);
+            ctx.collapse();
+          }
+        }}
       />
       {items.map((item, i) => (
         <Fragment key={`spider-${item.id}`}>
@@ -167,7 +181,7 @@ export function SpiderfierManager() {
             ]}
             pane="spiderBgPane"
             pathOptions={{
-              color: '#374151',
+              color: isDark ? '#9ca3af' : '#374151',
               weight: 1.5,
               opacity: 0.65,
               dashArray: '3 5',
@@ -193,3 +207,4 @@ export function SpiderfierManager() {
     </>
   );
 }
+
