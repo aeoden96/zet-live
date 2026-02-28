@@ -122,9 +122,11 @@ export function PublicTransportMode() {
   }, [lastUpdate]);
 
   const onLocateSuccess = useCallback((_lat: number, _lon: number) => {
+    // Clear any previously selected stop
+    clearStop();
     // BaseMap auto-zooms to the user location so we only need to open the nearby modal
     setNearbyOpen(true);
-  }, []);
+  }, [clearStop]);
 
   const { userLocation, setUserLocation, locateError } = useGeolocation(onLocateSuccess);
 
@@ -217,6 +219,7 @@ export function PublicTransportMode() {
   };
 
   const handleSelectStop = (stopId: string) => {
+    setNearbyOpen(false); // Close nearby modal if open
     const stop = stopsById.get(stopId);
     selectStop(stopId);
     addRecentStop(stopId);
