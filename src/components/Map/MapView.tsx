@@ -62,9 +62,10 @@ export function MapView({
   showAllVehicles = false,
   showRoadClosures = false,
   allVehicles = [],
+  routesById,
   userLocation,
-  // routesById and serviceId are declared in the interface for future use
-  // but are not consumed by the map component directly
+  // serviceId is declared in the interface for future use
+  // but is not consumed by the map component directly
   parentStationZoomTarget,
   onZoomComplete,
   selectedStop,
@@ -90,12 +91,12 @@ export function MapView({
         {showAllVehicles && (
           <ZoomBasedStops
             parentStations={parentStations}
-
             platformStops={platformStops}
             parentChildCounts={parentChildCounts}
             selectedStopId={selectedStopId}
             highlightStopIds={selectedRouteId ? routeStops : []}
             orderedStops={orderedStops}
+            routesById={routesById}
             onStopClick={onStopClick}
           />
         )}

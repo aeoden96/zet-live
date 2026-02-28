@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
-import type { Stop } from '../../utils/gtfs';
+import type { Stop, Route } from '../../utils/gtfs';
 import { useMapBounds } from '../../hooks/useMapBounds';
 
 interface ZoomBasedStopsProps {
@@ -19,6 +19,7 @@ interface ZoomBasedStopsProps {
 
   /** Optional ordered stops mapping from useRouteData (direction -> stop ids) */
   orderedStops?: Record<string, string[]>;
+  routesById: Map<string, Route>;
 }
 
 export function ZoomBasedStops({
@@ -30,6 +31,7 @@ export function ZoomBasedStops({
   highlightStopIds,
   onStopClick,
   orderedStops,
+  routesById,
 }: ZoomBasedStopsProps) {
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
@@ -107,6 +109,7 @@ export function ZoomBasedStops({
       onStopClick={onStopClick}
       opacityFactor={opacityFactor}
       showLabels={showLabels}
+      routesById={routesById}
     />
   );
 }

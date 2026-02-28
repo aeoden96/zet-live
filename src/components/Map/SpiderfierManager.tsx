@@ -1,7 +1,7 @@
 import { Fragment, useEffect } from 'react';
 import { Circle, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useSpiderfierContext, type SpiderfiedItem } from './SpiderfierContext';
+import { useSpiderfierContext } from './SpiderfierContext';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 // ── Icon factories ────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ function animatedSpiderIcon(
   const html =
     `<div class="spider-node-wrap" style="--spider-idx:${index}">` +
     innerHtml +
-    `<span class="spider-node-label">${safe}</span>` +
+    `<span class="spider-node-label">${label}</span>` +
     `</div>`;
 
   // Preserve the source icon's anchor so the animated copy sits exactly on top
@@ -39,29 +39,6 @@ function animatedSpiderIcon(
   return L.divIcon({ html, className: '', iconSize, iconAnchor });
 }
 
-function listPopupIcon(items: SpiderfiedItem[]): L.DivIcon {
-  const rows = items
-    .map(
-      (item, i) =>
-        `<button data-idx="${i}" class="spider-list-item" type="button">` +
-        item.label
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;') +
-        `</button>`,
-    )
-    .join('');
-  return L.divIcon({
-    html:
-      `<div class="spider-list-popup">` +
-      `<div class="spider-list-header">${items.length} items – tap to select</div>` +
-      rows +
-      `</div>`,
-    className: '',
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-  });
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -113,30 +90,7 @@ export function SpiderfierManager() {
 
   if (!ctx?.spiderfied) return null;
 
-  const { centerLat, centerLon, items, useListFallback } = ctx.spiderfied;
-
-  // ── List-popup fallback (large clusters) ───────────────────────────────────
-  if (useListFallback) {
-    return (
-      <Marker
-        position={[centerLat, centerLon]}
-        icon={listPopupIcon(items)}
-        zIndexOffset={1200}
-        interactive
-        eventHandlers={{
-          click: (e) => {
-            e.originalEvent.stopPropagation();
-            const target = e.originalEvent.target as HTMLElement;
-            const btn = target.closest<HTMLButtonElement>('[data-idx]');
-            if (btn) {
-              const idx = parseInt(btn.dataset.idx ?? '-1', 10);
-              if (idx >= 0) items[idx]?.onClick();
-            }
-          },
-        }}
-      />
-    );
-  }
+  const { centerLat, centerLon, items } = ctx.spiderfied;
 
   // ── Radial fan ─────────────────────────────────────────────────────────────
 
@@ -147,7 +101,7 @@ export function SpiderfierManager() {
     return d > max ? d : max;
   }, 0);
   const mPerPx = 40075016.686 * Math.abs(Math.cos(centerLat * Math.PI / 180)) / Math.pow(2, map.getZoom() + 8);
-  const bgRadius = maxMeters + mPerPx * 24; // slightly more padding for labels
+  const bgRadius = maxMeters + mPerPx * 45; // significantly more padding for labels and larger fan
 
   return (
     <>

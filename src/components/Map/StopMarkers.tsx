@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Marker, Polyline, useMap } from 'react-leaflet';
 import { useSpiderfierContext } from './SpiderfierContext';
 import L from 'leaflet';
-import type { Stop, ParentGroup } from '../../utils/gtfs';
+import { fetchStopTimetable, type Stop, type ParentGroup, type Route } from '../../utils/gtfs';
 import { getDirectionColor } from './directionColors';
 
 // ── Stop colour by service type ──────────────────────────────────────────────
@@ -41,31 +41,31 @@ function makeStopIcon(
     : '';
 
   if (bearing !== undefined) {
-    const pinTipY  = cx - r - 4;
+    const pinTipY = cx - r - 4;
     const pinBaseY = cx - r;
     const pinHalfW = 3;
     const html =
       `<div style="position:relative;width:${size}px;height:${size}px;opacity:${opacityFactor};">` +
-        `<svg style="position:absolute;top:0;left:0;transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
-             ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-          `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
-                   ` fill="${color}" stroke="white" stroke-width="1" stroke-linejoin="round"/>` +
-        `</svg>` +
-        `<svg style="position:absolute;top:0;left:0;" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-          `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
-        `</svg>` +
-        `${safeLabel ? `<span class="stop-label">${safeLabel}</span>` : ''}` +
+      `<svg style="position:absolute;top:0;left:0;transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
+      ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+      `<polygon points="${cx},${pinTipY} ${cx - pinHalfW},${pinBaseY} ${cx + pinHalfW},${pinBaseY}"` +
+      ` fill="${color}" stroke="white" stroke-width="1" stroke-linejoin="round"/>` +
+      `</svg>` +
+      `<svg style="position:absolute;top:0;left:0;" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+      `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
+      `</svg>` +
+      `${safeLabel ? `<span class="stop-label">${safeLabel}</span>` : ''}` +
       `</div>`;
     return L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [cx, cx] });
   }
 
   const html =
     `<div style="position:relative;width:${size}px;height:${size}px;">` +
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"` +
-          ` style="opacity:${opacityFactor}">` +
-        `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
-      `</svg>` +
-      `${safeLabel ? `<span class="stop-label">${safeLabel}</span>` : ''}` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"` +
+    ` style="opacity:${opacityFactor}">` +
+    `<circle cx="${cx}" cy="${cx}" r="${r}" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1.5"/>` +
+    `</svg>` +
+    `${safeLabel ? `<span class="stop-label">${safeLabel}</span>` : ''}` +
     `</div>`;
   return L.divIcon({ html, className: '', iconSize: [size, size], iconAnchor: [cx, cx] });
 }
@@ -78,6 +78,7 @@ interface PlatformStopMarkerProps {
   isHighlighted: boolean;
   color: string;
   effectiveFactor: number;
+  routesById: Map<string, Route>;
   onStopClick: (id: string) => void;
 }
 
@@ -87,6 +88,7 @@ function PlatformStopMarker({
   isHighlighted,
   color,
   effectiveFactor,
+  routesById,
   onStopClick,
 }: PlatformStopMarkerProps) {
   const map = useMap();
@@ -94,23 +96,58 @@ function PlatformStopMarker({
 
   // Compute icon before hooks/effects so iconRef always holds the latest value
   const size = isSelected ? 30 : isHighlighted ? 26 : 24;
-  const r    = isSelected ?  9 : isHighlighted ?  8 :  7;
+  const r = isSelected ? 9 : isHighlighted ? 8 : 7;
   const icon = makeStopIcon(color, stop.bearing, size, r, effectiveFactor);
   const iconRef = useRef(icon);
   useLayoutEffect(() => { iconRef.current = icon; });
 
   useEffect(() => {
     if (!ctx) return;
+
+    // Resolve a more descriptive label on-demand (e.g. including route info)
+    const resolveLabel = async () => {
+      try {
+        const timetable = await fetchStopTimetable(stop.id);
+        const routes = Object.keys(timetable)
+          .map(rid => routesById.get(rid))
+          .filter((r): r is Route => !!r)
+          .sort((a, b) => {
+            const numA = parseInt(a.shortName, 10);
+            const numB = parseInt(b.shortName, 10);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return a.shortName.localeCompare(b.shortName);
+          });
+
+        if (routes.length === 0) return stop.name;
+
+        const renderedBadges = routes.map(r => {
+          const typeClass = r.type === 0 ? 'is-tram' : r.type === 3 ? 'is-bus' : 'is-mixed';
+          return `<span class="spider-route-badge ${typeClass}">${r.shortName}</span>`;
+        }).join('');
+
+        // If many routes, wrap them in a sliding ticker
+        const badgeContent = routes.length > 3
+          ? `<div class="spider-route-ticker"><div class="spider-route-ticker-inner">${renderedBadges}${renderedBadges}</div></div>`
+          : `<div class="spider-route-badges">${renderedBadges}</div>`;
+
+        return `<div class="spider-label-content"><span class="stop-name">${stop.name}</span>${badgeContent}</div>`;
+      } catch (err) {
+        console.error('Failed to resolve routes for stop', stop.id, err);
+        return stop.name;
+      }
+    };
+
     ctx.register({
       id: stop.id,
       lat: stop.lat,
       lon: stop.lon,
       label: stop.name,
+      resolveLabel,
       onClick: () => onStopClick(stop.id),
       getIcon: () => iconRef.current,
     });
     return () => ctx.unregister(stop.id);
-  }, [stop.id, stop.lat, stop.lon, stop.name, onStopClick, ctx]);
+  }, [stop.id, stop.lat, stop.lon, stop.name, onStopClick, ctx, routesById]);
 
   // Hide when the SpiderfierManager is rendering this marker in the fan
   if (ctx?.isHidden(stop.id)) return null;
@@ -148,22 +185,24 @@ interface StopMarkersProps {
   opacityFactor?: number;
   /** When true, platform stop labels are rendered inside the DivIcon (used at max zoom) */
   showLabels?: boolean;
+  routesById: Map<string, Route>;
 }
 
-export function StopMarkers({ 
-  stops, 
+export function StopMarkers({
+  stops,
   isParentStationView,
   parentStations,
   parentChildCounts,
-  selectedStopId, 
+  selectedStopId,
   highlightStopIds,
   stopDirectionMap,
   onStopClick,
   opacityFactor = 1,
-  showLabels = false
+  showLabels = false,
+  routesById,
 }: StopMarkersProps) {
   const highlightSet = new Set(highlightStopIds as string[]);
-  
+
   // Build a lookup of parent stations by id for quick access
   const parentMap = new Map<string, Stop>();
   if (parentStations) parentStations.forEach((p) => parentMap.set(p.id, p));
@@ -202,8 +241,8 @@ export function StopMarkers({
       const R = 6371000; // meters
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     };
 
@@ -318,6 +357,7 @@ export function StopMarkers({
             isHighlighted={isHighlighted}
             color={color}
             effectiveFactor={effectiveFactor}
+            routesById={routesById}
             onStopClick={onStopClick}
           />
         );
@@ -328,7 +368,7 @@ export function StopMarkers({
           <Marker
             position={[lat, lon]}
             icon={L.divIcon({
-              html: `<span class="parent-station-label">${String(label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`,
+              html: `<span class="parent-station-label">${String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`,
               className: '',
               iconSize: [0, 0],
               iconAnchor: [0, 0],

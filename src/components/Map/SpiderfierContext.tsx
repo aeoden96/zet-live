@@ -23,6 +23,8 @@ export interface SpiderfierEntry {
   lon: number;
   /** Shown in the list-fallback popup and as tooltip on node markers. */
   label: string;
+  /** Optional: Resolve a more descriptive label on-demand (e.g. including route info). */
+  resolveLabel?: () => Promise<string>;
   onClick: () => void;
   /** Called fresh each time the spider fan is rendered to get the current icon. */
   getIcon?: () => L.DivIcon | null;
@@ -43,8 +45,6 @@ export interface SpiderfiedGroup {
   centerLat: number;
   centerLon: number;
   items: SpiderfiedItem[];
-  /** When true render a scrollable list popup instead of a radial fan. */
-  useListFallback: boolean;
 }
 
 interface SpiderfierCtx {
@@ -75,13 +75,13 @@ export function useSpiderfierContext(): SpiderfierCtx | null {
 /** Within this many pixels markers are treated as overlapping. */
 const OVERLAP_PX = 22;
 
-/** Fan to radial layout; beyond this count use list popup. */
-const MAX_SPIDER_FAN = 8;
+/** Fan to radial layout; beyond this count zoom in the map instead. */
+const MAX_SPIDER_FAN = 5;
 
 // ── Layout helpers ────────────────────────────────────────────────────────────
 
 function circlePositions(count: number, center: L.Point, map: L.Map): L.LatLng[] {
-  const radius = count <= 3 ? 44 : count <= 6 ? 56 : 70;
+  const radius = count <= 3 ? 80 : count <= 6 ? 110 : 140;
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
     return map.containerPointToLatLng(
@@ -90,17 +90,6 @@ function circlePositions(count: number, center: L.Point, map: L.Map): L.LatLng[]
   });
 }
 
-function spiralPositions(count: number, center: L.Point, map: L.Map): L.LatLng[] {
-  let legLength = 42;
-  let angle = 0;
-  return Array.from({ length: count }, () => {
-    angle += Math.asin(Math.min(1, 26 / legLength)) + 0.28;
-    legLength += 400 / legLength;
-    return map.containerPointToLatLng(
-      L.point(center.x + legLength * Math.cos(angle), center.y + legLength * Math.sin(angle)),
-    );
-  });
-}
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -140,6 +129,9 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
 
       const clickedPx = map.latLngToContainerPoint([clicked.lat, clicked.lon]);
 
+      // Auto-center the map on the spider origin
+      map.panTo([clicked.lat, clicked.lon]);
+
       // Gather all entries within OVERLAP_PX of the clicked position
       const nearby: SpiderfierEntry[] = [];
       registry.forEach((entry) => {
@@ -157,12 +149,14 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const useListFallback = nearby.length > MAX_SPIDER_FAN;
-      const positions = useListFallback
-        ? nearby.map(() => map.containerPointToLatLng(clickedPx)) // positions unused for list
-        : nearby.length <= MAX_SPIDER_FAN
-          ? circlePositions(nearby.length, clickedPx, map)
-          : spiralPositions(nearby.length, clickedPx, map);
+      // Large cluster – zoom in instead of spiderfying
+      if (nearby.length > MAX_SPIDER_FAN) {
+        map.setView([clicked.lat, clicked.lon], map.getZoom() + 1);
+        return;
+      }
+
+      // Fan positions (always circle since count is <= MAX_SPIDER_FAN)
+      const positions = circlePositions(nearby.length, clickedPx, map);
 
       const items: SpiderfiedItem[] = nearby.map((entry, i) => ({
         id: entry.id,
@@ -179,7 +173,27 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
       }));
 
       spiderfiedIdsRef.current = new Set(nearby.map((e) => e.id));
-      setSpiderfied({ centerLat: clicked.lat, centerLon: clicked.lon, items, useListFallback });
+      const group: SpiderfiedGroup = { centerLat: clicked.lat, centerLon: clicked.lon, items };
+      setSpiderfied(group);
+
+      // On-demand label enrichment
+      nearby.forEach(async (entry, i) => {
+        if (!entry.resolveLabel) return;
+        try {
+          const enrichedLabel = await entry.resolveLabel();
+          setSpiderfied(current => {
+            if (!current || current.centerLat !== group.centerLat || current.centerLon !== group.centerLon) return current;
+            const newItems = [...current.items];
+            if (newItems[i] && newItems[i].id === entry.id) {
+              newItems[i] = { ...newItems[i], label: enrichedLabel };
+              return { ...current, items: newItems };
+            }
+            return current;
+          });
+        } catch (e) {
+          console.error('Failed to resolve spider label', e);
+        }
+      });
     },
     [collapse],
   );

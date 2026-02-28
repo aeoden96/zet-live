@@ -494,24 +494,104 @@ body {
   position: absolute;
   top: 100%;
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%) translateY(6px);
+  /* More spacing */
   background: white;
   color: #111827;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   animation: spider-label-fadein 0.35s ease-out both;
   animation-delay: calc(var(--spider-idx, 0) * 35ms + 80ms);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 1000;
 }
 
 [data-theme="dark"] .spider-node-label {
-  background: #1f2937;
+  background: #374151;
   color: #f3f4f6;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.spider-label-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spider-route-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  max-width: 160px;
+}
+
+.spider-route-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.spider-route-badge.is-tram {
+  background-color: #2563eb;
+}
+
+.spider-route-badge.is-bus {
+  background-color: #ea580c;
+}
+
+.spider-route-badge.is-mixed {
+  background-color: #8242be;
+}
+
+.spider-route-ticker {
+  width: 100%;
+  max-width: 130px;
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+.spider-route-ticker-inner {
+  display: flex;
+  gap: 3px;
+  padding: 0 10px;
+  width: max-content;
+  animation: spider-marquee 10s linear infinite;
+}
+
+/* Pause on hover would be nice, but since it's pointer-events: none, 
+   we can't easily hover individual labels. However, the spider view 
+   itself isn't pointer-events: none. */
+
+@keyframes spider-marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes spider-label-fadein {
