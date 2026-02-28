@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Navigation, MapPin, Smartphone, Map, LocateFixed, GitMerge, Coffee } from 'lucide-react';
+import { X, Navigation, MapPin, Smartphone, Map, GitMerge, Coffee, List, MousePointerClick, Layers } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list';
@@ -25,11 +25,11 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
   const modeSwitchStep = {
     title: 'Promjena načina rada',
     body: 'Klikni na glavni gumb na dnu (Spider izbornik) za brzo prebacivanje između javnog prijevoza, bicikla, auta ili gradskog sadržaja.',
-    icon: <LocateFixed className="w-6 h-6 text-primary" />,
-    image: '/images/onboarding/spider_menu.png'
+    icon: <Layers className="w-6 h-6 text-primary" />,
+    video: '/onboarding/switch_views.webm'
   };
 
-  const getStepsForVariant = (): Array<{ title: string; body: string; icon: React.ReactNode; image?: string }> => {
+  const getStepsForVariant = (): Array<{ title: string; body: string; icon: React.ReactNode; image?: string; video?: string }> => {
     switch (variant) {
       case 'transit':
         return [
@@ -40,10 +40,22 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
             image: '/images/onboarding/public_transit_map.png'
           },
           {
-            title: 'Odaberi liniju ili stanicu',
-            body: 'Koristi pretragu ili klikni na stanicu na karti za detalje, raspored i praćenje vozila.',
+            title: 'Pregled stanice',
+            body: 'Klikni na stanicu na karti kako bi otvorio detalje i provjerio raspored dolazaka i odlazećih linija.',
             icon: <MapPin className="w-6 h-6 text-primary" />,
-            image: '/images/onboarding/public_transit_stop.png'
+            video: '/onboarding/station_view.webm'
+          },
+          {
+            title: 'Precizan odabir',
+            body: 'Kada klikneš na grupu stanica ili vozila, otvara se izbornik iz kojeg lako možeš odabrati točno ono što želiš pratiti.',
+            icon: <MousePointerClick className="w-6 h-6 text-primary" />,
+            video: '/onboarding/spider_selector.webm'
+          },
+          {
+            title: 'Karta ili Lista',
+            body: 'Uz kartu, dostupan je i prikaz u obliku liste. Korisno kada samo želiš pronaći liniju bez gledanja u kartu.',
+            icon: <List className="w-6 h-6 text-primary" />,
+            video: '/onboarding/public_transport_swith_views.webm'
           },
           modeSwitchStep
         ];
@@ -113,10 +125,22 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
   const currentStep = steps[step];
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-open z-[9999]">
       <div className="modal-box max-w-md p-0 overflow-hidden relative">
-        {/* Cover Image */}
-        {currentStep.image && (
+        {/* Cover Media */}
+        {currentStep.video ? (
+          <div className="w-full bg-base-300 flex items-center justify-center">
+            <video
+              src={import.meta.env.BASE_URL + currentStep.video.replace(/^\//, '')}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full object-contain"
+              style={{ maxHeight: '55vh', aspectRatio: '0.716' }}
+            />
+          </div>
+        ) : currentStep.image ? (
           <div className="w-full h-48 bg-base-200 relative">
             <img
               src={import.meta.env.BASE_URL + currentStep.image.replace(/^\//, '')}
@@ -124,7 +148,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
               className="w-full h-full object-cover"
             />
           </div>
-        )}
+        ) : null}
 
         <button
           onClick={handleClose}
