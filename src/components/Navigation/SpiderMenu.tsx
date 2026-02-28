@@ -83,8 +83,11 @@ export function SpiderMenu() {
             label: "Pomoć",
             icon: <HelpCircle className="w-5 h-5" />,
             onClick: () => {
+                const variant = location.pathname === '/'
+                    ? (appMode === 'list' ? 'list' : 'transit')
+                    : location.pathname.substring(1);
                 setOnboardingStep(0);
-                setOnboardingCompleted(false);
+                setOnboardingCompleted(variant, false);
             }
         },
         {
