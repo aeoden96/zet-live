@@ -125,10 +125,24 @@ function PlatformStopMarker({
           return `<span class="spider-route-badge ${typeClass}">${r.shortName}</span>`;
         }).join('');
 
-        // If many routes, wrap them in a sliding ticker
-        const badgeContent = routes.length > 3
-          ? `<div class="spider-route-ticker"><div class="spider-route-ticker-inner">${renderedBadges}${renderedBadges}</div></div>`
-          : `<div class="spider-route-badges">${renderedBadges}</div>`;
+        // Estimate total badge row width to decide whether to animate or not.
+        // Badge: font-size 10px bold ≈ 6.5px/char, 10px h-padding, min-width 18px, gap 3px.
+        // Visible ticker area ≈ 110px (130px container minus mask fade zones).
+        const CHAR_PX = 6.5;
+        const H_PAD = 10;
+        const MIN_W = 18;
+        const GAP = 3;
+        const TICKER_VISIBLE_PX = 110;
+        const estimatedWidth = routes.reduce(
+          (sum, r, i) => sum + Math.max(MIN_W, r.shortName.length * CHAR_PX + H_PAD) + (i > 0 ? GAP : 0),
+          0,
+        );
+
+        const badgeContent = estimatedWidth <= TICKER_VISIBLE_PX
+          // Fits — plain static row, no animation, no mask, no duplication
+          ? `<div class="spider-route-badges">${renderedBadges}</div>`
+          // Overflows — scrolling ticker with seamless doubled content
+          : `<div class="spider-route-ticker"><div class="spider-route-ticker-inner">${renderedBadges}${renderedBadges}</div></div>`;
 
         return `<div class="spider-label-content"><span class="stop-name">${stop.name}</span>${badgeContent}</div>`;
       } catch (err) {

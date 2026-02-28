@@ -44,8 +44,9 @@ function SpiderfiedVehicleMarker({
       lat: vehicle.lat,
       lon: vehicle.lon,
       label,
-      onClick: () => {}, // route already selected; spiderfy just separates overlapping vehicles
+      onClick: () => { }, // route already selected; spiderfy just separates overlapping vehicles
       getIcon: () => iconRef.current,
+      hideLabel: true, // icon already shows the route number; no need for a text bubble
     });
     return () => ctx.unregister(vehicle.tripId);
   }, [vehicle.tripId, vehicle.lat, vehicle.lon, label, ctx]);

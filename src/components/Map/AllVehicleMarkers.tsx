@@ -44,6 +44,7 @@ function SpiderfiedAllVehicleMarker({
       label,
       onClick: () => onVehicleClick?.(vehicle.routeId, vehicle.routeType),
       getIcon: () => iconRef.current,
+      hideLabel: true, // icon already shows the route number; no need for a text bubble
     });
     return () => ctx.unregister(vehicle.tripId);
   }, [vehicle.tripId, vehicle.lat, vehicle.lon, label, onVehicleClick, vehicle.routeId, vehicle.routeType, ctx]);

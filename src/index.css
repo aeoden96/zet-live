@@ -492,10 +492,10 @@ body {
 
 .spider-node-label {
   position: absolute;
-  top: 100%;
+  /* Anchor at icon centre, then offset outward via --lx / --ly set per-item */
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  /* More spacing */
+  transform: translate(calc(-50% + var(--lx, 0px)), calc(-50% + var(--ly, 0px)));
   background: white;
   color: #111827;
   padding: 4px 8px;
@@ -504,7 +504,8 @@ body {
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   animation: spider-label-fadein 0.35s ease-out both;
   animation-delay: calc(var(--spider-idx, 0) * 35ms + 80ms);
   display: flex;
@@ -531,7 +532,8 @@ body {
 
 .spider-route-badges {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 3px;
   max-width: 160px;
@@ -597,12 +599,14 @@ body {
 @keyframes spider-label-fadein {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(0);
+    /* Start at ~70% of the final outward distance, slide outward to full */
+    transform: translate(calc(-50% + var(--lx, 0px) * 0.7),
+        calc(-50% + var(--ly, 0px) * 0.7)) scale(0.9);
   }
 
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(4px);
+    transform: translate(calc(-50% + var(--lx, 0px)), calc(-50% + var(--ly, 0px)));
   }
 }
 

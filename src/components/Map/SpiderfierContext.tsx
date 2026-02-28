@@ -28,6 +28,8 @@ export interface SpiderfierEntry {
   onClick: () => void;
   /** Called fresh each time the spider fan is rendered to get the current icon. */
   getIcon?: () => L.DivIcon | null;
+  /** When true, the text label bubble is hidden in the spider fan (icon is sufficient). */
+  hideLabel?: boolean;
 }
 
 export interface SpiderfiedItem {
@@ -39,6 +41,8 @@ export interface SpiderfiedItem {
   spiderfiedLon: number;
   icon?: L.DivIcon | null;
   onClick: () => void;
+  /** When true, the text label bubble is hidden in the spider fan (icon is sufficient). */
+  hideLabel?: boolean;
 }
 
 export interface SpiderfiedGroup {
@@ -81,7 +85,7 @@ const MAX_SPIDER_FAN = 5;
 // ── Layout helpers ────────────────────────────────────────────────────────────
 
 function circlePositions(count: number, center: L.Point, map: L.Map): L.LatLng[] {
-  const radius = count <= 3 ? 80 : count <= 6 ? 110 : 140;
+  const radius = count <= 3 ? 40 : count <= 6 ? 55 : 70;
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
     return map.containerPointToLatLng(
@@ -166,6 +170,7 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
         spiderfiedLat: positions[i].lat,
         spiderfiedLon: positions[i].lng,
         icon: entry.getIcon?.() ?? null,
+        hideLabel: entry.hideLabel,
         onClick: () => {
           collapse();
           entry.onClick();

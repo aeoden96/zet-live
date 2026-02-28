@@ -11,10 +11,19 @@ import { useSettingsStore } from '../../stores/settingsStore';
  * looks identical to the real marker but pops in with a staggered scale animation.
  * Falls back to a neutral dot when no base icon is available.
  */
+/**
+ * Distance (px) from the icon centre to the label centre in the outward direction.
+ * Should comfortably clear the largest icon (stop: ~24 px radius).
+ */
+const LABEL_DIST_PX = 50;
+
 function animatedSpiderIcon(
   baseIcon: L.DivIcon | null | undefined,
   label: string,
   index: number,
+  hideLabel = false,
+  labelOffsetX = 0,
+  labelOffsetY = 0,
 ): L.DivIcon {
   const safe = label
     .replace(/&/g, '&amp;')
@@ -26,10 +35,16 @@ function animatedSpiderIcon(
       ? baseIcon.options.html
       : `<div class="spider-node-dot" title="${safe}"></div>`;
 
+  // Embed outward offsets as CSS variables so both the resting position
+  // and the fade-in animation keyframes use the correct direction.
+  const labelHtml = hideLabel
+    ? ''
+    : `<span class="spider-node-label" style="--lx:${labelOffsetX.toFixed(1)}px;--ly:${labelOffsetY.toFixed(1)}px;">${label}</span>`;
+
   const html =
     `<div class="spider-node-wrap" style="--spider-idx:${index}">` +
     innerHtml +
-    `<span class="spider-node-label">${label}</span>` +
+    labelHtml +
     `</div>`;
 
   // Preserve the source icon's anchor so the animated copy sits exactly on top
@@ -101,7 +116,11 @@ export function SpiderfierManager() {
     return d > max ? d : max;
   }, 0);
   const mPerPx = 40075016.686 * Math.abs(Math.cos(centerLat * Math.PI / 180)) / Math.pow(2, map.getZoom() + 8);
-  const bgRadius = maxMeters + mPerPx * 45; // significantly more padding for labels and larger fan
+  const bgRadius = maxMeters + mPerPx * 14; // just past the icon edges
+
+  // Pre-compute the center pixel position so each item can derive
+  // the outward angle (center → item) for label placement.
+  const centerPx = map.latLngToContainerPoint([centerLat, centerLon]);
 
   return (
     <>
@@ -113,7 +132,7 @@ export function SpiderfierManager() {
         pathOptions={{
           color: 'transparent',
           fillColor: isDark ? '#1f2937' : '#ffffff',
-          fillOpacity: 0.85,
+          fillOpacity: 0.93,
           weight: 0,
           className: 'spider-bg-circle',
         }}
@@ -125,39 +144,55 @@ export function SpiderfierManager() {
           }
         }}
       />
-      {items.map((item, i) => (
-        <Fragment key={`spider-${item.id}`}>
-          {/* Dashed leg from original position to spiderfied position */}
-          <Polyline
-            positions={[
-              [centerLat, centerLon],
-              [item.spiderfiedLat, item.spiderfiedLon],
-            ]}
-            pane="spiderBgPane"
-            pathOptions={{
-              color: isDark ? '#9ca3af' : '#374151',
-              weight: 1.5,
-              opacity: 0.65,
-              dashArray: '3 5',
-              className: 'spider-leg',
-            }}
-            interactive={false}
-          />
-          {/* Clickable node at spiderfied position – uses the real marker icon */}
-          <Marker
-            position={[item.spiderfiedLat, item.spiderfiedLon]}
-            icon={animatedSpiderIcon(item.icon, item.label, i)}
-            pane="spiderNodePane"
-            zIndexOffset={1100}
-            eventHandlers={{
-              click: (e) => {
-                e.originalEvent.stopPropagation();
-                item.onClick();
-              },
-            }}
-          />
-        </Fragment>
-      ))}
+      {items.map((item, i) => {
+        // Compute outward angle in pixel space (center → item),
+        // then derive the label offset vector at LABEL_DIST_PX distance.
+        const itemPx = map.latLngToContainerPoint([item.spiderfiedLat, item.spiderfiedLon]);
+        const dxPx = itemPx.x - centerPx.x;
+        const dyPx = itemPx.y - centerPx.y;
+        const angle = Math.atan2(dyPx, dxPx);
+        // Base distance is fine for top/bottom labels (short pill height).
+        // Left/right labels are wide, so add extra push proportional to |cos(angle)|
+        // to prevent the pill from overlapping the icon on horizontal positions.
+        const LABEL_H_EXTRA = 38; // extra px at pure left/right
+        const distPx = LABEL_DIST_PX + Math.abs(Math.cos(angle)) * LABEL_H_EXTRA;
+        const lx = Math.cos(angle) * distPx;
+        const ly = Math.sin(angle) * distPx;
+
+        return (
+          <Fragment key={`spider-${item.id}`}>
+            {/* Dashed leg from original position to spiderfied position */}
+            <Polyline
+              positions={[
+                [centerLat, centerLon],
+                [item.spiderfiedLat, item.spiderfiedLon],
+              ]}
+              pane="spiderBgPane"
+              pathOptions={{
+                color: isDark ? '#9ca3af' : '#374151',
+                weight: 1.5,
+                opacity: 0.65,
+                dashArray: '3 5',
+                className: 'spider-leg',
+              }}
+              interactive={false}
+            />
+            {/* Clickable node at spiderfied position – uses the real marker icon */}
+            <Marker
+              position={[item.spiderfiedLat, item.spiderfiedLon]}
+              icon={animatedSpiderIcon(item.icon, item.label, i, item.hideLabel, lx, ly)}
+              pane="spiderNodePane"
+              zIndexOffset={1100}
+              eventHandlers={{
+                click: (e) => {
+                  e.originalEvent.stopPropagation();
+                  item.onClick();
+                },
+              }}
+            />
+          </Fragment>
+        );
+      })}
     </>
   );
 }
