@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { useSelectionParams } from '../hooks/useSelectionParams';
 import type { DirectionFilter } from '../hooks/useSelectionParams';
@@ -45,6 +45,7 @@ export function PublicTransportMode() {
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
+  const [timeAgoStr, setTimeAgoStr] = useState<string>('');
 
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
 
@@ -95,6 +96,29 @@ export function PublicTransportMode() {
 
   // Derive route type from loaded data (no need to store separately)
   const selectedRouteType = selectedRouteId ? (routesById.get(selectedRouteId)?.type ?? null) : null;
+
+  // Calculate realtime freshness
+  const lastUpdate = useRealtimeStore((s) => s.lastUpdate);
+
+  useEffect(() => {
+    if (!lastUpdate) {
+      setTimeAgoStr('');
+      return;
+    }
+
+    const updateTimeAgo = () => {
+      const seconds = Math.floor((Date.now() - lastUpdate) / 1000);
+      if (seconds < 60) {
+        setTimeAgoStr(`${seconds}s`);
+      } else {
+        setTimeAgoStr(`${Math.floor(seconds / 60)}m ${seconds % 60}s`);
+      }
+    };
+
+    updateTimeAgo();
+    const interval = setInterval(updateTimeAgo, 1000);
+    return () => clearInterval(interval);
+  }, [lastUpdate]);
 
   const onLocateSuccess = useCallback((lat: number, lon: number) => {
     setParentStationZoomTarget({ lat, lon, zoom: 16 });
@@ -391,7 +415,7 @@ export function PublicTransportMode() {
             onClick={() => setLegendOpen((o) => !o)}
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-            {realtimeStats.vehiclePositions} vozila uživo
+            ZET podaci stari {timeAgoStr || '...'}
           </button>
         </div>
       )}

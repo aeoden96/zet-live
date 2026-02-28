@@ -17,20 +17,25 @@ export function CyclingMode() {
 
     const { lastFetched } = useNextbikeData(showBikeStations);
 
-    const [timeAgo, setTimeAgo] = useState(0);
+    const [timeAgoStr, setTimeAgoStr] = useState<string>('');
 
     useEffect(() => {
         if (!lastFetched) {
-            setTimeAgo(0);
+            setTimeAgoStr('');
             return;
         }
 
         const updateTimeAgo = () => {
-            setTimeAgo(Math.round((Date.now() - lastFetched) / 60000));
+            const seconds = Math.floor((Date.now() - lastFetched) / 1000);
+            if (seconds < 60) {
+                setTimeAgoStr(`${seconds}s`);
+            } else {
+                setTimeAgoStr(`${Math.floor(seconds / 60)}m ${seconds % 60}s`);
+            }
         };
 
         updateTimeAgo();
-        const interval = setInterval(updateTimeAgo, 60000);
+        const interval = setInterval(updateTimeAgo, 1000);
         return () => clearInterval(interval);
     }, [lastFetched]);
 
@@ -76,10 +81,10 @@ export function CyclingMode() {
                     </button>
                 )}
 
-                {showBikeStations && (
+                {showBikeStations && timeAgoStr && (
                     <div className="badge badge-info gap-1 shadow">
                         <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                        Ažurirano prije {timeAgo === 0 ? 'manje od 1' : timeAgo} min
+                        Podaci stari {timeAgoStr}
                     </div>
                 )}
             </div>
