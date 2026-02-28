@@ -22,7 +22,7 @@ const TILE_PROVIDERS = {
     }
 };
 
-export interface BaseMapProps extends MapContainerProps {
+interface BaseMapProps extends MapContainerProps {
     children?: React.ReactNode;
     userLocation?: { lat: number; lon: number } | null;
 }

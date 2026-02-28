@@ -17,7 +17,7 @@ import L from 'leaflet';
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
-export interface SpiderfierEntry {
+interface SpiderfierEntry {
   id: string;
   lat: number;
   lon: number;
@@ -32,7 +32,7 @@ export interface SpiderfierEntry {
   hideLabel?: boolean;
 }
 
-export interface SpiderfiedItem {
+interface SpiderfiedItem {
   id: string;
   label: string;
   originalLat: number;
@@ -45,7 +45,7 @@ export interface SpiderfiedItem {
   hideLabel?: boolean;
 }
 
-export interface SpiderfiedGroup {
+interface SpiderfiedGroup {
   centerLat: number;
   centerLon: number;
   items: SpiderfiedItem[];
@@ -68,7 +68,7 @@ interface SpiderfierCtx {
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
-export const SpiderfierContext = createContext<SpiderfierCtx | null>(null);
+const SpiderfierContext = createContext<SpiderfierCtx | null>(null);
 
 export function useSpiderfierContext(): SpiderfierCtx | null {
   return useContext(SpiderfierContext);

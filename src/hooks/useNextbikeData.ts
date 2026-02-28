@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export interface BajsStation {
+interface BajsStation {
     uid: number;
     lat: number;
     lng: number;

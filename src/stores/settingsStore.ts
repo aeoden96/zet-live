@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type MapTileProvider = 'osm' | 'positron' | 'dark-matter';
-export type Theme = 'light' | 'dark';
+type MapTileProvider = 'osm' | 'positron' | 'dark-matter';
+type Theme = 'light' | 'dark';
 
-export type AppMode = 'map' | 'list';
+type AppMode = 'map' | 'list';
 
-export interface RecentItem {
+interface RecentItem {
   id: string;
   timestamp: number;
 }

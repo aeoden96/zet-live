@@ -23,7 +23,7 @@ import { useSearchParams } from 'react-router-dom';
 
 export type DirectionFilter = 'A' | 'B';
 
-export interface SelectionParams {
+interface SelectionParams {
   /** Currently selected route ID (null = none) */
   selectedRouteId: string | null;
   /** Currently selected stop ID (null = none) */

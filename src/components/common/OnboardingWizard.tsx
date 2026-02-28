@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Navigation, MapPin, Smartphone, Map, LocateFixed, GitMerge, Coffee } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
-export type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list';
+type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list';
 
 interface OnboardingWizardProps {
   variant: OnboardingVariant;

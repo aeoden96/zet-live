@@ -65,7 +65,6 @@ interface SpiderNodeProps {
   centerPx: L.Point;
   map: L.Map;
   isDark: boolean;
-  ctx: any;
 }
 
 const SpiderNode = React.memo(function SpiderNode({
@@ -75,8 +74,7 @@ const SpiderNode = React.memo(function SpiderNode({
   centerLon,
   centerPx,
   map,
-  isDark,
-  ctx
+  isDark
 }: SpiderNodeProps) {
   const itemPx = map.latLngToContainerPoint([item.spiderfiedLat, item.spiderfiedLon]);
   const dxPx = itemPx.x - centerPx.x;
@@ -212,7 +210,6 @@ export const SpiderfierManager = React.memo(function SpiderfierManager() {
           centerPx={centerPx}
           map={map}
           isDark={isDark}
-          ctx={ctx}
         />
       ))}
     </>

@@ -25,11 +25,11 @@ export const STOP_ROW_HEIGHT = 40;
 export const STOP_LIST_PADDING_TOP = 8;
 
 /** Width of the diagram column (in px). */
-export const DIAGRAM_WIDTH = 44;
+const DIAGRAM_WIDTH = 44;
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 const TRAM_COLOR = '#2563eb';   // blue-600
-const BUS_COLOR  = '#ea580c';   // orange-600
+const BUS_COLOR = '#ea580c';   // orange-600
 
 interface RouteLineDiagramProps {
   /** Ordered stop IDs for the selected direction. */
@@ -82,7 +82,7 @@ export function RouteLineDiagram({
   // top-centre of the first dot
   const firstDotTop = STOP_LIST_PADDING_TOP + STOP_ROW_HEIGHT / 2;
   // top-centre of the last dot
-  const lastDotTop  = STOP_LIST_PADDING_TOP + (stopCount - 1) * STOP_ROW_HEIGHT + STOP_ROW_HEIGHT / 2;
+  const lastDotTop = STOP_LIST_PADDING_TOP + (stopCount - 1) * STOP_ROW_HEIGHT + STOP_ROW_HEIGHT / 2;
 
   return (
     <div
@@ -152,8 +152,8 @@ export function RouteLineDiagram({
             delayMin > 0
               ? `${delayMin} min kašnjenja`
               : delayMin < 0
-              ? `${Math.abs(delayMin)} min ispred`
-              : 'Na vrijeme'
+                ? `${Math.abs(delayMin)} min ispred`
+                : 'Na vrijeme'
           );
         const tooltip = tooltipParts.join(' · ');
 
