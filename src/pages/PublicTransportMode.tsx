@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { useSelectionParams } from '../hooks/useSelectionParams';
 import type { DirectionFilter } from '../hooks/useSelectionParams';
@@ -21,6 +21,7 @@ import { useAllVehiclePositions } from '../hooks/useAllVehiclePositions';
 import { useVehiclePositions } from '../hooks/useVehiclePositions';
 import { useRealtimeData } from '../hooks/useRealtimeData';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { findNearestStops } from '../utils/gtfs';
 
 export function PublicTransportMode() {
   // Modal states
@@ -120,8 +121,8 @@ export function PublicTransportMode() {
     return () => clearInterval(interval);
   }, [lastUpdate]);
 
-  const onLocateSuccess = useCallback((lat: number, lon: number) => {
-    setParentStationZoomTarget({ lat, lon, zoom: 16 });
+  const onLocateSuccess = useCallback((_lat: number, _lon: number) => {
+    // BaseMap auto-zooms to the user location so we only need to open the nearby modal
     setNearbyOpen(true);
   }, []);
 
@@ -230,6 +231,21 @@ export function PublicTransportMode() {
     clearStop();
   };
 
+  const nearbyHighlightedStops = useMemo(() => {
+    if (!nearbyOpen || !userLocation) return [];
+    const nearby = findNearestStops(platformStops, userLocation.lat, userLocation.lon, 15);
+    const seen = new Set<string>();
+    return nearby.filter((s) => {
+      if (seen.has(s.name)) return false;
+      seen.add(s.name);
+      return true;
+    }).slice(0, 6).map(s => s.id);
+  }, [nearbyOpen, userLocation, platformStops]);
+
+  const activeHighlightStopIds = useMemo(() => {
+    return selectedRouteId && routeStops ? routeStops : [];
+  }, [selectedRouteId, routeStops]);
+
   // Loading state
   if (initialLoading) {
     return (
@@ -283,6 +299,8 @@ export function PublicTransportMode() {
         onZoomComplete={handleZoomComplete}
         selectedStop={selectedStop && !stopModalOpen ? selectedStop : null}
         onFlyToStop={selectedStop ? () => setParentStationZoomTarget({ lat: selectedStop.lat, lon: selectedStop.lon, zoom: 17 }) : undefined}
+        highlightStopIds={activeHighlightStopIds}
+        nearbyStopIds={nearbyHighlightedStops}
       />
 
       {/* Loading indicators */}

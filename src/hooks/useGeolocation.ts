@@ -20,6 +20,7 @@ export function useGeolocation(onSuccess?: (lat: number, lon: number) => void) {
                 const { latitude, longitude } = pos.coords;
                 setUserLocation({ lat: latitude, lon: longitude });
                 setLocatingStore(false);
+                if (onSuccess) onSuccess(latitude, longitude);
             },
             () => {
                 setLocateError('Lokacija nije dostupna. Provjerite dozvole preglednika.');
@@ -28,7 +29,7 @@ export function useGeolocation(onSuccess?: (lat: number, lon: number) => void) {
             },
             { timeout: 8000, maximumAge: 30000 }
         );
-    }, [setLocatingStore]);
+    }, [setLocatingStore, onSuccess]);
 
     useEffect(() => {
         setLocateAction(handleLocateMe);

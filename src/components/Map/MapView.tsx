@@ -42,6 +42,8 @@ interface MapViewProps {
   /** Stop object for off-screen directional indicator */
   selectedStop?: Stop | null;
   onFlyToStop?: () => void;
+  highlightStopIds?: string[];
+  nearbyStopIds?: string[];
 }
 
 
@@ -69,7 +71,9 @@ export function MapView({
   parentStationZoomTarget,
   onZoomComplete,
   selectedStop,
-  onFlyToStop
+  onFlyToStop,
+  highlightStopIds,
+  nearbyStopIds
 }: MapViewProps) {
   // Fetch road closures if enabled
   const { closures } = useRoadClosures(showRoadClosures);
@@ -94,7 +98,8 @@ export function MapView({
             platformStops={platformStops}
             parentChildCounts={parentChildCounts}
             selectedStopId={selectedStopId}
-            highlightStopIds={selectedRouteId ? routeStops : []}
+            highlightStopIds={highlightStopIds ?? (selectedRouteId ? routeStops : [])}
+            nearbyStopIds={nearbyStopIds}
             orderedStops={orderedStops}
             routesById={routesById}
             onStopClick={onStopClick}

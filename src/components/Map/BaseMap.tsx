@@ -1,7 +1,8 @@
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import type { MapContainerProps } from 'react-leaflet';
 import L from 'leaflet';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useEffect } from 'react';
 
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
 const DEFAULT_ZOOM = 13;
@@ -25,6 +26,16 @@ const TILE_PROVIDERS = {
 interface BaseMapProps extends MapContainerProps {
     children?: React.ReactNode;
     userLocation?: { lat: number; lon: number } | null;
+}
+
+function MapLocater({ userLocation }: { userLocation?: { lat: number; lon: number } | null }) {
+    const map = useMap();
+    useEffect(() => {
+        if (userLocation) {
+            map.flyTo([userLocation.lat, userLocation.lon], 16, { duration: 1.5 });
+        }
+    }, [userLocation, map]);
+    return null;
 }
 
 export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
@@ -63,6 +74,8 @@ export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
                     })}
                 />
             )}
+
+            <MapLocater userLocation={userLocation} />
 
             {children}
         </MapContainer>
