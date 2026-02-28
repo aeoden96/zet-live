@@ -17,7 +17,7 @@ interface SettingsState {
   sandboxVisible: boolean;
   mapTileProvider: MapTileProvider;
   theme: Theme;
-  onboardingCompleted: boolean;
+  onboardingCompleted: Record<string, boolean>;
   onboardingStep: number;
 
   showAllVehicles: boolean;
@@ -47,7 +47,7 @@ interface SettingsState {
   setMapTileProvider: (provider: MapTileProvider) => void;
   setTheme: (theme: Theme) => void;
   setDetailedMap: (detailed: boolean) => void;
-  setOnboardingCompleted: (completed: boolean) => void;
+  setOnboardingCompleted: (mode: string, completed: boolean) => void;
   setOnboardingStep: (step: number) => void;
 
   setShowAllVehicles: (show: boolean) => void;
@@ -84,7 +84,7 @@ export const useSettingsStore = create<SettingsState>()(
         mapTileProvider: initialTheme === 'dark' ? 'dark-matter' : 'osm',
         theme: initialTheme,
         detailedMap: true,
-        onboardingCompleted: false,
+        onboardingCompleted: {},
         onboardingStep: 0,
 
         showAllVehicles: true,
@@ -124,7 +124,10 @@ export const useSettingsStore = create<SettingsState>()(
           }
           localStorage.setItem('theme', theme);
         },
-        setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+        setOnboardingCompleted: (mode, completed) =>
+          set((s) => ({
+            onboardingCompleted: { ...s.onboardingCompleted, [mode]: completed }
+          })),
         setOnboardingStep: (step) => set({ onboardingStep: step }),
 
         setShowAllVehicles: (show) => set({ showAllVehicles: show }),

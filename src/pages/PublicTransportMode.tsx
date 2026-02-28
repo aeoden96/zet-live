@@ -544,7 +544,7 @@ export function PublicTransportMode() {
       )}
 
       {/* Onboarding Wizard */}
-      <OnboardingWizard />
+      <OnboardingWizard variant="transit" />
     </div>
   );
 }

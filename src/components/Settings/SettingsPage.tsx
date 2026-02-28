@@ -39,7 +39,13 @@ export function SettingsPage() {
   };
 
   const handleShowOnboarding = () => {
-    setOnboardingCompleted(false);
+    // If the appMode is list, we'll reset that, otherwise we'll figure out what mode we are actually in
+    // Since we are in Settings, we'll just reset the default transit view for simplicity, or all of them
+    setOnboardingCompleted('transit', false);
+    setOnboardingCompleted('cycling', false);
+    setOnboardingCompleted('driving', false);
+    setOnboardingCompleted('city', false);
+    setOnboardingCompleted('list', false);
   };
 
   const formatBytes = (bytes: number) => {

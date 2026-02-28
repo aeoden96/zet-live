@@ -24,7 +24,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { StopModal } from '../common/StopModal';
 import { RouteModal } from '../common/RouteModal';
 import { DebugPanel } from '../common/DebugPanel';
-import { OnboardingModal } from '../common/OnboardingModal';
+import { OnboardingWizard } from '../common/OnboardingWizard';
 import { FavouritesTab } from './FavouritesTab';
 import { RoutesTab } from './RoutesTab';
 import { NearbyTab } from './NearbyTab';
@@ -207,8 +207,8 @@ export function ListApp() {
                 key={id}
                 onClick={() => setActiveTab(id)}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 transition-colors relative ${isActive
-                    ? 'text-primary'
-                    : 'text-base-content/50 hover:text-base-content/70'
+                  ? 'text-primary'
+                  : 'text-base-content/50 hover:text-base-content/70'
                   }`}
               >
                 <div className="relative">
@@ -256,7 +256,8 @@ export function ListApp() {
       )}
 
       <DebugPanel />
-      <OnboardingModal />
+      {/* Onboarding Wizard */}
+      <OnboardingWizard variant="list" />
     </div>
   );
 }

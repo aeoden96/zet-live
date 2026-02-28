@@ -4,6 +4,7 @@ import { BikeStations } from '../components/Map/BikeStations';
 import { BikeParkings } from '../components/Map/BikeParkings';
 import { BikePaths } from '../components/Map/BikePaths';
 import { useNextbikeData } from '../hooks/useNextbikeData';
+import { OnboardingWizard } from '../components/common/OnboardingWizard';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useSettingsStore } from '../stores/settingsStore';
 
@@ -28,9 +29,9 @@ export function CyclingMode() {
         const updateTimeAgo = () => {
             const seconds = Math.floor((Date.now() - lastFetched) / 1000);
             if (seconds < 60) {
-                setTimeAgoStr(`${seconds}s`);
+                setTimeAgoStr(`${seconds} s`);
             } else {
-                setTimeAgoStr(`${Math.floor(seconds / 60)}m ${seconds % 60}s`);
+                setTimeAgoStr(`${Math.floor(seconds / 60)}m ${seconds % 60} s`);
             }
         };
 
@@ -47,7 +48,8 @@ export function CyclingMode() {
                 <BikePaths show={showBikePaths} />
             </BaseMap>
 
-            {/* Floating Badges */}
+            {/* Map Controls */}
+            <OnboardingWizard variant="cycling" />
             <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
                 {showBikePaths && legendOpen && (
                     <div className="bg-base-100 rounded-xl shadow-xl border border-base-200 p-3 w-64 text-xs space-y-2 mb-2">

@@ -1,4 +1,5 @@
 import { BaseMap } from '../components/Map/BaseMap';
+import { OnboardingWizard } from '../components/common/OnboardingWizard';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useSettingsStore } from '../stores/settingsStore';
 import { StudentRestaurantsMap } from '../components/Map/StudentRestaurantsMap';
@@ -23,8 +24,9 @@ export function CityLifeMode() {
                 <FreeWifiMap show={showFreeWifi} />
             </BaseMap>
 
-            {/* Floating Badges for Context */}
-            <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2 pointer-events-none">
+            {/* Map Controls */}
+            <OnboardingWizard variant="city" />
+            <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
                 <div className="badge badge-primary gap-1 shadow backdrop-blur-md bg-primary/80 border-white/20">
                     Gradski Način
                 </div>

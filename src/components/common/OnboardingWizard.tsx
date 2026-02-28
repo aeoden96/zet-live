@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
-import { X, Navigation, MapPin, Smartphone, Wifi, LayoutList, Map } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Navigation, MapPin, Smartphone, Map, LocateFixed, GitMerge, Coffee } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
-export function OnboardingWizard() {
+export type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list';
+
+interface OnboardingWizardProps {
+  variant: OnboardingVariant;
+}
+
+export function OnboardingWizard({ variant }: OnboardingWizardProps) {
   const onboardingCompleted = useSettingsStore((s) => s.onboardingCompleted);
   const setOnboardingCompleted = useSettingsStore((s) => s.setOnboardingCompleted);
   const onboardingStep = useSettingsStore((s) => s.onboardingStep);
@@ -14,37 +20,81 @@ export function OnboardingWizard() {
     setStep(onboardingStep ?? 0);
   }, [onboardingStep]);
 
-  if (onboardingCompleted) return null;
+  if (onboardingCompleted[variant]) return null;
 
-  const steps = [
-    {
-      title: 'Dobrodošli u ZET Live',
-      body: 'Brzi pregled tramvaja i autobusa uživo u Zagrebu. Ovo kratko uputstvo prikazuje ključne značajke.'
-    },
-    {
-      title: 'Pretraži linije',
-      body: 'Koristi polje za pretragu na vrhu da brzo pronađeš liniju ili stanicu. Klikom otvaraš detalje i raspored.'
-    },
-    {
-      title: 'Načini i teme',
-      body: 'Prebaci između načina rada: karta (vizualni prikaz) i popis (pregled bez karte). U Postavkama možeš promijeniti temu (svijetla / tamna).'
-    },
-    {
-      title: 'Prikaz rute',
-      body: 'Odaberi liniju za prikaz rute, oblika, vozila i praćenje uživo. Možeš otvoriti puni prikaz rute za detalje.'
-    },
-    {
-      title: 'Prikaz stanice',
-      body: 'Stanica ima dva načina: lista vozila koja dolaze (uživo) i klasični raspored (tabelarni pregled vremena polazaka).'
-    },
-    {
-      title: 'Offline podrška',
-      body: 'Postupno preuzima podatke za offline korištenje. Podaci se keširaju kako bi aplikacija radila bolje bez stalne veze.'
+  const modeSwitchStep = {
+    title: 'Promjena načina rada',
+    body: 'Klikni na glavni gumb na dnu (Spider izbornik) za brzo prebacivanje između javnog prijevoza, bicikla, auta ili gradskog sadržaja.',
+    icon: <LocateFixed className="w-6 h-6 text-primary" />,
+    image: '/images/onboarding/spider_menu.png'
+  };
+
+  const getStepsForVariant = (): Array<{ title: string; body: string; icon: React.ReactNode; image?: string }> => {
+    switch (variant) {
+      case 'transit':
+        return [
+          {
+            title: 'Javni prijevoz',
+            body: 'Prati ZET tramvaje i autobuse uživo na karti.',
+            icon: <Navigation className="w-6 h-6 text-primary" />,
+            image: '/images/onboarding/public_transit_map.png'
+          },
+          {
+            title: 'Odaberi liniju ili stanicu',
+            body: 'Koristi pretragu ili klikni na stanicu na karti za detalje, raspored i praćenje vozila.',
+            icon: <MapPin className="w-6 h-6 text-primary" />,
+            image: '/images/onboarding/public_transit_stop.png'
+          },
+          modeSwitchStep
+        ];
+      case 'cycling':
+        return [
+          {
+            title: 'Biciklizam',
+            body: 'Istraži biciklističke staze, Bajs (Nextbike) stanice i javna parkirališta za bicikle.',
+            icon: <GitMerge className="w-6 h-6 text-primary" />, // Using GitMerge as a placeholder for a path/bike icon
+            image: '/images/onboarding/cycling_mode.png'
+          },
+          modeSwitchStep
+        ];
+      case 'driving':
+        return [
+          {
+            title: 'Vožnja Auta',
+            body: 'Provjeri stanje u prometu i aktualna zatvaranja cesta prije polaska.',
+            icon: <Map className="w-6 h-6 text-primary" />,
+            image: '/images/onboarding/driving_mode.png'
+          },
+          modeSwitchStep
+        ];
+      case 'city':
+        return [
+          {
+            title: 'Gradski Život',
+            body: 'Pronađi javne fontane za pitku vodu, studentske restorane i druge gradske sadržaje.',
+            icon: <Coffee className="w-6 h-6 text-primary" />,
+            image: '/images/onboarding/city_life_mode.png'
+          },
+          modeSwitchStep
+        ];
+      case 'list':
+        return [
+          {
+            title: 'Prikaz Liste',
+            body: 'Brzi pregled svih linija i stanica u jednostavnom tekstualnom formatu, bez učitavanja karte.',
+            icon: <Smartphone className="w-6 h-6 text-primary" />
+          },
+          modeSwitchStep
+        ];
+      default:
+        return [modeSwitchStep];
     }
-  ];
+  };
+
+  const steps = getStepsForVariant();
 
   const handleClose = () => {
-    setOnboardingCompleted(true);
+    setOnboardingCompleted(variant, true);
     setOnboardingStep(0);
   };
 
@@ -60,50 +110,56 @@ export function OnboardingWizard() {
     setOnboardingStep(prev);
   };
 
-  const iconForStep = (i: number) => {
-    switch (i) {
-      case 0:
-        return <Navigation className="w-6 h-6 text-primary" />;
-      case 1:
-        return <MapPin className="w-6 h-6 text-primary" />;
-      case 2:
-        return <Map className="w-6 h-6 text-primary" />;
-      case 3:
-        return <LayoutList className="w-6 h-6 text-primary" />;
-      case 4:
-        return <Smartphone className="w-6 h-6 text-primary" />;
-      default:
-        return <Wifi className="w-6 h-6 text-primary" />;
-    }
-  };
+  const currentStep = steps[step];
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-md">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              {iconForStep(step)}
+      <div className="modal-box max-w-md p-0 overflow-hidden relative">
+        {/* Cover Image */}
+        {currentStep.image && (
+          <div className="w-full h-48 bg-base-200 relative">
+            <img
+              src={import.meta.env.BASE_URL + currentStep.image.replace(/^\//, '')}
+              alt={currentStep.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <button
+          onClick={handleClose}
+          className="btn btn-sm btn-circle absolute right-2 top-2 bg-base-100/80 hover:bg-base-200 border-none shadow-sm"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              {currentStep.icon}
             </div>
             <div>
-              <h2 className="text-lg font-semibold">{steps[step].title}</h2>
-              <p className="text-sm text-base-content/70">{steps[step].body}</p>
+              <h2 className="text-xl font-bold mb-2">{currentStep.title}</h2>
+              <p className="text-base-content/80 leading-relaxed">{currentStep.body}</p>
             </div>
           </div>
-          <button onClick={handleClose} className="btn btn-ghost btn-sm btn-circle">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        <div className="w-full mt-2">
-          <div className="flex items-center gap-2 justify-center mb-4">
+          <div className="flex items-center gap-2 justify-center mb-6">
             {steps.map((_, i) => (
-              <div key={i} className={`w-8 h-1 rounded ${i === step ? 'bg-primary' : 'bg-base-300'}`} />
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-primary' : 'w-2 bg-base-300'
+                  }`}
+              />
             ))}
           </div>
 
-          <div className="flex justify-between gap-2">
-            <button onClick={back} disabled={step === 0} className="btn btn-outline flex-1">
+          <div className="flex justify-between gap-3">
+            <button
+              onClick={back}
+              disabled={step === 0}
+              className="btn btn-outline flex-1"
+            >
               Natrag
             </button>
             {step < steps.length - 1 ? (
