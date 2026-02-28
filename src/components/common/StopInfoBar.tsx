@@ -55,8 +55,9 @@ export function StopInfoBar({
     routesById,
     nowMs
   );
-  // Vehicles tab: only show GPS-tracked vehicles (+ passed-stop ones within 200m)
-  const liveVehicles = allVehicles.filter((v) => v.confidence === 'realtime');
+  const liveVehicles = allVehicles
+    .filter((v) => v.confidence === 'realtime')
+    .sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
   const topVehicles = liveVehicles.slice(0, 4);
   const liveCount = liveVehicles.filter((v) => !v.passedStop).length;
 
@@ -69,9 +70,8 @@ export function StopInfoBar({
 
   return (
     <div
-      className={`fixed left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-base-100 rounded-xl shadow-2xl ${
-        stackBelow ? 'top-44 sm:top-44' : 'top-16 sm:top-20'
-      }`}
+      className={`fixed left-2 right-2 sm:left-4 sm:right-auto sm:max-w-md z-[1050] bg-base-100 rounded-xl shadow-2xl ${stackBelow ? 'top-44 sm:top-44' : 'top-16 sm:top-20'
+        }`}
       style={{ animation: 'modal-fade-in 0.2s ease-out' }}
     >
       <div className="p-4">
@@ -188,19 +188,16 @@ export function StopInfoBar({
                 return (
                   <div
                     key={vehicle.tripId}
-                    className={`flex items-center gap-2 rounded-lg px-1.5 py-1 -mx-1.5 transition-colors ${
-                      vehicle.passedStop ? 'opacity-50' :
-                      isAtStop ? 'bg-success/10 ring-1 ring-success/60' :
-                      (d !== null && d < 100) ? 'bg-success/5 ring-1 ring-success/30' :
-                      ''
-                    }`}
+                    className={`flex items-center gap-2 rounded-lg px-1.5 py-1 -mx-1.5 transition-colors ${vehicle.passedStop ? 'opacity-50' :
+                        isAtStop ? 'bg-success/10 ring-1 ring-success/60' :
+                          (d !== null && d < 100) ? 'bg-success/5 ring-1 ring-success/30' :
+                            ''
+                      }`}
                   >
                     <span
-                      className={`badge ${
-                        vehicle.routeType === 0 ? 'badge-primary' : 'badge-accent'
-                      } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0 ${
-                        isAtStop ? 'animate-pulse' : ''
-                      }`}
+                      className={`badge ${vehicle.routeType === 0 ? 'badge-primary' : 'badge-accent'
+                        } badge-sm font-bold min-w-[2.5rem] justify-center shrink-0 ${isAtStop ? 'animate-pulse' : ''
+                        }`}
                     >
                       {vehicle.routeShortName}
                     </span>
@@ -216,8 +213,8 @@ export function StopInfoBar({
                           {vehicle.passedStop
                             ? 'Prošao stajalište'
                             : vehicle.stopsAway !== null && vehicle.stopsAway > 0
-                            ? `${vehicle.stopsAway} stajališta`
-                            : 'GPS uživo'}
+                              ? `${vehicle.stopsAway} stajališta`
+                              : 'GPS uživo'}
                         </span>
                       </div>
                     </div>
