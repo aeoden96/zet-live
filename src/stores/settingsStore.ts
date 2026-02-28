@@ -31,6 +31,7 @@ interface SettingsState {
   showPublicFountains: boolean;
   showPedestrianZones: boolean;
   showFreeWifi: boolean;
+  showPublicGarages: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
   detailedMap: boolean;
   appMode: AppMode;
@@ -59,6 +60,7 @@ interface SettingsState {
   setShowPublicFountains: (show: boolean) => void;
   setShowPedestrianZones: (show: boolean) => void;
   setShowFreeWifi: (show: boolean) => void;
+  setShowPublicGarages: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
@@ -96,6 +98,7 @@ export const useSettingsStore = create<SettingsState>()(
         showPublicFountains: true,
         showPedestrianZones: false,
         showFreeWifi: false,
+        showPublicGarages: true,
         appMode: 'map',
         favouriteRouteIds: [],
         favouriteStopIds: [],
@@ -139,6 +142,7 @@ export const useSettingsStore = create<SettingsState>()(
         setShowPublicFountains: (show) => set({ showPublicFountains: show }),
         setShowPedestrianZones: (show) => set({ showPedestrianZones: show }),
         setShowFreeWifi: (show) => set({ showFreeWifi: show }),
+        setShowPublicGarages: (show) => set({ showPublicGarages: show }),
         setAppMode: (mode) => set({ appMode: mode }),
 
         toggleFavouriteRoute: (id) =>

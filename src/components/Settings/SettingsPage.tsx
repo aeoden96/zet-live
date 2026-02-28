@@ -21,6 +21,8 @@ export function SettingsPage() {
   const setDetailedMap = useSettingsStore((state) => state.setDetailedMap);
   const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
   const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
+  const showPublicGarages = useSettingsStore((state) => state.showPublicGarages);
+  const setShowPublicGarages = useSettingsStore((state) => state.setShowPublicGarages);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -138,6 +140,21 @@ export function SettingsPage() {
               />
             </div>
 
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl leading-none">🅿️</span>
+                  <p className="font-medium">Javne garaže</p>
+                </div>
+                <p className="text-sm text-base-content/70 mt-0.5">Prikaži javne garaže u Auto načinu</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary mt-1"
+                checked={showPublicGarages}
+                onChange={(e) => setShowPublicGarages(e.target.checked)}
+              />
+            </div>
 
           </div>
         </div>
