@@ -1,4 +1,4 @@
-import { Fragment, useEffect } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { Circle, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useSpiderfierContext } from './SpiderfierContext';
@@ -57,36 +57,100 @@ function animatedSpiderIcon(
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function SpiderfierManager() {
+interface SpiderNodeProps {
+  item: any;
+  i: number;
+  centerLat: number;
+  centerLon: number;
+  centerPx: L.Point;
+  map: L.Map;
+  isDark: boolean;
+  ctx: any;
+}
+
+const SpiderNode = React.memo(function SpiderNode({
+  item,
+  i,
+  centerLat,
+  centerLon,
+  centerPx,
+  map,
+  isDark,
+  ctx
+}: SpiderNodeProps) {
+  const itemPx = map.latLngToContainerPoint([item.spiderfiedLat, item.spiderfiedLon]);
+  const dxPx = itemPx.x - centerPx.x;
+  const dyPx = itemPx.y - centerPx.y;
+  const angle = Math.atan2(dyPx, dxPx);
+
+  const LABEL_H_EXTRA = 38;
+  const distPx = LABEL_DIST_PX + Math.abs(Math.cos(angle)) * LABEL_H_EXTRA;
+  const lx = Math.cos(angle) * distPx;
+  const ly = Math.sin(angle) * distPx;
+
+  // Memoize the icon so React Leaflet doesn't reset the marker DOM (and CSS animation) on every context update
+  const icon = React.useMemo(
+    () => animatedSpiderIcon(item.icon, item.label, i, item.hideLabel, lx, ly),
+    [item.icon, item.label, i, item.hideLabel, lx, ly]
+  );
+
+  return (
+    <Fragment>
+      {/* Dashed leg from original position to spiderfied position */}
+      <Polyline
+        positions={[
+          [centerLat, centerLon],
+          [item.spiderfiedLat, item.spiderfiedLon],
+        ]}
+        pane="spiderBgPane"
+        pathOptions={{
+          color: isDark ? '#9ca3af' : '#374151',
+          weight: 1.5,
+          opacity: 0.65,
+          dashArray: '3 5',
+          className: 'spider-leg',
+        }}
+        interactive={false}
+      />
+      {/* Clickable node at spiderfied position – uses the real marker icon */}
+      <Marker
+        position={[item.spiderfiedLat, item.spiderfiedLon]}
+        icon={icon}
+        pane="spiderNodePane"
+        zIndexOffset={1100}
+        eventHandlers={{
+          click: (e) => {
+            e.originalEvent.stopPropagation();
+            item.onClick();
+          },
+        }}
+      />
+    </Fragment>
+  );
+});
+
+export const SpiderfierManager = React.memo(function SpiderfierManager() {
   const map = useMap();
   const ctx = useSpiderfierContext();
   const theme = useSettingsStore((s) => s.theme);
   const isDark = theme === 'dark';
 
-  // Create custom panes once so we can control z-depth precisely:
-  //   spiderBgPane  (610) – bg circle + leg lines, above regular markerPane (600)
-  //   spiderNodePane (620) – spider node markers, above the bg circle
   useEffect(() => {
     if (!map.getPane('spiderBgPane')) {
       const bg = map.createPane('spiderBgPane');
       bg.style.zIndex = '610';
-      // bg.style.pointerEvents = 'none'; // Removed so it can block clicks on underlying markers
     }
     if (!map.getPane('spiderNodePane')) {
       map.createPane('spiderNodePane').style.zIndex = '620';
     }
   }, [map]);
 
-  // Collapse spider on background map click or zoom start
-  // Plus a mousedown listener to catch clicks on other markers
   useEffect(() => {
     if (!ctx) return;
     const collapse = () => ctx.collapse();
 
-    // Catch-all mousedown to collapse if clicking outside any spider node
     const handleGlobalMousedown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // If a spider is open and we click something that isn't a spider node or the list popup
       if (ctx.spiderfied && !target.closest('.spider-node-wrap, .spider-list-popup')) {
         collapse();
       }
@@ -107,24 +171,18 @@ export function SpiderfierManager() {
 
   const { centerLat, centerLon, items } = ctx.spiderfied;
 
-  // ── Radial fan ─────────────────────────────────────────────────────────────
-
-  // Compute encompassing radius: farthest item distance from center + padding.
   const center = L.latLng(centerLat, centerLon);
   const maxMeters = items.reduce((max, item) => {
     const d = center.distanceTo(L.latLng(item.spiderfiedLat, item.spiderfiedLon));
     return d > max ? d : max;
   }, 0);
   const mPerPx = 40075016.686 * Math.abs(Math.cos(centerLat * Math.PI / 180)) / Math.pow(2, map.getZoom() + 8);
-  const bgRadius = maxMeters + mPerPx * 14; // just past the icon edges
+  const bgRadius = maxMeters + mPerPx * 14;
 
-  // Pre-compute the center pixel position so each item can derive
-  // the outward angle (center → item) for label placement.
   const centerPx = map.latLngToContainerPoint([centerLat, centerLon]);
 
   return (
     <>
-      {/* Single background circle encompassing all fan nodes */}
       <Circle
         center={[centerLat, centerLon]}
         radius={bgRadius}
@@ -144,56 +202,19 @@ export function SpiderfierManager() {
           }
         }}
       />
-      {items.map((item, i) => {
-        // Compute outward angle in pixel space (center → item),
-        // then derive the label offset vector at LABEL_DIST_PX distance.
-        const itemPx = map.latLngToContainerPoint([item.spiderfiedLat, item.spiderfiedLon]);
-        const dxPx = itemPx.x - centerPx.x;
-        const dyPx = itemPx.y - centerPx.y;
-        const angle = Math.atan2(dyPx, dxPx);
-        // Base distance is fine for top/bottom labels (short pill height).
-        // Left/right labels are wide, so add extra push proportional to |cos(angle)|
-        // to prevent the pill from overlapping the icon on horizontal positions.
-        const LABEL_H_EXTRA = 38; // extra px at pure left/right
-        const distPx = LABEL_DIST_PX + Math.abs(Math.cos(angle)) * LABEL_H_EXTRA;
-        const lx = Math.cos(angle) * distPx;
-        const ly = Math.sin(angle) * distPx;
-
-        return (
-          <Fragment key={`spider-${item.id}`}>
-            {/* Dashed leg from original position to spiderfied position */}
-            <Polyline
-              positions={[
-                [centerLat, centerLon],
-                [item.spiderfiedLat, item.spiderfiedLon],
-              ]}
-              pane="spiderBgPane"
-              pathOptions={{
-                color: isDark ? '#9ca3af' : '#374151',
-                weight: 1.5,
-                opacity: 0.65,
-                dashArray: '3 5',
-                className: 'spider-leg',
-              }}
-              interactive={false}
-            />
-            {/* Clickable node at spiderfied position – uses the real marker icon */}
-            <Marker
-              position={[item.spiderfiedLat, item.spiderfiedLon]}
-              icon={animatedSpiderIcon(item.icon, item.label, i, item.hideLabel, lx, ly)}
-              pane="spiderNodePane"
-              zIndexOffset={1100}
-              eventHandlers={{
-                click: (e) => {
-                  e.originalEvent.stopPropagation();
-                  item.onClick();
-                },
-              }}
-            />
-          </Fragment>
-        );
-      })}
+      {items.map((item, i) => (
+        <SpiderNode
+          key={`spider-${item.id}`}
+          item={item}
+          i={i}
+          centerLat={centerLat}
+          centerLon={centerLon}
+          centerPx={centerPx}
+          map={map}
+          isDark={isDark}
+          ctx={ctx}
+        />
+      ))}
     </>
   );
-}
-
+});
