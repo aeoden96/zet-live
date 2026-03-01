@@ -63,7 +63,16 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      // Exclude *.mobile.spec.ts files — those run only in the mobile-chrome project.
+      // The regex matches any .spec.ts file whose name does NOT end with .mobile.spec.ts
+      testMatch: /^(?!.*\.mobile\.spec\.ts$).*\.spec\.ts$/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile-chrome',
+      // Only run *.mobile.spec.ts files for the Pixel 5 project.
+      testMatch: '**/*.mobile.spec.ts',
+      use: { ...devices['Pixel 5'] },
     },
 
     // Uncomment to enable additional browsers:
@@ -74,12 +83,6 @@ export default defineConfig({
     // {
     //   name: 'webkit',
     //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    // Mobile viewports:
-    // {
-    //   name: 'mobile-chrome',
-    //   use: { ...devices['Pixel 5'] },
     // },
   ],
 });
