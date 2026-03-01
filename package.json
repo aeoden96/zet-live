@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
     "build": "tsc -b && vite build",
     "build:gh-pages": "GITHUB_PAGES=true GITHUB_REPOSITORY=username/repo-name tsc -b && vite build",
     "lint": "eslint .",
@@ -13,6 +14,11 @@
     "test:ui": "vitest --ui",
     "tsc": "tsc -b --noEmit",
     "test:coverage": "vitest --coverage",
+    "test:e2e": "docker compose -f docker-compose.playwright.yml run --rm playwright-runner",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "pw:server": "docker compose -f docker-compose.playwright.yml up playwright-server",
+    "pw:server:down": "docker compose -f docker-compose.playwright.yml down playwright-server",
     "knip": "knip"
   },
   "dependencies": {
@@ -28,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "1.58.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.9",
     "@testing-library/jest-dom": "^6.9.1",
