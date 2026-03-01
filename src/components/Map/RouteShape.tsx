@@ -41,6 +41,7 @@ export function RouteShape({ shapes, routeType }: RouteShapeProps) {
               color,
               weight: 4,
               opacity: 0.8,
+              className: 'route-polyline',
             }}
           />
         );

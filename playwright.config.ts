@@ -33,6 +33,8 @@ export default defineConfig({
       // intercept them.  Without this the proxy URL is empty and the store
       // throws before issuing any HTTP request, which page.route() never sees.
       VITE_GTFS_PROXY_URL: 'http://localhost:9999',
+      // Expose the Leaflet map instance on window.__leafletMap for E2E tests.
+      VITE_E2E: 'true',
     },
   },
 

@@ -51,7 +51,7 @@ function makeStopIcon(
     const pinBaseY = cx - r;
     const pinHalfW = 3;
     const html =
-      `<div style="position:relative;width:${size}px;height:${size}px;opacity:${opacityFactor};">` +
+      `<div data-testid="stop-marker" style="position:relative;width:${size}px;height:${size}px;opacity:${opacityFactor};">` +
       pulseHtml +
       `<svg style="position:absolute;top:0;left:0;transform:rotate(${bearing}deg);transform-origin:${cx}px ${cx}px;"` +
       ` width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
@@ -68,7 +68,7 @@ function makeStopIcon(
   }
 
   const html =
-    `<div style="position:relative;width:${size}px;height:${size}px;">` +
+    `<div data-testid="stop-marker" style="position:relative;width:${size}px;height:${size}px;">` +
     pulseHtml +
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"` +
     ` style="opacity:${opacityFactor}">` +
@@ -321,7 +321,7 @@ export function StopMarkers({
           const displayCount = groupPlatformCount > 9 ? '9+' : String(groupPlatformCount || group.count);
 
           const icon = L.divIcon({
-            html: `<div class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
+            html: `<div data-testid="stop-marker" class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
               <span class="count">${displayCount}</span>
             </div>`,
             className: 'parent-station-icon',
@@ -346,7 +346,7 @@ export function StopMarkers({
           const displayCount = childCount > 9 ? '9+' : childCount.toString();
 
           const icon = L.divIcon({
-            html: `<div class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
+            html: `<div data-testid="stop-marker" class="parent-station-marker ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}">
               <span class="count">${displayCount}</span>
             </div>`,
             className: 'parent-station-icon',

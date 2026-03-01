@@ -81,7 +81,7 @@ export function makeVehicleIcon(
                 ` fill="white" font-family="system-ui,sans-serif">${label}</text>` +
       `</svg>`;
 
-    const html = `<div style="position:relative;width:${size}px;height:${size}px;">` + rotatingSvg + fixedSvg + `</div>`;
+    const html = `<div data-testid="vehicle-marker" style="position:relative;width:${size}px;height:${size}px;">` + rotatingSvg + fixedSvg + `</div>`;
 
     return L.divIcon({
       html,
@@ -107,7 +107,7 @@ export function makeVehicleIcon(
              ` text-anchor="middle" font-size="${fontSize}" font-weight="bold"` +
              ` fill="white" font-family="system-ui,sans-serif">${label}</text>`;
 
-  const html = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` + svgBody + `</svg>`;
+  const html = `<svg data-testid="vehicle-marker" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` + svgBody + `</svg>`;
 
   return L.divIcon({
     html,

@@ -4,6 +4,22 @@ import L from 'leaflet';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useEffect } from 'react';
 
+/** Exposes the Leaflet map instance on window.__leafletMap for E2E tests. */
+function MapTestRef() {
+    const map = useMap();
+    useEffect(() => {
+        if (import.meta.env.DEV || import.meta.env.VITE_E2E === 'true') {
+            (window as unknown as Record<string, unknown>).__leafletMap = map;
+        }
+        return () => {
+            if ((window as unknown as Record<string, unknown>).__leafletMap === map) {
+                delete (window as unknown as Record<string, unknown>).__leafletMap;
+            }
+        };
+    }, [map]);
+    return null;
+}
+
 const ZAGREB_CENTER: [number, number] = [45.815, 15.977];
 const DEFAULT_ZOOM = 13;
 
@@ -67,7 +83,7 @@ export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
                 <Marker
                     position={[userLocation.lat, userLocation.lon]}
                     icon={L.divIcon({
-                        html: `<div class="user-location-marker"><span class="pulse"></span><span class="dot"></span></div>`,
+                        html: `<div data-testid="user-location-marker" class="user-location-marker"><span class="pulse"></span><span class="dot"></span></div>`,
                         className: 'user-location-icon',
                         iconSize: [44, 44],
                         iconAnchor: [22, 22],
@@ -76,6 +92,7 @@ export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
             )}
 
             <MapLocater userLocation={userLocation} />
+            <MapTestRef />
 
             {children}
         </MapContainer>
