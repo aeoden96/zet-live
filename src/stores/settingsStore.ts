@@ -32,6 +32,10 @@ interface SettingsState {
   showPedestrianZones: boolean;
   showFreeWifi: boolean;
   showPublicGarages: boolean;
+  /** Show electric vehicle charging stations layer */
+  showElectricCharging: boolean;
+  /** Show railway stations layer */
+  showRailwayStations: boolean;
   /** Prefer more detailed map tiles (Standard / HOT) */
   detailedMap: boolean;
   appMode: AppMode;
@@ -61,6 +65,8 @@ interface SettingsState {
   setShowPedestrianZones: (show: boolean) => void;
   setShowFreeWifi: (show: boolean) => void;
   setShowPublicGarages: (show: boolean) => void;
+  setShowElectricCharging: (show: boolean) => void;
+  setShowRailwayStations: (show: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   toggleFavouriteRoute: (id: string) => void;
   toggleFavouriteStop: (id: string) => void;
@@ -99,6 +105,8 @@ export const useSettingsStore = create<SettingsState>()(
         showPedestrianZones: false,
         showFreeWifi: false,
         showPublicGarages: true,
+        showElectricCharging: false,
+        showRailwayStations: false,
         appMode: 'map',
         favouriteRouteIds: [],
         favouriteStopIds: [],
@@ -143,6 +151,8 @@ export const useSettingsStore = create<SettingsState>()(
         setShowPedestrianZones: (show) => set({ showPedestrianZones: show }),
         setShowFreeWifi: (show) => set({ showFreeWifi: show }),
         setShowPublicGarages: (show) => set({ showPublicGarages: show }),
+        setShowElectricCharging: (show) => set({ showElectricCharging: show }),
+        setShowRailwayStations: (show) => set({ showRailwayStations: show }),
         setAppMode: (mode) => set({ appMode: mode }),
 
         toggleFavouriteRoute: (id) =>
