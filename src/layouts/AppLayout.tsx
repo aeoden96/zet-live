@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { SpiderMenu } from '../components/Navigation/SpiderMenu';
+import { UpdatePrompt } from '../components/common/UpdatePrompt';
 
 export function AppLayout() {
     return (
@@ -15,6 +16,7 @@ export function AppLayout() {
                 to 'register' its locate function.
             */}
             <SpiderMenu />
+            <UpdatePrompt />
         </div>
     );
 }

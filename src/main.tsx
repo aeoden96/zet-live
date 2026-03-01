@@ -9,10 +9,6 @@ import { AppLayout } from './layouts/AppLayout.tsx'
 import { CyclingMode } from './pages/CyclingMode.tsx'
 import { DrivingMode } from './pages/DrivingMode.tsx'
 import { CityLifeMode } from './pages/CityLifeMode.tsx'
-import { registerSW } from 'virtual:pwa-register'
-
-// Register service worker for PWA functionality
-registerSW({ immediate: true })
 
 
 createRoot(document.getElementById('root')!).render(
