@@ -14,6 +14,7 @@ import { OffScreenStopIndicator } from './OffScreenStopIndicator';
 import { SpiderfierProvider } from './SpiderfierContext';
 import { SpiderfierManager } from './SpiderfierManager';
 import { RoadClosures } from './RoadClosures';
+import { RailwayStationsMap } from './RailwayStationsMap';
 import { useRoadClosures } from '../../hooks/useRoadClosures';
 
 
@@ -33,6 +34,7 @@ interface MapViewProps {
   onVehicleClick?: (routeId: string, routeType: number) => void;
   showAllVehicles?: boolean;
   showRoadClosures?: boolean;
+  showRailwayStations?: boolean;
   allVehicles?: AllVehiclePosition[];
   routesById: Map<string, Route>;
   serviceId: string | null;
@@ -63,6 +65,7 @@ export function MapView({
   onVehicleClick,
   showAllVehicles = false,
   showRoadClosures = false,
+  showRailwayStations = false,
   allVehicles = [],
   routesById,
   userLocation,
@@ -112,6 +115,7 @@ export function MapView({
         )}
 
         <RoadClosures show={showRoadClosures} closures={closures} />
+        <RailwayStationsMap show={showRailwayStations} />
 
         {selectedRouteId && (
           <>
