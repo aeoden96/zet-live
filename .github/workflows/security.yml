@@ -1,0 +1,154 @@
+name: Security
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  schedule:
+    # Run every Monday at 06:00 UTC so new CVEs / leaked secrets are caught
+    # even without a code push.
+    - cron: '0 6 * * 1'
+
+# Least-privilege baseline; individual jobs elevate only what they need.
+permissions:
+  contents: read
+
+jobs:
+  # ── 1. Secret scanning ────────────────────────────────────────────────────
+  # Gitleaks scans the full git history so secrets committed and later
+  # "deleted" are still caught.
+  secret-scan:
+    name: Secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── 2. Dependency vulnerability audit ────────────────────────────────────
+  # `yarn audit` queries the npm advisory database for known CVEs.
+  # Two thresholds:
+  #   • "high" (and above) → hard failure, blocks merge
+  #   • "moderate"         → surfaced as an annotation, never blocks
+  dependency-audit:
+    name: Dependency audit (CVE check)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Exit non-zero only when high/critical vulnerabilities are present.
+      - name: Check for high/critical CVEs (hard block)
+        run: yarn audit --level high
+
+      # Run again at moderate level just for visibility; allowed to fail.
+      - name: Report moderate-level CVEs (informational)
+        run: yarn audit --level moderate
+        continue-on-error: true
+
+  # ── 3. Dependency review (pull requests only) ─────────────────────────────
+  # Compares dependency changes introduced by a PR against the GitHub
+  # Advisory Database and a license allow-list. Blocks PRs that add
+  # packages with known high/critical CVEs or disallowed licenses.
+  dependency-review:
+    name: Dependency review (PR diff)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Block on high and critical CVEs in newly added packages.
+          fail-on-severity: high
+          # Copyleft / viral licenses that are incompatible with this project.
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, AGPL-3.0
+
+  # ── 4. SAST — CodeQL ─────────────────────────────────────────────────────
+  # GitHub's own static analysis engine. The "security-extended" query suite
+  # covers OWASP Top-10, injection, XSS, path traversal, etc.
+  codeql:
+    name: CodeQL (SAST)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # required to upload SARIF results
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # security-extended adds extra queries on top of the default suite
+          # (prototype pollution, ReDoS, server-side request forgery, etc.)
+          queries: security-extended
+
+      # No build step needed for JS/TS — CodeQL uses auto-build.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'
+
+  # ── 5. SAST — Semgrep ────────────────────────────────────────────────────
+  # Semgrep complements CodeQL with a different rule engine and rule sets.
+  # Running both catches issues that either tool might miss on its own.
+  # No SEMGREP_APP_TOKEN required — this uses the open-source CLI only.
+  semgrep:
+    name: Semgrep (SAST + secrets)
+    runs-on: ubuntu-latest
+    # Dependabot PRs don't have access to org secrets, skip to avoid noisy
+    # failures unrelated to the code change.
+    if: github.actor != 'dependabot[bot]'
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        # p/typescript  — TypeScript-specific security rules
+        # p/secrets     — hard-coded credentials, API keys, tokens
+        # p/owasp-top-ten — OWASP Top-10 coverage
+        # p/react       — React-specific issues (dangerouslySetInnerHTML etc.)
+        run: |
+          semgrep scan \
+            --config "p/typescript" \
+            --config "p/secrets" \
+            --config "p/owasp-top-ten" \
+            --config "p/react" \
+            --error \
+            --sarif \
+            --output semgrep.sarif
+
+      - name: Upload Semgrep SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+        # SARIF upload requires the security-events write permission.
+        # Add it here at the step level via job-level permissions below.
+    permissions:
+      contents: read
+      security-events: write
