@@ -72,7 +72,17 @@ export default defineConfig({
       name: 'mobile-chrome',
       // Only run *.mobile.spec.ts files for the Pixel 5 project.
       testMatch: '**/*.mobile.spec.ts',
-      use: { ...devices['Pixel 5'] },
+      // Run headed mobile tests with a single worker to make them easy to
+      // observe in a single browser window.
+      workers: 1,
+      use: {
+        ...devices['Pixel 5'],
+        // Slow down actions for easier visual debugging when running headed.
+        // Adjust milliseconds to taste (e.g. 100-500).
+        launchOptions: {
+          slowMo: 600,
+        },
+      },
     },
 
     // Uncomment to enable additional browsers:
