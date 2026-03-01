@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Maximize2, Clock, X, Star } from 'lucide-react';
+import { Maximize2, Clock, X, Star, ArrowRight } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
@@ -25,6 +25,7 @@ interface StopInfoBarProps {
   stopsById: Map<string, Stop>;
   onExpand: (stopId: string) => void;
   onClose: () => void;
+  onStopSelect?: (stopId: string) => void;
   /** When true, shifts the bar down so it sits below the RouteInfoBar */
   stackBelow?: boolean;
 }
@@ -35,6 +36,7 @@ export function StopInfoBar({
   stopsById,
   onExpand,
   onClose,
+  onStopSelect,
   stackBelow = false,
 }: StopInfoBarProps) {
   const currentTime = useCurrentTime();
@@ -49,12 +51,43 @@ export function StopInfoBar({
     return () => clearInterval(interval);
   }, []);
 
-  const { vehicles: allVehicles, loading: vehiclesLoading } = useApproachingVehicles(
+  const { vehicles: allVehicles, loading: vehiclesLoading, isAllTerminus } = useApproachingVehicles(
     stop.id,
     stopsById,
     routesById,
     nowMs
   );
+
+  // Sibling platforms at the same parent station (for the terminus redirect banner)
+  const siblingPlatforms = stop.parentStation !== null
+    ? Array.from(stopsById.values()).filter(
+        s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id
+      )
+    : [];
+
+  const terminusBanner = isAllTerminus ? (
+    <div className="rounded-lg bg-warning/10 border border-warning/30 p-3 mt-1">
+      <p className="text-xs font-semibold text-warning mb-1">Odredišna platforma</p>
+      <p className="text-xs text-base-content/70 mb-2">
+        Autobusi ovdje završavaju vožnju — nema polazaka.
+        {siblingPlatforms.length > 0 && ' Polasci su na susjednoj platformi:'}
+      </p>
+      {siblingPlatforms.map(s => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => onStopSelect?.(s.id)}
+          className="btn btn-xs btn-warning w-full gap-1.5 mt-1"
+        >
+          <ArrowRight className="w-3 h-3" />
+          {s.name}
+          {s.bearing !== undefined && (
+            <span className="font-normal opacity-70">· smjer {bearingToDirection(s.bearing)}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  ) : null;
   const liveVehicles = allVehicles
     .filter((v) => v.confidence === 'realtime')
     .sort((a, b) => {
@@ -151,9 +184,11 @@ export function StopInfoBar({
               <span className="text-sm text-base-content/60">Tražim vozila...</span>
             </div>
           ) : topVehicles.length === 0 ? (
-            <div className="text-sm text-base-content/50 py-2 text-center">
-              Nema GPS vozila u blizini
-            </div>
+            terminusBanner ?? (
+              <div className="text-sm text-base-content/50 py-2 text-center">
+                Nema GPS vozila u blizini
+              </div>
+            )
           ) : (
             <div className="space-y-2">
               {topVehicles.map((vehicle) => {
@@ -246,9 +281,11 @@ export function StopInfoBar({
               <span className="text-sm text-base-content/60">Učitavam red vožnje...</span>
             </div>
           ) : topDepartures.length === 0 ? (
-            <div className="text-sm text-base-content/50 py-2 text-center">
-              Nema polazaka u sljedećih 60 min
-            </div>
+            terminusBanner ?? (
+              <div className="text-sm text-base-content/50 py-2 text-center">
+                Nema polazaka u sljedećih 60 min
+              </div>
+            )
           ) : (
             <div className="space-y-2">
               {topDepartures.map((dep) => (

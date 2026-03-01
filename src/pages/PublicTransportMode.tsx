@@ -461,6 +461,7 @@ export function PublicTransportMode() {
           stopsById={stopsById}
           onExpand={handleExpandStop}
           onClose={handleCloseStopInfo}
+          onStopSelect={handleSelectStop}
           stackBelow={!!(selectedRoute && !routeModalOpen)}
         />
       )}
@@ -550,6 +551,7 @@ export function PublicTransportMode() {
           stopsById={stopsById}
           onClose={handleCloseStop}
           onRouteClick={handleRouteClickFromStop}
+          onStopSelect={handleSelectStop}
         />
       )}
 

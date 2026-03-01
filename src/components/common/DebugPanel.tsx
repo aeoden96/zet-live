@@ -44,6 +44,7 @@ function fmtTimestamp(ts: number, nowMs: number): string {
 
 const REASON_LABELS: Record<string, { label: string; color: string }> = {
   ok:                  { label: 'Included',               color: 'badge-success' },
+  terminus:            { label: 'Terminus (arrival only)', color: 'badge-secondary' },
   outside_window:      { label: 'Too far ahead (>30 min)', color: 'badge-warning' },
   past_grace_window:   { label: 'Already departed',        color: 'badge-neutral' },
   passed_stop_too_far: { label: 'Passed stop (>400 m)',    color: 'badge-error' },
@@ -174,6 +175,9 @@ function TripDiagnosticRow({ d, nowMs }: TripDiagnosticRowProps) {
           {!d.included && (
             <div className="mt-1 px-1.5 py-1 rounded bg-warning/10 text-warning text-[10px]">
               <strong>Filtered out:</strong> {meta.label}
+              {d.filterReason === 'terminus' && (
+                <span> — this stop is the last stop of the route (stopIdx {d.targetStopIndex}); only arrivals here, no departures</span>
+              )}
               {d.filterReason === 'outside_window' && (
                 <span> — arrives in {Math.round(d.arrivingInSeconds / 60)} min (limit: 30 min)</span>
               )}

@@ -28,6 +28,7 @@ const DIAG_FUTURE_SECONDS = 60 * 60;
 
 export type TripFilterReason =
   | 'ok'                   // passed all filters — would appear in approaching list
+  | 'terminus'             // this stop is the last stop of the route direction (arriving, not departing)
   | 'outside_window'       // ETA is beyond LOOKAHEAD_MINUTES
   | 'past_grace_window'    // scheduled-only trip already departed (> ARRIVED_GRACE_SECONDS ago)
   | 'passed_stop_too_far'  // GPS shows vehicle has already passed stop and is > 400 m away
@@ -188,6 +189,12 @@ export function useStopDiagnostic(
         }
       }
 
+      // Pre-compute whether this stop is the terminal for this route direction
+      const routeStopCount =
+        directionKey !== null ? (routeStopsData?.orderedStops?.[directionKey]?.length ?? 0) : 0;
+      const isTerminusRoute =
+        targetStopIndex >= 0 && routeStopCount > 1 && targetStopIndex === routeStopCount - 1;
+
       for (const [tripId, { time: scheduledMinutes }] of Object.entries(trips)) {
         const vehiclePos = vehiclePositions.get(tripId) ?? null;
         const tripUpdate = tripUpdates.get(tripId) ?? null;
@@ -275,8 +282,14 @@ export function useStopDiagnostic(
         let filterReason: TripFilterReason = 'ok';
         let included = true;
 
+        // 0. Terminus — this stop is the last stop of the route direction
+        if (isTerminusRoute) {
+          filterReason = 'terminus';
+          included = false;
+        }
+
         // 1. Outside lookahead window
-        if (etaAbsoluteSeconds > productionWindowEnd) {
+        if (included && etaAbsoluteSeconds > productionWindowEnd) {
           filterReason = 'outside_window';
           included = false;
         }

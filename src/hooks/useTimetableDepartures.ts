@@ -7,8 +7,8 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import type { Route, StopTimetable } from '../utils/gtfs';
-import { fetchStopTimetable } from '../utils/gtfs';
+import type { Route, StopTimetable, RouteStopsData } from '../utils/gtfs';
+import { fetchStopTimetable, fetchRouteStops } from '../utils/gtfs';
 import { useRealtimeStore } from '../stores/realtimeStore';
 import { useInitialData } from './useInitialData';
 
@@ -41,6 +41,7 @@ export function useTimetableDepartures(
   nowMs: number
 ): { departures: TimetableDeparture[]; loading: boolean; error: Error | null } {
   const [stopTimetable, setStopTimetable] = useState<StopTimetable | null>(null);
+  const [routeStopsCache, setRouteStopsCache] = useState<Map<string, RouteStopsData>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -51,6 +52,7 @@ export function useTimetableDepartures(
   useEffect(() => {
     if (!stopId) {
       setStopTimetable(null);
+      setRouteStopsCache(new Map());
       setError(null);
       return;
     }
@@ -59,9 +61,30 @@ export function useTimetableDepartures(
     setError(null);
 
     fetchStopTimetable(stopId)
-      .then((timetable) => {
+      .then(async (timetable) => {
         if (fetchingForRef.current !== stopId) return;
         setStopTimetable(timetable);
+
+        // Fetch route_stops for all routes at this stop to enable terminus detection
+        const routeIds = Object.keys(timetable);
+        const settled = await Promise.all(
+          routeIds.map(async (routeId) => {
+            try {
+              const data = await fetchRouteStops(routeId);
+              return [routeId, data] as const;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        if (fetchingForRef.current !== stopId) return;
+
+        const rsMap = new Map<string, RouteStopsData>();
+        for (const entry of settled) {
+          if (entry) rsMap.set(entry[0], entry[1]);
+        }
+        setRouteStopsCache(rsMap);
         setLoading(false);
       })
       .catch((err) => {
@@ -93,6 +116,22 @@ export function useTimetableDepartures(
     for (const [routeId, trips] of Object.entries(stopTimetable)) {
       const route = routesById.get(routeId);
       if (!route) continue;
+
+      // Skip routes where this stop is the terminal (last) stop — terminating trips
+      // are arrivals, not departures. Passengers waiting to board should use the
+      // paired departing platform.
+      const routeStopsData = routeStopsCache.get(routeId);
+      let isTerminus = false;
+      if (routeStopsData?.orderedStops) {
+        for (const [, stopList] of Object.entries(routeStopsData.orderedStops)) {
+          const idx = stopList.indexOf(stopId);
+          if (idx !== -1) {
+            isTerminus = stopList.length > 1 && idx === stopList.length - 1;
+            break;
+          }
+        }
+      }
+      if (isTerminus) continue;
 
       for (const [tripId, { time: scheduledMinutes }] of Object.entries(trips)) {
         // Skip trips that don't belong to today's service
@@ -144,7 +183,7 @@ export function useTimetableDepartures(
     results.sort((a, b) => a.adjustedMinutes - b.adjustedMinutes);
 
     return results;
-  }, [stopId, stopTimetable, tripUpdates, nowMs, routesById, calendar]);
+  }, [stopId, stopTimetable, routeStopsCache, tripUpdates, nowMs, routesById, calendar]);
 
   return { departures, loading: loading || (!!stopId && !stopTimetable && !error), error };
 }

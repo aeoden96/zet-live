@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, Clock, Star } from 'lucide-react';
+import { X, Clock, Star, ArrowRight } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
-import { minutesToTime } from '../../utils/gtfs';
+import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
@@ -22,6 +22,7 @@ interface StopModalProps {
   stopsById: Map<string, Stop>;
   onClose: () => void;
   onRouteClick: (routeId: string, routeType: number) => void;
+  onStopSelect?: (stopId: string) => void;
 }
 
 export function StopModal({
@@ -31,6 +32,7 @@ export function StopModal({
   stopsById,
   onClose,
   onRouteClick,
+  onStopSelect,
 }: StopModalProps) {
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
@@ -46,12 +48,43 @@ export function StopModal({
   }, [isOpen]);
 
   // Approaching vehicles (GPS) — only active when modal is open
-  const { vehicles: allVehicles, loading: vehiclesLoading } = useApproachingVehicles(
+  const { vehicles: allVehicles, loading: vehiclesLoading, isAllTerminus } = useApproachingVehicles(
     isOpen ? stop.id : null,
     stopsById,
     routesById,
     nowMs
   );
+
+  // Sibling platforms at the same parent station (for the terminus redirect banner)
+  const siblingPlatforms = stop.parentStation !== null
+    ? Array.from(stopsById.values()).filter(
+        s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id
+      )
+    : [];
+
+  const terminusBanner = isAllTerminus ? (
+    <div className="rounded-xl bg-warning/10 border border-warning/30 p-4 m-4">
+      <p className="text-sm font-semibold text-warning mb-1">Odredišna platforma</p>
+      <p className="text-sm text-base-content/70 mb-3">
+        Autobusi ovdje završavaju vožnju — nema polazaka.
+        {siblingPlatforms.length > 0 && ' Polasci su na susjednoj platformi:'}
+      </p>
+      {siblingPlatforms.map(s => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => onStopSelect?.(s.id)}
+          className="btn btn-sm btn-warning w-full gap-2 mb-1"
+        >
+          <ArrowRight className="w-4 h-4" />
+          {s.name}
+          {s.bearing !== undefined && (
+            <span className="font-normal opacity-70">· smjer {bearingToDirection(s.bearing)}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  ) : null;
   const liveVehicles = allVehicles
     .filter((v) => v.confidence === 'realtime')
     .sort((a, b) => {
@@ -124,9 +157,11 @@ export function StopModal({
                 <span>Tražim vozila...</span>
               </div>
             ) : liveVehicles.length === 0 ? (
-              <div className="p-8 text-center text-base-content/50">
-                Nema GPS vozila u blizini
-              </div>
+              terminusBanner ?? (
+                <div className="p-8 text-center text-base-content/50">
+                  Nema GPS vozila u blizini
+                </div>
+              )
             ) : (
               <div className="p-4 space-y-2">
                 <div className="flex items-center justify-between mb-1">
@@ -155,9 +190,11 @@ export function StopModal({
                 <span>Učitavam red vožnje...</span>
               </div>
             ) : timetableDepartures.length === 0 ? (
-              <div className="p-8 text-center text-base-content/50">
-                Nema polazaka u sljedećih 60 min
-              </div>
+              terminusBanner ?? (
+                <div className="p-8 text-center text-base-content/50">
+                  Nema polazaka u sljedećih 60 min
+                </div>
+              )
             ) : (
               <div className="p-4 space-y-2">
                 <div className="flex items-center justify-between mb-1">

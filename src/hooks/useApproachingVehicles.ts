@@ -69,7 +69,7 @@ export function useApproachingVehicles(
   stopsById: Map<string, Stop>,
   routesById: Map<string, Route>,
   nowMs: number   // Date.now() — updated every second by caller for live countdown
-): { vehicles: ApproachingVehicle[]; loading: boolean; error: Error | null } {
+): { vehicles: ApproachingVehicle[]; loading: boolean; error: Error | null; isAllTerminus: boolean } {
   const [stopTimetable, setStopTimetable] = useState<StopTimetable | null>(null);
   const [routeStopsCache, setRouteStopsCache] = useState<Map<string, RouteStopsData>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -128,8 +128,8 @@ export function useApproachingVehicles(
       });
   }, [stopId]);
 
-  const vehicles = useMemo<ApproachingVehicle[]>(() => {
-    if (!stopId || !stopTimetable) return [];
+  const { vehicles, isAllTerminus } = useMemo<{ vehicles: ApproachingVehicle[]; isAllTerminus: boolean }>(() => {
+    if (!stopId || !stopTimetable) return { vehicles: [], isAllTerminus: false };
 
     // Convert wall-clock ms to seconds and compute local midnight offset
     const nowSeconds = nowMs / 1000;
@@ -146,6 +146,8 @@ export function useApproachingVehicles(
     const targetStop = stopsById.get(stopId);
 
     const results: ApproachingVehicle[] = [];
+    let routesInTopology = 0;
+    let terminusRoutes = 0;
 
     for (const [routeId, trips] of Object.entries(stopTimetable)) {
       const route = routesById.get(routeId);
@@ -165,6 +167,21 @@ export function useApproachingVehicles(
             break;
           }
         }
+      }
+
+      // Track how many routes have valid topology data (for isAllTerminus detection)
+      if (targetStopIndex >= 0 && directionKey !== null) {
+        routesInTopology++;
+      }
+
+      // Skip routes where this stop is the terminal (last) stop — those trips are
+      // arriving/terminating here, not departing. Passengers waiting to depart
+      // should use the paired departing platform instead.
+      const routeStopCount =
+        directionKey !== null ? (routeStopsData?.orderedStops?.[directionKey]?.length ?? 0) : 0;
+      if (targetStopIndex >= 0 && routeStopCount > 1 && targetStopIndex === routeStopCount - 1) {
+        terminusRoutes++;
+        continue;
       }
 
       for (const [tripId, { time: scheduledMinutes }] of Object.entries(trips)) {
@@ -306,7 +323,8 @@ export function useApproachingVehicles(
       }
       deduped.push(v);
     }
-    return deduped;
+    const isAllTerminus = routesInTopology > 0 && terminusRoutes === routesInTopology;
+    return { vehicles: deduped, isAllTerminus };
   }, [
     stopId,
     stopTimetable,
@@ -318,5 +336,5 @@ export function useApproachingVehicles(
     routesById,
   ]);
 
-  return { vehicles, loading: loading || (!!stopId && !stopTimetable && !error), error };
+  return { vehicles, loading: loading || (!!stopId && !stopTimetable && !error), error, isAllTerminus };
 }
