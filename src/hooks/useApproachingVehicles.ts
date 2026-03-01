@@ -267,10 +267,15 @@ export function useApproachingVehicles(
       }
     }
 
-    // Sort: passed-stop vehicles go last; within each group sort by arrivingInSeconds ascending,
+    // Sort: passed-stop vehicles come first (descending by distance — furthest shown first),
+    // then approaching vehicles sorted by arrivingInSeconds ascending (closest ETA first),
     // then realtime before scheduled at the same ETA.
     const sorted = results.sort((a, b) => {
-      if (a.passedStop !== b.passedStop) return a.passedStop ? 1 : -1;
+      if (a.passedStop !== b.passedStop) return a.passedStop ? -1 : 1;
+      if (a.passedStop && b.passedStop) {
+        // Both passed: furthest away first (descending)
+        return (b.distanceMeters ?? 0) - (a.distanceMeters ?? 0);
+      }
       if (a.arrivingInSeconds !== b.arrivingInSeconds) return a.arrivingInSeconds - b.arrivingInSeconds;
       const aRT = a.confidence === 'realtime' ? 0 : 1;
       const bRT = b.confidence === 'realtime' ? 0 : 1;

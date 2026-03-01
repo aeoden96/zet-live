@@ -57,7 +57,11 @@ export function StopInfoBar({
   );
   const liveVehicles = allVehicles
     .filter((v) => v.confidence === 'realtime')
-    .sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
+    .sort((a, b) => {
+      if (a.passedStop !== b.passedStop) return a.passedStop ? -1 : 1;
+      if (a.passedStop && b.passedStop) return (b.distanceMeters ?? 0) - (a.distanceMeters ?? 0);
+      return (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity);
+    });
   const topVehicles = liveVehicles.slice(0, 4);
   const liveCount = liveVehicles.filter((v) => !v.passedStop).length;
 

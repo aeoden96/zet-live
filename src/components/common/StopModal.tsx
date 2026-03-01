@@ -54,7 +54,11 @@ export function StopModal({
   );
   const liveVehicles = allVehicles
     .filter((v) => v.confidence === 'realtime')
-    .sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
+    .sort((a, b) => {
+      if (a.passedStop !== b.passedStop) return a.passedStop ? -1 : 1;
+      if (a.passedStop && b.passedStop) return (b.distanceMeters ?? 0) - (a.distanceMeters ?? 0);
+      return (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity);
+    });
   const liveCount = liveVehicles.filter((v) => !v.passedStop).length;
 
   // Timetable departures — 60-min window, only active when modal is open

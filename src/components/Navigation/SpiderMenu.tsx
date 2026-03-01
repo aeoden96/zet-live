@@ -30,6 +30,10 @@ export function SpiderMenu() {
         setShowBikeParkings,
         showBikePaths,
         setShowBikePaths,
+        showPublicGarages,
+        setShowPublicGarages,
+        showElectricCharging,
+        setShowElectricCharging,
         showStudentRestaurants,
         setShowStudentRestaurants,
         showPublicFountains,
@@ -185,6 +189,41 @@ export function SpiderMenu() {
                                         >
                                             <List className="w-3 h-3" />
                                             POPIS
+                                        </button>
+                                    </div>
+                                )}
+                                {location.pathname === "/driving" && item.to === "/driving" && (
+                                    <div
+                                        className="flex p-0.5 bg-neutral/90 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl animate-spider-reveal overflow-hidden"
+                                        style={{ animationDelay: `${index * 50 + 50}ms` }}
+                                    >
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowPublicGarages(!showPublicGarages);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showPublicGarages
+                                                    ? 'bg-orange-500 text-white shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            GARAŽE
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowElectricCharging(!showElectricCharging);
+                                            }}
+                                            className={`
+                                                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all duration-300
+                                                ${showElectricCharging
+                                                    ? 'bg-yellow-400 text-black shadow-lg scale-105'
+                                                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'}
+                                            `}
+                                        >
+                                            EV
                                         </button>
                                     </div>
                                 )}

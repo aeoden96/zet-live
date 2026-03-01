@@ -3,7 +3,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info, MapPin } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Map, Database, Trash2, Info } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useDataCacheStore } from '../../stores/dataCache';
 import { useInitialData } from '../../hooks/useInitialData';
@@ -19,14 +19,6 @@ export function SettingsPage() {
   const setSandboxVisible = useSettingsStore((state) => state.setSandboxVisible);
   const detailedMap = useSettingsStore((state) => state.detailedMap);
   const setDetailedMap = useSettingsStore((state) => state.setDetailedMap);
-  const showAllVehicles = useSettingsStore((state) => state.showAllVehicles);
-  const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
-  const showPublicGarages = useSettingsStore((state) => state.showPublicGarages);
-  const setShowPublicGarages = useSettingsStore((state) => state.setShowPublicGarages);
-  const showElectricCharging = useSettingsStore((state) => state.showElectricCharging);
-  const setShowElectricCharging = useSettingsStore((state) => state.setShowElectricCharging);
-  const showRailwayStations = useSettingsStore((state) => state.showRailwayStations);
-  const setShowRailwayStations = useSettingsStore((state) => state.setShowRailwayStations);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -63,7 +55,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="min-h-svh bg-base-200">
+    <div className="h-full overflow-y-auto bg-base-200">
       {/* Header */}
       <div className="bg-base-100 border-b border-base-300">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -126,71 +118,6 @@ export function SettingsPage() {
               </div>
             </div>
 
-            <div className="divider my-2" />
-
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-base-content/70" />
-                  <p className="font-medium">Javni prijevoz</p>
-                </div>
-                <p className="text-sm text-base-content/70 mt-0.5">Prikazuje stanice, linije, pretragu i GPS položaje vozila</p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary mt-1"
-                checked={showAllVehicles}
-                onChange={(e) => setShowAllVehicles(e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl leading-none">🅿️</span>
-                  <p className="font-medium">Javne garaže</p>
-                </div>
-                <p className="text-sm text-base-content/70 mt-0.5">Prikaži javne garaže u Auto načinu</p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary mt-1"
-                checked={showPublicGarages}
-                onChange={(e) => setShowPublicGarages(e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl leading-none">⚡</span>
-                  <p className="font-medium">Električne punionice</p>
-                </div>
-                <p className="text-sm text-base-content/70 mt-0.5">Prikaži EV punionice u Auto načinu</p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary mt-1"
-                checked={showElectricCharging}
-                onChange={(e) => setShowElectricCharging(e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl leading-none">🚆</span>
-                  <p className="font-medium">Željezničke postaje</p>
-                </div>
-                <p className="text-sm text-base-content/70 mt-0.5">Prikaži željezničke postaje u JGP načinu</p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary mt-1"
-                checked={showRailwayStations}
-                onChange={(e) => setShowRailwayStations(e.target.checked)}
-              />
-            </div>
 
           </div>
         </div>
