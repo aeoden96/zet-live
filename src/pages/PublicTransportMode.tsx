@@ -511,7 +511,11 @@ export function PublicTransportMode() {
       )}
 
       {/* Debug panel */}
-      <DebugPanel />
+      <DebugPanel
+        selectedStopId={selectedStopId}
+        stopsById={stopsById}
+        routesById={routesById}
+      />
 
       {/* Search Modal */}
       <SearchModal
