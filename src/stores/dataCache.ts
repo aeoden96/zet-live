@@ -148,9 +148,18 @@ export async function checkCacheVersion(): Promise<void> {
     const currentVersion = store.version;
     
     if (currentVersion && currentVersion !== newVersion) {
-      // Version changed - clear cache
+      // Version changed - clear IndexedDB cache and the SW runtime cache for GTFS data
       console.log(`Cache version mismatch (${currentVersion} -> ${newVersion}), clearing cache`);
       store.clearCache();
+
+      // Also purge the Service Worker's runtime cache so stale fetch responses
+      // don't get served on this same page load (StaleWhileRevalidate would
+      // otherwise return the old cached JSON before updating in the background).
+      if ('caches' in window) {
+        caches.delete('gtfs-data').catch(() => {
+          // Non-fatal: SW cache may not exist in dev or on first load
+        });
+      }
     }
     
     // Update to new version
