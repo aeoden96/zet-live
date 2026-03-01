@@ -38,15 +38,17 @@ const PAST_GRACE_SECONDS = 30;
 export function useTimetableDepartures(
   stopId: string | null,
   routesById: Map<string, Route>,
-  nowMs: number
+  nowMs: number,
+  options: { dataDir?: string } = {}
 ): { departures: TimetableDeparture[]; loading: boolean; error: Error | null } {
+  const { dataDir = 'data' } = options;
   const [stopTimetable, setStopTimetable] = useState<StopTimetable | null>(null);
   const [routeStopsCache, setRouteStopsCache] = useState<Map<string, RouteStopsData>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const tripUpdates = useRealtimeStore((s) => s.tripUpdates);
-  const { calendar } = useInitialData();
+  const { calendar } = useInitialData({ dataDir });
   const fetchingForRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function useTimetableDepartures(
     setLoading(true);
     setError(null);
 
-    fetchStopTimetable(stopId)
+    fetchStopTimetable(stopId, dataDir)
       .then(async (timetable) => {
         if (fetchingForRef.current !== stopId) return;
         setStopTimetable(timetable);
@@ -70,7 +72,7 @@ export function useTimetableDepartures(
         const settled = await Promise.all(
           routeIds.map(async (routeId) => {
             try {
-              const data = await fetchRouteStops(routeId);
+              const data = await fetchRouteStops(routeId, dataDir);
               return [routeId, data] as const;
             } catch {
               return null;
@@ -92,7 +94,7 @@ export function useTimetableDepartures(
         setError(err instanceof Error ? err : new Error(String(err)));
         setLoading(false);
       });
-  }, [stopId]);
+  }, [stopId, dataDir]);
 
   const departures = useMemo<TimetableDeparture[]>(() => {
     if (!stopId || !stopTimetable) return [];

@@ -10,7 +10,8 @@ import {
     X,
     LocateFixed,
     Map,
-    List
+    List,
+    Train
 } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useNavigationStore } from '../../stores/navigationStore';
@@ -55,6 +56,14 @@ export function SpiderMenu() {
             color: 'bg-primary',
             hoverColor: 'hover:bg-primary/80',
             activeRing: 'ring-primary'
+        },
+        {
+            to: "/train",
+            icon: <Train className="w-5 h-5" />,
+            label: "Vlak",
+            color: 'bg-red-700',
+            hoverColor: 'hover:bg-red-600',
+            activeRing: 'ring-red-700'
         },
         {
             to: "/cycling",

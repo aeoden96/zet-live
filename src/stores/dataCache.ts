@@ -14,12 +14,16 @@ interface CacheEntry {
 interface DataCacheState {
   cache: Record<string, CacheEntry>;
   version: string | null;
+  /** Per-manifest version keys, e.g. { 'data/manifest.json': 'v1', 'data-train/manifest.json': 'v2' } */
+  versions: Record<string, string>;
   
   // Actions
   setEntry: (key: string, data: unknown) => void;
   getEntry: <T>(key: string) => T | undefined;
   clearCache: () => void;
   setVersion: (version: string) => void;
+  setVersionForKey: (key: string, version: string) => void;
+  getVersionForKey: (key: string) => string | undefined;
   getCacheStats: () => { entryCount: number; sizeBytes: number };
 }
 
@@ -56,6 +60,7 @@ export const useDataCacheStore = create<DataCacheState>()(
     (set, get) => ({
       cache: {},
       version: null,
+      versions: {},
 
       setEntry: (key: string, data: unknown) => {
         set((state) => ({
@@ -80,6 +85,14 @@ export const useDataCacheStore = create<DataCacheState>()(
 
       setVersion: (version: string) => {
         set({ version });
+      },
+
+      setVersionForKey: (key: string, version: string) => {
+        set((state) => ({ versions: { ...state.versions, [key]: version } }));
+      },
+
+      getVersionForKey: (key: string): string | undefined => {
+        return get().versions[key];
       },
 
       getCacheStats: () => {
@@ -131,13 +144,15 @@ export async function cachedFetch<T>(
 }
 
 /**
- * Check and update cache version from manifest
+ * Check and update cache version from manifest.
+ * @param manifestRelPath - relative path under BASE_URL, defaults to 'data/manifest.json'
  */
-export async function checkCacheVersion(): Promise<void> {
+export async function checkCacheVersion(manifestRelPath = 'data/manifest.json'): Promise<void> {
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/manifest.json`);
+    const url = `${import.meta.env.BASE_URL}${manifestRelPath}`;
+    const response = await fetch(url);
     if (!response.ok) {
-      console.warn('Failed to fetch manifest.json');
+      console.warn(`Failed to fetch ${manifestRelPath}`);
       return;
     }
     
@@ -145,25 +160,25 @@ export async function checkCacheVersion(): Promise<void> {
     const newVersion = manifest.version;
     
     const store = useDataCacheStore.getState();
-    const currentVersion = store.version;
+    // Use per-key versioning; fall back to legacy global `version` for the default manifest
+    const currentVersion = manifestRelPath === 'data/manifest.json'
+      ? (store.getVersionForKey(manifestRelPath) ?? store.version)
+      : store.getVersionForKey(manifestRelPath);
     
     if (currentVersion && currentVersion !== newVersion) {
-      // Version changed - clear IndexedDB cache and the SW runtime cache for GTFS data
-      console.log(`Cache version mismatch (${currentVersion} -> ${newVersion}), clearing cache`);
+      console.log(`Cache version mismatch for ${manifestRelPath} (${currentVersion} -> ${newVersion}), clearing cache`);
       store.clearCache();
 
-      // Also purge the Service Worker's runtime cache so stale fetch responses
-      // don't get served on this same page load (StaleWhileRevalidate would
-      // otherwise return the old cached JSON before updating in the background).
       if ('caches' in window) {
-        caches.delete('gtfs-data').catch(() => {
-          // Non-fatal: SW cache may not exist in dev or on first load
-        });
+        caches.delete('gtfs-data').catch(() => {});
       }
     }
     
-    // Update to new version
-    store.setVersion(newVersion);
+    store.setVersionForKey(manifestRelPath, newVersion);
+    // Keep legacy field in sync for the default manifest
+    if (manifestRelPath === 'data/manifest.json') {
+      store.setVersion(newVersion);
+    }
   } catch (error) {
     console.warn('Failed to check cache version:', error);
   }

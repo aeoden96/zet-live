@@ -23,6 +23,8 @@ interface StopModalProps {
   onClose: () => void;
   onRouteClick: (routeId: string, routeType: number) => void;
   onStopSelect?: (stopId: string) => void;
+  /** Data directory to use for timetable fetching (default: 'data') */
+  dataDir?: string;
 }
 
 export function StopModal({
@@ -33,6 +35,7 @@ export function StopModal({
   onClose,
   onRouteClick,
   onStopSelect,
+  dataDir = 'data',
 }: StopModalProps) {
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
@@ -98,7 +101,8 @@ export function StopModal({
   const { departures: timetableDepartures, loading: timetableLoading } = useTimetableDepartures(
     isOpen ? stop.id : null,
     routesById,
-    nowMs
+    nowMs,
+    { dataDir }
   );
 
   if (!isOpen) return null;

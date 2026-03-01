@@ -9,6 +9,7 @@ import { AppLayout } from './layouts/AppLayout.tsx'
 import { CyclingMode } from './pages/CyclingMode.tsx'
 import { DrivingMode } from './pages/DrivingMode.tsx'
 import { CityLifeMode } from './pages/CityLifeMode.tsx'
+import { TrainMode } from './pages/TrainMode.tsx'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<AppModeSwitch />} />
+            <Route path="/train" element={<TrainMode />} />
             <Route path="/cycling" element={<CyclingMode />} />
             <Route path="/driving" element={<DrivingMode />} />
             <Route path="/city" element={<CityLifeMode />} />

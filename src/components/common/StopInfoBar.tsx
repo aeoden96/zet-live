@@ -28,6 +28,8 @@ interface StopInfoBarProps {
   onStopSelect?: (stopId: string) => void;
   /** When true, shifts the bar down so it sits below the RouteInfoBar */
   stackBelow?: boolean;
+  /** Data directory to use for timetable fetching (default: 'data') */
+  dataDir?: string;
 }
 
 export function StopInfoBar({
@@ -38,6 +40,7 @@ export function StopInfoBar({
   onClose,
   onStopSelect,
   stackBelow = false,
+  dataDir = 'data',
 }: StopInfoBarProps) {
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
@@ -101,7 +104,8 @@ export function StopInfoBar({
   const { departures: timetableDepartures, loading: timetableLoading } = useTimetableDepartures(
     stop.id,
     routesById,
-    nowMs
+    nowMs,
+    { dataDir }
   );
   const topDepartures = timetableDepartures.slice(0, 4);
 

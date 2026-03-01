@@ -7,7 +7,13 @@ import type { InitialData, Stop, ParentGroup } from '../utils/gtfs';
 import { fetchInitialData, clusterParentStops } from '../utils/gtfs';
 import { checkCacheVersion } from '../stores/dataCache';
 
-export function useInitialData() {
+interface UseInitialDataOptions {
+  /** Data directory to load from (default: 'data'). Use 'data-train' for train mode. */
+  dataDir?: string;
+}
+
+export function useInitialData(options: UseInitialDataOptions = {}) {
+  const { dataDir = 'data' } = options;
   const [data, setData] = useState<InitialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -15,9 +21,9 @@ export function useInitialData() {
   useEffect(() => {
     let mounted = true;
 
-    // Check cache version first, then fetch data
-    checkCacheVersion()
-      .then(() => fetchInitialData())
+    // Check cache version for this specific manifest, then fetch data
+    checkCacheVersion(`${dataDir}/manifest.json`)
+      .then(() => fetchInitialData(dataDir))
       .then((initialData) => {
         if (mounted) {
           setData(initialData);
@@ -34,7 +40,7 @@ export function useInitialData() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [dataDir]);
 
   // Create lookup maps
   const stopsById = useMemo(() => {

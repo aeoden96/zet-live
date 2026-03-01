@@ -17,12 +17,18 @@ interface RouteData {
   activeTripsData: RouteActiveTripsData | null;
 }
 
-export function useRouteData(routeId: string | null) {
+interface UseRouteDataOptions {
+  /** Data directory to load from (default: 'data'). Use 'data-train' for train mode. */
+  dataDir?: string;
+}
+
+export function useRouteData(routeId: string | null, options: UseRouteDataOptions = {}) {
+  const { dataDir = 'data' } = options;
   const [data, setData] = useState<RouteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Cache loaded routes to avoid refetching
+  // Cache loaded routes to avoid refetching; namespace by dataDir to prevent cross-dataset hits
   const cache = useRef<Map<string, RouteData>>(new Map());
 
   useEffect(() => {
@@ -32,8 +38,9 @@ export function useRouteData(routeId: string | null) {
       return;
     }
 
-    // Check cache first
-    const cached = cache.current.get(routeId);
+    // Cache key includes dataDir to avoid cross-dataset collisions
+    const cacheKey = `${dataDir}:${routeId}`;
+    const cached = cache.current.get(cacheKey);
     if (cached) {
       setData(cached);
       setLoading(false);
@@ -46,9 +53,9 @@ export function useRouteData(routeId: string | null) {
 
     // Fetch all route data in parallel
     Promise.all([
-      fetchRouteShapes(routeId),
-      fetchRouteStops(routeId),
-      fetchRouteActiveTrips(routeId)
+      fetchRouteShapes(routeId, dataDir),
+      fetchRouteStops(routeId, dataDir),
+      fetchRouteActiveTrips(routeId, dataDir)
     ])
       .then(([shapes, stopsData, activeTripsData]) => {
         if (mounted) {
@@ -67,8 +74,7 @@ export function useRouteData(routeId: string | null) {
             activeTripsData
           };
           
-          // Cache the data
-          cache.current.set(routeId, routeData);
+          cache.current.set(cacheKey, routeData);
           
           setData(routeData);
           setLoading(false);
@@ -84,7 +90,7 @@ export function useRouteData(routeId: string | null) {
     return () => {
       mounted = false;
     };
-  }, [routeId]);
+  }, [routeId, dataDir]);
 
   return {
     shapes: data?.shapes || {},

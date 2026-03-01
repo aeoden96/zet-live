@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Navigation, MapPin, Smartphone, Map, GitMerge, Coffee, List, MousePointerClick, Layers } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
-type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list';
+type OnboardingVariant = 'transit' | 'cycling' | 'driving' | 'city' | 'list' | 'train';
 
 interface OnboardingWizardProps {
   variant: OnboardingVariant;
@@ -95,6 +95,15 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
             title: 'Prikaz Liste',
             body: 'Brzi pregled svih linija i stanica u jednostavnom tekstualnom formatu, bez učitavanja karte.',
             icon: <Smartphone className="w-6 h-6 text-primary" />
+          },
+          modeSwitchStep
+        ];
+      case 'train':
+        return [
+          {
+            title: 'Vlakovi HŽ',
+            body: 'Pregledaj vozni red HŽ Putničkog prijevoza za željezničke stanice u Zagrebu i okolici. Odaberi stanicu ili prugu za detalje.',
+            icon: <Navigation className="w-6 h-6 text-primary" />
           },
           modeSwitchStep
         ];
