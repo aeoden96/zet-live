@@ -23,6 +23,10 @@ export function SettingsPage() {
   const setShowAllVehicles = useSettingsStore((state) => state.setShowAllVehicles);
   const showPublicGarages = useSettingsStore((state) => state.showPublicGarages);
   const setShowPublicGarages = useSettingsStore((state) => state.setShowPublicGarages);
+  const showElectricCharging = useSettingsStore((state) => state.showElectricCharging);
+  const setShowElectricCharging = useSettingsStore((state) => state.setShowElectricCharging);
+  const showRailwayStations = useSettingsStore((state) => state.showRailwayStations);
+  const setShowRailwayStations = useSettingsStore((state) => state.setShowRailwayStations);
   const setOnboardingCompleted = useSettingsStore((state) => state.setOnboardingCompleted);
 
   const clearCache = useDataCacheStore((state) => state.clearCache);
@@ -153,6 +157,38 @@ export function SettingsPage() {
                 className="toggle toggle-primary mt-1"
                 checked={showPublicGarages}
                 onChange={(e) => setShowPublicGarages(e.target.checked)}
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl leading-none">⚡</span>
+                  <p className="font-medium">Električne punionice</p>
+                </div>
+                <p className="text-sm text-base-content/70 mt-0.5">Prikaži EV punionice u Auto načinu</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary mt-1"
+                checked={showElectricCharging}
+                onChange={(e) => setShowElectricCharging(e.target.checked)}
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl leading-none">🚆</span>
+                  <p className="font-medium">Željezničke postaje</p>
+                </div>
+                <p className="text-sm text-base-content/70 mt-0.5">Prikaži željezničke postaje u JGP načinu</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary mt-1"
+                checked={showRailwayStations}
+                onChange={(e) => setShowRailwayStations(e.target.checked)}
               />
             </div>
 

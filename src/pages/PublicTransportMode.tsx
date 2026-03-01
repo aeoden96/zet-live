@@ -43,6 +43,7 @@ export function PublicTransportMode() {
 
   const showAllVehicles = useSettingsStore((s) => s.showAllVehicles);
   const showRoadClosures = useSettingsStore((s) => s.showRoadClosures);
+  const showRailwayStations = useSettingsStore((s) => s.showRailwayStations);
   const { addRecentRoute, addRecentStop } = useSettingsStore();
   const [legendOpen, setLegendOpen] = useState(false);
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
@@ -294,6 +295,7 @@ export function PublicTransportMode() {
         onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
         showAllVehicles={showAllVehicles}
         showRoadClosures={showRoadClosures}
+        showRailwayStations={showRailwayStations}
         allVehicles={showAllVehicles && selectedRouteId ? allVehicles.filter(v => v.routeId === selectedRouteId) : allVehicles}
         routesById={routesById}
         serviceId={serviceId}
