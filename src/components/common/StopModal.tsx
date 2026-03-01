@@ -14,6 +14,7 @@ import { ApproachingVehicleCard } from './ApproachingVehicleCard';
 import { TimetableDepartureCard } from './TimetableDepartureCard';
 import { StopTabSelector, type StopTab } from './StopTabSelector';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useGTFSMode } from '../../contexts/GTFSModeContext';
 
 interface StopModalProps {
   isOpen: boolean;
@@ -23,8 +24,6 @@ interface StopModalProps {
   onClose: () => void;
   onRouteClick: (routeId: string, routeType: number) => void;
   onStopSelect?: (stopId: string) => void;
-  /** Data directory to use for timetable fetching (default: 'data') */
-  dataDir?: string;
 }
 
 export function StopModal({
@@ -35,8 +34,8 @@ export function StopModal({
   onClose,
   onRouteClick,
   onStopSelect,
-  dataDir = 'data',
 }: StopModalProps) {
+  const { dataDir } = useGTFSMode();
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);

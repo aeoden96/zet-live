@@ -10,63 +10,38 @@ Output: ./public/data/ (chunked JSON files)
 import csv
 import json
 import os
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+# Allow importing from the sibling 'core' package regardless of CWD.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.gtfs_base import (
+    time_to_minutes,
+    write_json,
+    haversine_meters as _haversine_meters,
+    compute_bearing as _compute_bearing,
+    snap_stops_to_shape,
+)
 
+
+# ---------------------------------------------------------------------------
 # Paths
+# ---------------------------------------------------------------------------
+
 DATA_DIR = Path("data")
 OUTPUT_DIR = Path("public/data")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def time_to_minutes(time_str):
-    """Convert HH:MM:SS to minutes from midnight (integer)."""
-    parts = time_str.split(':')
-    hours = int(parts[0])
-    minutes = int(parts[1])
-    return hours * 60 + minutes
-
-
-def read_csv(filename):
-    """Read a CSV file and return list of dicts."""
+def read_csv(filename: str) -> list:
+    """Read a GTFS CSV file from DATA_DIR and return list of row dicts."""
     filepath = DATA_DIR / filename
     with open(filepath, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
+        import csv as _csv
+        reader = _csv.DictReader(f)
         return list(reader)
-
-
-def write_json(filepath, data):
-    """Write data to JSON file with compact formatting."""
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
-
-
-def _haversine_meters(a_lat, a_lon, b_lat, b_lon):
-    """Return distance in meters between two points using Haversine formula."""
-    from math import radians, sin, cos, asin, sqrt
-    R = 6371000.0
-    dlat = radians(b_lat - a_lat)
-    dlon = radians(b_lon - a_lon)
-    lat1 = radians(a_lat)
-    lat2 = radians(b_lat)
-    sin_dlat = sin(dlat / 2.0)
-    sin_dlon = sin(dlon / 2.0)
-    h = sin_dlat * sin_dlat + cos(lat1) * cos(lat2) * sin_dlon * sin_dlon
-    return 2.0 * R * asin(sqrt(h))
-
-
-def _compute_bearing(lat1, lon1, lat2, lon2):
-    """Compass bearing in degrees (0=N, 90=E, 180=S, 270=W) from point 1 to point 2."""
-    import math
-    lat1_r = math.radians(lat1)
-    lat2_r = math.radians(lat2)
-    dlon_r = math.radians(lon2 - lon1)
-    x = math.sin(dlon_r) * math.cos(lat2_r)
-    y = math.cos(lat1_r) * math.sin(lat2_r) - math.sin(lat1_r) * math.cos(lat2_r) * math.cos(dlon_r)
-    return (math.degrees(math.atan2(x, y)) + 360) % 360
 
 
 def _cluster_parent_stops(parents, radius_meters=150):
@@ -384,85 +359,7 @@ def generate_route_stops_index(timetables_by_route, trip_lookup):
     print(f"    ✓ Wrote {len(timetables_by_route)} route stops files")
 
 
-def snap_stops_to_shape(shape_points, stop_coords):
-    """Project stops onto shape polyline and compute progress fractions.
-    
-    Args:
-        shape_points: List of [lat, lon] coordinates defining the shape polyline
-        stop_coords: List of (lat, lon) tuples for stops in sequence order
-    
-    Returns:
-        List of progress fractions (0.0 to 1.0) for each stop
-    """
-    if not shape_points or not stop_coords:
-        return []
-    
-    # Pre-compute segment lengths and cumulative distances
-    segment_lengths = []
-    cumulative_distances = [0]
-    total_length = 0
-    
-    for i in range(1, len(shape_points)):
-        lat1, lon1 = shape_points[i - 1]
-        lat2, lon2 = shape_points[i]
-        seg_len = ((lat2 - lat1) ** 2 + (lon2 - lon1) ** 2) ** 0.5
-        segment_lengths.append(seg_len)
-        total_length += seg_len
-        cumulative_distances.append(total_length)
-    
-    if total_length == 0:
-        return [0.0] * len(stop_coords)
-    
-    # For each stop, find nearest point on shape (forward search)
-    progress_values = []
-    search_start_idx = 0  # Enforce monotonic progression
-    
-    for stop_lat, stop_lon in stop_coords:
-        min_dist = float('inf')
-        best_cumulative_dist = 0
-        best_idx = search_start_idx
-        
-        # Search forward from last position (stops should be ordered along route)
-        for i in range(search_start_idx, len(segment_lengths)):
-            lat1, lon1 = shape_points[i]
-            lat2, lon2 = shape_points[i + 1]
-            
-            # Vector from segment start to stop
-            dx_seg = lat2 - lat1
-            dy_seg = lon2 - lon1
-            dx_stop = stop_lat - lat1
-            dy_stop = stop_lon - lon1
-            
-            # Project stop onto segment line (clamped to [0, 1])
-            seg_len_sq = dx_seg ** 2 + dy_seg ** 2
-            if seg_len_sq > 0:
-                t = max(0, min(1, (dx_stop * dx_seg + dy_stop * dy_seg) / seg_len_sq))
-            else:
-                t = 0
-            
-            # Calculate closest point on segment
-            proj_lat = lat1 + t * dx_seg
-            proj_lon = lon1 + t * dy_seg
-            
-            # Distance from stop to projection
-            dist = ((stop_lat - proj_lat) ** 2 + (stop_lon - proj_lon) ** 2) ** 0.5
-            
-            if dist < min_dist:
-                min_dist = dist
-                best_cumulative_dist = cumulative_distances[i] + t * segment_lengths[i]
-                best_idx = i
-                
-            # Early termination: if distance is increasing significantly, we've passed the stop
-            elif dist > min_dist * 3 and i > search_start_idx + 10:
-                break
-        
-        # Update search start for next stop (monotonic progression)
-        search_start_idx = max(search_start_idx, best_idx)
-        
-        progress = best_cumulative_dist / total_length if total_length > 0 else 0
-        progress_values.append(round(progress, 6))
-    
-    return progress_values
+# snap_stops_to_shape is imported from core.gtfs_base above.
 
 
 def generate_stop_timetables_index(timetables_by_route, trip_lookup):

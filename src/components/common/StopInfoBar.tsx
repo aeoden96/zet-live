@@ -10,6 +10,7 @@ import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useGTFSMode } from '../../contexts/GTFSModeContext';
 import { StopTabSelector, type StopTab } from './StopTabSelector';
 import { TimetableDepartureCard } from './TimetableDepartureCard';
 
@@ -28,8 +29,6 @@ interface StopInfoBarProps {
   onStopSelect?: (stopId: string) => void;
   /** When true, shifts the bar down so it sits below the RouteInfoBar */
   stackBelow?: boolean;
-  /** Data directory to use for timetable fetching (default: 'data') */
-  dataDir?: string;
 }
 
 export function StopInfoBar({
@@ -40,8 +39,8 @@ export function StopInfoBar({
   onClose,
   onStopSelect,
   stackBelow = false,
-  dataDir = 'data',
 }: StopInfoBarProps) {
+  const { dataDir } = useGTFSMode();
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);

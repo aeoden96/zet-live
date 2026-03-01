@@ -11,10 +11,20 @@ Output: ./public/data-train/ (chunked JSON files)
 import csv
 import json
 import os
+import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
-from math import radians, sin, cos, asin, sqrt, atan2, degrees
 from pathlib import Path
+
+# Allow importing from the sibling 'core' package regardless of CWD.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.gtfs_base import (
+    time_to_minutes,
+    write_json,
+    haversine_meters as _haversine_meters,
+    compute_bearing as _compute_bearing,
+    snap_stops_to_shape,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -35,46 +45,16 @@ ZAGREB_RADIUS_M = 20_000   # 20 km
 # Utilities
 # ---------------------------------------------------------------------------
 
-def _haversine_meters(a_lat, a_lon, b_lat, b_lon):
-    R = 6_371_000.0
-    dlat = radians(b_lat - a_lat)
-    dlon = radians(b_lon - a_lon)
-    lat1 = radians(a_lat)
-    lat2 = radians(b_lat)
-    sh = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    return 2.0 * R * asin(sqrt(sh))
-
-
-def _compute_bearing(lat1, lon1, lat2, lon2):
-    lat1_r = radians(lat1)
-    lat2_r = radians(lat2)
-    dlon_r = radians(lon2 - lon1)
-    x = sin(dlon_r) * cos(lat2_r)
-    y = cos(lat1_r) * sin(lat2_r) - sin(lat1_r) * cos(lat2_r) * cos(dlon_r)
-    return (degrees(atan2(x, y)) + 360) % 360
-
-
 def is_within_zagreb(lat, lon):
     return _haversine_meters(ZAGREB_LAT, ZAGREB_LON, lat, lon) <= ZAGREB_RADIUS_M
 
 
-def time_to_minutes(time_str):
-    """Convert HH:MM:SS to minutes from midnight (handles >24h overnight services)."""
-    parts = time_str.split(':')
-    return int(parts[0]) * 60 + int(parts[1])
-
-
-def read_csv(filename):
+def read_csv(filename: str) -> list:
+    """Read a GTFS CSV file from DATA_DIR and return list of row dicts."""
     filepath = DATA_DIR / filename
     with open(filepath, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         return list(reader)
-
-
-def write_json(filepath, data):
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
 
 
 def _short_name_from_route_id(route_id: str) -> str:
@@ -356,54 +336,7 @@ def process_stop_times(trip_lookup, zagreb_stop_ids, zagreb_trip_ids):
     return timetables_by_route
 
 
-def snap_stops_to_shape(shape_points, stop_coords):
-    """Project stops onto shape polyline and compute progress fractions."""
-    if not shape_points or not stop_coords:
-        return []
-
-    segment_lengths    = []
-    cumulative_dists   = [0]
-    total_length       = 0
-
-    for i in range(1, len(shape_points)):
-        lat1, lon1 = shape_points[i - 1]
-        lat2, lon2 = shape_points[i]
-        seg_len = ((lat2 - lat1) ** 2 + (lon2 - lon1) ** 2) ** 0.5
-        segment_lengths.append(seg_len)
-        total_length += seg_len
-        cumulative_dists.append(total_length)
-
-    if total_length == 0:
-        return [0.0] * len(stop_coords)
-
-    progress_values = []
-    search_start_idx = 0
-
-    for stop_lat, stop_lon in stop_coords:
-        min_dist = float('inf')
-        best_cum = 0
-        best_idx = search_start_idx
-
-        for i in range(search_start_idx, len(segment_lengths)):
-            lat1, lon1 = shape_points[i]
-            lat2, lon2 = shape_points[i + 1]
-            dx_seg = lat2 - lat1; dy_seg = lon2 - lon1
-            dx_stp = stop_lat - lat1; dy_stp = stop_lon - lon1
-            seg_sq = dx_seg ** 2 + dy_seg ** 2
-            t = max(0, min(1, (dx_stp * dx_seg + dy_stp * dy_seg) / seg_sq)) if seg_sq > 0 else 0
-            proj_lat = lat1 + t * dx_seg; proj_lon = lon1 + t * dy_seg
-            dist = ((stop_lat - proj_lat) ** 2 + (stop_lon - proj_lon) ** 2) ** 0.5
-            if dist < min_dist:
-                min_dist = dist
-                best_cum = cumulative_dists[i] + t * segment_lengths[i]
-                best_idx = i
-            elif dist > min_dist * 3 and i > search_start_idx + 10:
-                break
-
-        search_start_idx = max(search_start_idx, best_idx)
-        progress_values.append(round(best_cum / total_length, 6))
-
-    return progress_values
+# snap_stops_to_shape is imported from core.gtfs_base above.
 
 
 def generate_route_stops_index(timetables_by_route, trip_lookup):
