@@ -36,8 +36,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
           {
             title: 'Javni prijevoz',
             body: 'Prati ZET tramvaje i autobuse uživo na karti.',
-            icon: <Navigation className="w-6 h-6 text-primary" />,
-            image: '/images/onboarding/public_transit_map.png'
+            icon: <Navigation className="w-6 h-6 text-primary" />
           },
           {
             title: 'Pregled stanice',
@@ -55,7 +54,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
             title: 'Karta ili Lista',
             body: 'Uz kartu, dostupan je i prikaz u obliku liste. Korisno kada samo želiš pronaći liniju bez gledanja u kartu.',
             icon: <List className="w-6 h-6 text-primary" />,
-            video: '/onboarding/public_transport_swith_views.webm'
+            video: '/onboarding/public_transport_switch_views.webm'
           },
           modeSwitchStep
         ];
@@ -64,8 +63,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
           {
             title: 'Biciklizam',
             body: 'Istraži biciklističke staze, Bajs (Nextbike) stanice i javna parkirališta za bicikle.',
-            icon: <GitMerge className="w-6 h-6 text-primary" />, // Using GitMerge as a placeholder for a path/bike icon
-            image: '/images/onboarding/cycling_mode.png'
+            icon: <GitMerge className="w-6 h-6 text-primary" /> // Using GitMerge as a placeholder for a path/bike icon
           },
           modeSwitchStep
         ];
@@ -74,8 +72,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
           {
             title: 'Vožnja Auta',
             body: 'Provjeri stanje u prometu i aktualna zatvaranja cesta prije polaska.',
-            icon: <Map className="w-6 h-6 text-primary" />,
-            image: '/images/onboarding/driving_mode.png'
+            icon: <Map className="w-6 h-6 text-primary" />
           },
           modeSwitchStep
         ];
@@ -84,8 +81,7 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
           {
             title: 'Gradski Život',
             body: 'Pronađi javne fontane za pitku vodu, studentske restorane i druge gradske sadržaje.',
-            icon: <Coffee className="w-6 h-6 text-primary" />,
-            image: '/images/onboarding/city_life_mode.png'
+            icon: <Coffee className="w-6 h-6 text-primary" />
           },
           modeSwitchStep
         ];
@@ -134,19 +130,18 @@ export function OnboardingWizard({ variant }: OnboardingWizardProps) {
   const currentStep = steps[step];
 
   return (
-    <div className="modal modal-open z-[9999]">
+    <div className="modal modal-open z-[9999] backdrop-blur-sm">
       <div className="modal-box max-w-md p-0 overflow-hidden relative">
         {/* Cover Media */}
         {currentStep.video ? (
-          <div className="w-full bg-base-300 flex items-center justify-center">
+          <div className="w-full bg-base-300">
             <video
               src={import.meta.env.BASE_URL + currentStep.video.replace(/^\//, '')}
               autoPlay
               loop
               muted
               playsInline
-              className="w-full object-contain"
-              style={{ maxHeight: '55vh', aspectRatio: '0.716' }}
+              className="w-full h-auto"
             />
           </div>
         ) : currentStep.image ? (
