@@ -14,6 +14,7 @@ on:
 # Least-privilege baseline; individual jobs elevate only what they need.
 permissions:
   contents: read
+  actions: read
 
 jobs:
   # ── 1. Secret scanning ────────────────────────────────────────────────────
@@ -91,13 +92,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       security-events: write   # required to upload SARIF results
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           # security-extended adds extra queries on top of the default suite
@@ -106,7 +108,7 @@ jobs:
 
       # No build step needed for JS/TS — CodeQL uses auto-build.
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:javascript-typescript'
 
@@ -117,6 +119,10 @@ jobs:
   semgrep:
     name: Semgrep (SAST + secrets)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write   # required to upload SARIF results
     # Dependabot PRs don't have access to org secrets, skip to avoid noisy
     # failures unrelated to the code change.
     if: github.actor != 'dependabot[bot]'
@@ -143,12 +149,8 @@ jobs:
 
       - name: Upload Semgrep SARIF results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
           category: semgrep
         # SARIF upload requires the security-events write permission.
-        # Add it here at the step level via job-level permissions below.
-    permissions:
-      contents: read
-      security-events: write

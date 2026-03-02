@@ -2,6 +2,8 @@
     "ignore": [
         "src/utils/gtfs.ts",
         "src/utils/realtime.ts",
-        "src/utils/vehicles.ts"
-    ]
+        "src/utils/vehicles.ts",
+        "src/components/Map/RailwayStationsMap.tsx"
+    ],
+    "ignoreBinaries": ["audit"]
 }

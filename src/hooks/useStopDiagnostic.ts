@@ -68,7 +68,7 @@ export interface TripDiagnostic {
   included: boolean;
 }
 
-export interface StopDiagnosticResult {
+interface StopDiagnosticResult {
   diagnostics: TripDiagnostic[];
   loading: boolean;
   error: Error | null;

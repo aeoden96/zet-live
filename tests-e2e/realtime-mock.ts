@@ -22,7 +22,7 @@
 import type { Page } from '@playwright/test';
 import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 
-export interface MockVehicle {
+interface MockVehicle {
   vehicleId: string;
   /** Must be a real trip_id from trips.txt so the store can enrich it. */
   tripId: string;
