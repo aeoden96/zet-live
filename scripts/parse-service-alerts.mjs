@@ -121,9 +121,11 @@ function makeId(guid) {
 
 // Ollama Cloud endpoint
 const OLLAMA_API_URL = 'https://ollama.com/api/chat';
-// llama3.3:70b handles Croatian well and is fast enough for this batch task.
-// Switch to a larger model (e.g. gpt-oss:120b) if extraction quality is poor.
-const OLLAMA_MODEL = 'llama3.3:70b';
+// gemma3:12b – strong multilingual (incl. Croatian), reliable JSON output, ~24 GB.
+// Other good options from https://ollama.com/api/tags:
+//   ministral-3:14b  (~16 GB, Mistral multilingual)
+//   gpt-oss:20b      (~14 GB, smaller/faster)
+const OLLAMA_MODEL = 'gemma3:12b';
 
 const SYSTEM_PROMPT = `You are a transit data parser for ZET (Zagreb Electric Tram), Croatia.
 You receive a raw transit service alert in Croatian (title + plain-text description).
