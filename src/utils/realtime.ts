@@ -119,6 +119,8 @@ export interface ParsedServiceAlert {
   activeSince: number | null;
   /** POSIX end timestamp in seconds, or null */
   activeUntil: number | null;
+  /** Optional URL to the original source (RSS alerts only) */
+  url?: string;
 }
 
 // ============================================

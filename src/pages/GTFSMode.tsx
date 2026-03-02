@@ -31,6 +31,7 @@ import { useRealtimeData } from '../hooks/useRealtimeData';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { findNearestStops } from '../utils/gtfs';
 import { GTFSModeProvider } from '../contexts/GTFSModeContext';
+import { useRssServiceAlerts } from '../hooks/useRssServiceAlerts';
 import type { GTFSModeConfig } from '../config/modes';
 
 interface GTFSModeProps {
@@ -109,8 +110,12 @@ export function GTFSMode({ config }: GTFSModeProps) {
   const { error: realtimeError, stats: realtimeStats } = useRealtimeData(
     config.hasRealtime && showAllVehicles,
   );
-  const serviceAlerts = useRealtimeStore((s) => s.serviceAlerts);
+  const gtfsRtAlerts = useRealtimeStore((s) => s.serviceAlerts);
   const lastUpdate = useRealtimeStore((s) => s.lastUpdate);
+
+  // RSS-parsed ZET service alerts (polled by GitHub Actions cron every 30 min)
+  const rssAlerts = useRssServiceAlerts(routesById);
+  const serviceAlerts = [...rssAlerts, ...gtfsRtAlerts];
 
   // All-vehicles overlay (transit only)
   const { vehicles: allVehicles, loading: allVehiclesLoading } =

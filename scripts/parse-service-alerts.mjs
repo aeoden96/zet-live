@@ -128,25 +128,25 @@ const OLLAMA_API_URL = 'https://ollama.com/api/chat';
 //   gpt-oss:20b      (~14 GB, smaller/faster)
 const OLLAMA_MODEL = 'gemma3:12b';
 
-const SYSTEM_PROMPT = `You are a transit data parser for ZET (Zagreb Electric Tram), Croatia.
-You receive a raw transit service alert in Croatian (title + plain-text description).
-Extract structured data and return ONLY valid JSON with exactly these keys:
+const SYSTEM_PROMPT = `Ti si parser podataka o prometu za ZET (Zagrebački električni tramvaj).
+Primaš obavijest o prometu na hrvatskom jeziku (naslov + opis u plain-textu).
+Izdvoji strukturirane podatke i vrati SAMO valjani JSON s točno ovim ključevima:
 {
-  "lines": ["6", "7"],          // tram/bus line numbers mentioned (strings)
-  "type": "route-change",        // one of: route-change, stop-change, cancellation, new-service, other
-  "startDate": "2026-03-02",     // ISO 8601 date or null
-  "endDate": "2026-03-09",       // ISO 8601 date or null
-  "affectedStops": ["Zapruđe"], // stop names (keep Croatian)
-  "summary": "..."}              // 1-2 sentence plain-English summary
+  "lines": ["6", "7"],          // brojevi tramvajskih/autobusnih linija (stringovi)
+  "type": "route-change",        // jedno od: route-change, stop-change, cancellation, new-service, other
+  "startDate": "2026-03-02",     // ISO 8601 datum ili null
+  "endDate": "2026-03-09",       // ISO 8601 datum ili null
+  "affectedStops": ["Zapruđe"], // nazivi stajališta (zadrži hrvatska imena)
+  "summary": "..."}              // sažetak od 1-2 rečenice NA HRVATSKOM JEZIKU
 
-type values:
-- route-change: detour or route modification
-- stop-change: stop moved, closed, or temporarily relocated
-- cancellation: service suspended or replaced (e.g. buses replacing trams)
-- new-service: new route or extended service
-- other: anything else
+Vrijednosti za type:
+- route-change: izmjena trase ili preusmjeravanje
+- stop-change: stajalište premješteno, zatvoreno ili privremeno izmješteno
+- cancellation: usluga obustavljena ili zamijenjena (npr. autobusi umjesto tramvaja)
+- new-service: nova linija ili produžena usluga
+- other: ostalo
 
-Return ONLY the JSON object. No markdown, no explanation.`;
+Vrati SAMO JSON objekt. Bez markdowna, bez objašnjenja.`;
 
 /**
  * @param {string} title
