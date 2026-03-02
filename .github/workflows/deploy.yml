@@ -59,6 +59,29 @@ jobs:
         if: steps.gtfs-cache.outputs.cache-hit != 'true'
         run: bash scripts/run.sh
 
+      - name: Download HZPP train GTFS data
+        run: curl -L https://www.hzpp.hr/GTFS_files.zip -o gtfs-train.zip
+
+      - name: Compute train GTFS hash
+        id: gtfs-train-hash
+        run: echo "hash=$(sha256sum gtfs-train.zip | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Restore processed train GTFS cache
+        id: gtfs-train-cache
+        if: ${{ !inputs.force_gtfs }}
+        uses: actions/cache@v4
+        with:
+          path: public/data-train
+          key: gtfs-train-processed-${{ steps.gtfs-train-hash.outputs.hash }}
+
+      - name: Extract train GTFS data
+        if: steps.gtfs-train-cache.outputs.cache-hit != 'true'
+        run: unzip -o gtfs-train.zip -d data-train/
+
+      - name: Process train GTFS data
+        if: steps.gtfs-train-cache.outputs.cache-hit != 'true'
+        run: bash scripts/run_train.sh
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
