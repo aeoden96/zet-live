@@ -33,6 +33,11 @@ dev-dist/
 
 data/
 data-train/
+# Un-ignore the directory so git can see inside it, re-ignore everything,
+# then carve out just the one file we want committed.
+!public/data/
+public/data/*
+!public/data/service-alerts.json
 
 # Playwright
 playwright-report/
