@@ -16,7 +16,8 @@
  *   CF_API_TOKEN            – Cloudflare API token with KV write permission
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
@@ -287,6 +288,7 @@ async function main() {
     lastUpdate: new Date().toISOString(),
   };
 
+  mkdirSync(dirname(ALERTS_FILE), { recursive: true });
   writeFileSync(ALERTS_FILE, JSON.stringify(output, null, 2) + '\n');
   console.log(`✓ Saved ${pruned.length} alerts to ${ALERTS_FILE}`);
 
