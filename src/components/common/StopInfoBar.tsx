@@ -40,12 +40,12 @@ export function StopInfoBar({
   onStopSelect,
   stackBelow = false,
 }: StopInfoBarProps) {
-  const { dataDir } = useGTFSMode();
+  const { dataDir, hasRealtime } = useGTFSMode();
   const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [activeTab, setActiveTab] = useState<StopTab>('vehicles');
+  const [activeTab, setActiveTab] = useState<StopTab>(hasRealtime ? 'vehicles' : 'timetable');
 
   // 1-second tick for live countdown
   useEffect(() => {
@@ -175,6 +175,7 @@ export function StopInfoBar({
             activeTab={activeTab}
             onTabChange={setActiveTab}
             liveVehicleCount={liveCount}
+            hideVehicles={!hasRealtime}
             compact
           />
         </div>

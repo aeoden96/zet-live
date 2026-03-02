@@ -395,6 +395,56 @@ def generate_route_stops_index(timetables_by_route, trip_lookup):
     print(f"  ✓ Wrote {len(timetables_by_route)} route stops files")
 
 
+def generate_route_shapes_index():
+    """Synthesize per-route shape files from ordered stop sequences + stop coordinates.
+
+    HZPP does not publish shapes.txt, so we build a simple polyline through the
+    ordered stops for each direction.  The output format mirrors the ZET bus/tram
+    shapes: { "<routeId>_<direction>": [[lat, lon], ...] }
+    """
+    print("🗺️  Generating route shape files (synthetic from stop coords)...")
+
+    shapes_dir = OUTPUT_DIR / 'shapes'
+    shapes_dir.mkdir(exist_ok=True)
+
+    route_stops_dir = OUTPUT_DIR / 'route_stops'
+    initial_file    = OUTPUT_DIR / 'initial.json'
+
+    # Load stop coordinates from the already-written initial.json
+    stops_by_id: dict = {}
+    if initial_file.exists():
+        with open(initial_file, 'r', encoding='utf-8') as f:
+            initial_data = json.load(f)
+            for stop in initial_data.get('stops', []):
+                stops_by_id[stop['id']] = (stop['lat'], stop['lon'])
+
+    generated = 0
+    for route_file in sorted(route_stops_dir.glob('*.json')):
+        route_id = route_file.stem
+        with open(route_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        ordered = data.get('orderedStops', {})
+        if not ordered:
+            continue
+
+        shapes: dict = {}
+        for direction, stop_ids in ordered.items():
+            coords = [
+                [stops_by_id[s][0], stops_by_id[s][1]]
+                for s in stop_ids
+                if s in stops_by_id
+            ]
+            if len(coords) >= 2:
+                shapes[f'{route_id}_{direction}'] = coords
+
+        if shapes:
+            write_json(shapes_dir / f'{route_id}.json', shapes)
+            generated += 1
+
+    print(f"  ✓ Wrote {generated} route shape files")
+
+
 def generate_stop_timetables_index(timetables_by_route, trip_lookup):
     """Pre-filtered timetables by stop."""
     print("⏱️  Generating stop timetables index...")
@@ -642,6 +692,9 @@ def main():
 
     # Step 6: Route stops index
     generate_route_stops_index(timetables_by_route, trip_lookup)
+
+    # Step 6b: Synthetic route shapes (HZPP has no shapes.txt)
+    generate_route_shapes_index()
 
     # Step 7: Stop timetables index
     generate_stop_timetables_index(timetables_by_route, trip_lookup)

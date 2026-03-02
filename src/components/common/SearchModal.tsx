@@ -6,8 +6,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, X, TrainFront, Bus, MapPin, Star, Clock } from 'lucide-react';
 import type { Route, Stop } from '../../utils/gtfs';
-import { isRouteTypeTram, isRouteTypeBus } from '../../utils/gtfs';
+import { isRouteTypeTram, isRouteTypeBus, isRouteTypeRail } from '../../utils/gtfs';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useGTFSMode } from '../../contexts/GTFSModeContext';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ interface SearchModalProps {
   onSelectStop: (stopId: string) => void;
 }
 
-type FilterType = 'tram' | 'bus' | 'stanice';
+type FilterType = 'tram' | 'bus' | 'trains' | 'stanice';
 
 const POPULAR_TRAMS = ['6', '11', '17', '4', '13', '12'];
 const POPULAR_BUSES = ['101', '102', '106', '140', '268'];
@@ -33,7 +34,8 @@ export function SearchModal({
   onSelectRoute,
   onSelectStop,
 }: SearchModalProps) {
-  const [filter, setFilter] = useState<FilterType>('tram');
+  const config = useGTFSMode();
+  const [filter, setFilter] = useState<FilterType>(config.id === 'train' ? 'trains' : 'tram');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,15 +59,16 @@ export function SearchModal({
   }, [isOpen]);
 
   // Routes by type
-  const { trams, buses } = useMemo(
+  const { trams, buses, trainRoutes } = useMemo(
     () =>
       routes.reduce(
         (acc, route) => {
           if (isRouteTypeTram(route.type)) acc.trams.push(route);
           else if (isRouteTypeBus(route.type)) acc.buses.push(route);
+          else if (isRouteTypeRail(route.type)) acc.trainRoutes.push(route);
           return acc;
         },
-        { trams: [] as Route[], buses: [] as Route[] }
+        { trams: [] as Route[], buses: [] as Route[], trainRoutes: [] as Route[] }
       ),
     [routes]
   );
@@ -78,6 +81,7 @@ export function SearchModal({
 
   // Popular routes
   const quickAccessRoutes = useMemo(() => {
+    if (filter === 'trains') return [];
     const popular = filter === 'tram' ? POPULAR_TRAMS : POPULAR_BUSES;
     return popular
       .map((id) => routes.find((r) => r.shortName === id))
@@ -86,11 +90,11 @@ export function SearchModal({
 
   // Favourite routes for current tab
   const favRoutes = useMemo(() => {
-    const source = filter === 'tram' ? trams : buses;
+    const source = filter === 'tram' ? trams : filter === 'trains' ? trainRoutes : buses;
     return favouriteRouteIds
       .map((id) => source.find((r) => r.id === id))
       .filter((r): r is Route => r !== undefined);
-  }, [filter, trams, buses, favouriteRouteIds]);
+  }, [filter, trams, buses, trainRoutes, favouriteRouteIds]);
 
   // Favourite stops
   const favStops = useMemo(
@@ -124,7 +128,7 @@ export function SearchModal({
 
   // Filtered routes
   const filteredRoutes = useMemo(() => {
-    const sourceRoutes = filter === 'tram' ? trams : buses;
+    const sourceRoutes = filter === 'tram' ? trams : filter === 'trains' ? trainRoutes : buses;
     if (!searchQuery.trim()) return sourceRoutes;
     const query = searchQuery.toLowerCase();
     return sourceRoutes.filter(
@@ -132,7 +136,7 @@ export function SearchModal({
         route.shortName.toLowerCase().includes(query) ||
         route.longName.toLowerCase().includes(query)
     );
-  }, [filter, searchQuery, trams, buses]);
+  }, [filter, searchQuery, trams, buses, trainRoutes]);
 
   // Filtered stops (deduped by name)
   const filteredStops = useMemo(() => {
@@ -165,9 +169,10 @@ export function SearchModal({
 
   if (!isOpen) return null;
 
+  const isRouteFilter = filter === 'tram' || filter === 'bus' || filter === 'trains';
   const isTramOrBus = filter === 'tram' || filter === 'bus';
   const isTram = filter === 'tram';
-  const badgeClass = isTram ? 'badge-primary' : 'badge-accent';
+  const badgeClass = isTram ? 'badge-primary' : filter === 'trains' ? 'badge-secondary' : 'badge-accent';
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-start justify-center">
@@ -218,35 +223,57 @@ export function SearchModal({
 
           {/* Tabs */}
           <div className="tabs tabs-boxed w-full">
-            <button
-              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'tram' ? 'tab-active' : ''}`}
-              onClick={() => setFilter('tram')}
-            >
-              <TrainFront className="w-4 h-4" />
-              <span className="hidden sm:inline">Tramvaji ({trams.length})</span>
-              <span className="sm:hidden">Tram ({trams.length})</span>
-            </button>
-            <button
-              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'bus' ? 'tab-active' : ''}`}
-              onClick={() => setFilter('bus')}
-            >
-              <Bus className="w-4 h-4" />
-              <span className="hidden sm:inline">Autobusi ({buses.length})</span>
-              <span className="sm:hidden">Bus ({buses.length})</span>
-            </button>
-            <button
-              className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'stanice' ? 'tab-active' : ''}`}
-              onClick={() => setFilter('stanice')}
-            >
-              <MapPin className="w-4 h-4" />
-              Stanice
-            </button>
+            {config.id === 'train' ? (
+              <>
+                <button
+                  className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'trains' ? 'tab-active' : ''}`}
+                  onClick={() => setFilter('trains')}
+                >
+                  <TrainFront className="w-4 h-4" />
+                  <span className="hidden sm:inline">Vlakovi ({trainRoutes.length})</span>
+                  <span className="sm:hidden">Vlak ({trainRoutes.length})</span>
+                </button>
+                <button
+                  className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'stanice' ? 'tab-active' : ''}`}
+                  onClick={() => setFilter('stanice')}
+                >
+                  <MapPin className="w-4 h-4" />
+                  Stanice
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'tram' ? 'tab-active' : ''}`}
+                  onClick={() => setFilter('tram')}
+                >
+                  <TrainFront className="w-4 h-4" />
+                  <span className="hidden sm:inline">Tramvaji ({trams.length})</span>
+                  <span className="sm:hidden">Tram ({trams.length})</span>
+                </button>
+                <button
+                  className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'bus' ? 'tab-active' : ''}`}
+                  onClick={() => setFilter('bus')}
+                >
+                  <Bus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Autobusi ({buses.length})</span>
+                  <span className="sm:hidden">Bus ({buses.length})</span>
+                </button>
+                <button
+                  className={`tab flex-1 min-h-[40px] gap-1 text-xs sm:text-sm ${filter === 'stanice' ? 'tab-active' : ''}`}
+                  onClick={() => setFilter('stanice')}
+                >
+                  <MapPin className="w-4 h-4" />
+                  Stanice
+                </button>
+              </>
+            )}
           </div>
 
           {/* Favourites quick access */}
           {!searchQuery && (
             <>
-              {isTramOrBus && favRoutes.length > 0 && (
+              {isRouteFilter && favRoutes.length > 0 && (
                 <div className="mt-3">
                   <div className="flex items-center gap-1 text-xs text-base-content/60 mb-1.5">
                     <Star className="w-3 h-3 fill-current text-warning" />
@@ -325,8 +352,9 @@ export function SearchModal({
                 <button
                   key={`recent-r-${route.id}`}
                   onClick={() => handleSelectRoute(route)}
-                  className={`badge ${isRouteTypeTram(route.type) ? 'badge-primary' : 'badge-accent'
-                    } badge-md font-bold hover:opacity-80 transition-opacity cursor-pointer`}
+                  className={`badge ${
+                    isRouteTypeTram(route.type) ? 'badge-primary' : isRouteTypeRail(route.type) ? 'badge-secondary' : 'badge-accent'
+                  } badge-md font-bold hover:opacity-80 transition-opacity cursor-pointer`}
                 >
                   {route.shortName}
                 </button>
@@ -348,7 +376,7 @@ export function SearchModal({
         {/* Content list */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* Route list */}
-          {isTramOrBus && (
+          {isRouteFilter && (
             filteredRoutes.length === 0 ? (
               <div className="p-8 text-center text-base-content/50">
                 {searchQuery ? 'Nema rezultata' : 'Nema linija'}

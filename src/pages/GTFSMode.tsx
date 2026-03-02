@@ -474,7 +474,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
           <div className="absolute bottom-6 right-4 z-[1000]">
             <div className="badge badge-neutral gap-1.5 shadow text-[11px] opacity-80">
               <Train className="w-3 h-3" />
-              Živopraćenje vlakova nije dostupno
+              Live praćenje vlakova nije dostupno
             </div>
           </div>
         )}

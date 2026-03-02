@@ -30,6 +30,7 @@ export function GTFSModeProvider({ config, children }: GTFSModeProviderProps) {
 }
 
 /** Returns the active GTFSModeConfig for the nearest provider in the tree. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGTFSMode(): GTFSModeConfig {
   return useContext(GTFSModeContext);
 }

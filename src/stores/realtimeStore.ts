@@ -59,14 +59,19 @@ export const useRealtimeStore = create<RealtimeState>()((set) => ({
     set({ loading: true });
 
     try {
-      // The ZET feed is a single combined feed — both endpoints return the same
-      // protobuf blob, so we can fetch once and parse both types from it.
-      const feed = await fetchRealtimeFeed('vehicle-positions');
+      // Fetch both endpoints in parallel — ZET currently returns the same
+      // protobuf blob for each, but we poll them separately so each endpoint
+      // gets its own cache entry in the proxy worker and we use them as
+      // intended.
+      const [vehicleFeed, tripFeed] = await Promise.all([
+        fetchRealtimeFeed('vehicle-positions'),
+        fetchRealtimeFeed('trip-updates'),
+      ]);
 
-      const positions = parseVehiclePositions(feed);
-      const updates = parseTripUpdates(feed);
-      const alerts = parseServiceAlerts(feed);
-      const stats = getFeedStatistics(feed);
+      const positions = parseVehiclePositions(vehicleFeed);
+      const updates = parseTripUpdates(tripFeed);
+      const alerts = parseServiceAlerts(vehicleFeed);
+      const stats = getFeedStatistics(vehicleFeed);
 
       const vehiclePositions = new Map<string, ParsedVehiclePosition>();
       for (const pos of positions) {

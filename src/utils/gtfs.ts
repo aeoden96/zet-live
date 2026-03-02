@@ -286,6 +286,10 @@ export async function fetchRouteShapes(routeId: string, dataDir = 'data'): Promi
   const url = `${BASE_URL}${dataDir}/shapes/${routeId}.json`;
   return cachedFetch(url, async () => {
     const response = await fetch(url);
+    if (response.status === 404) {
+      // Shape data is optional — some datasets (e.g. HZPP trains) don't include shapes.txt.
+      return {};
+    }
     if (!response.ok) {
       throw new Error(`Failed to fetch shapes for route ${routeId}: ${response.statusText}`);
     }

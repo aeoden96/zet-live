@@ -7,6 +7,7 @@ import { useMap } from 'react-leaflet';
 import { StopMarkers } from './StopMarkers';
 import type { Stop, Route } from '../../utils/gtfs';
 import { useMapBounds } from '../../hooks/useMapBounds';
+import { useGTFSMode } from '../../contexts/GTFSModeContext';
 
 interface ZoomBasedStopsProps {
   parentStations: Stop[];
@@ -36,6 +37,7 @@ export function ZoomBasedStops({
   routesById,
 }: ZoomBasedStopsProps) {
   const map = useMap();
+  const { alwaysShowStops } = useGTFSMode();
   const [zoom, setZoom] = useState(map.getZoom());
   const bounds = useMapBounds();
 
@@ -84,13 +86,16 @@ export function ZoomBasedStops({
   // zoom >= 17  → factor 1.0 (fully visible)
   // 14 < zoom < 17 → linearly 0 → 1
   // zoom <= 14  → factor 0 (invisible)
+  // In train mode (alwaysShowStops) stops are always fully visible.
   const FADE_MIN = 14;
   const FADE_MAX = 17;
-  const opacityFactor = zoom >= FADE_MAX
+  const opacityFactor = alwaysShowStops
     ? 1
-    : zoom <= FADE_MIN
-      ? 0
-      : (zoom - FADE_MIN) / (FADE_MAX - FADE_MIN);
+    : zoom >= FADE_MAX
+      ? 1
+      : zoom <= FADE_MIN
+        ? 0
+        : (zoom - FADE_MIN) / (FADE_MAX - FADE_MIN);
 
   let visiblePlatforms = platformStops.filter((s) => bounds.contains([s.lat, s.lon]));
   // When a route is selected or nearby stops exist, only show stops on that route / nearby (always keep the selected stop).

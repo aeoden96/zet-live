@@ -26,11 +26,6 @@ export function CityLifeMode() {
 
             {/* Map Controls */}
             <OnboardingWizard variant="city" />
-            <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
-                <div className="badge badge-primary gap-1 shadow backdrop-blur-md bg-primary/80 border-white/20">
-                    Gradski Način
-                </div>
-            </div>
         </div>
     );
 }

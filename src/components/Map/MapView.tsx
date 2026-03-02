@@ -15,6 +15,7 @@ import { SpiderfierProvider } from './SpiderfierContext';
 import { SpiderfierManager } from './SpiderfierManager';
 import { RoadClosures } from './RoadClosures';
 import { useRoadClosures } from '../../hooks/useRoadClosures';
+import { useGTFSMode } from '../../contexts/GTFSModeContext';
 
 
 interface MapViewProps {
@@ -77,10 +78,15 @@ export function MapView({
 }: MapViewProps) {
   // Fetch road closures if enabled
   const { closures } = useRoadClosures(showRoadClosures);
+  const { initialZoom, minZoom } = useGTFSMode();
 
   return (
     <SpiderfierProvider>
-      <BaseMap userLocation={userLocation}>
+      <BaseMap
+        userLocation={userLocation}
+        {...(initialZoom !== undefined ? { zoom: initialZoom } : {})}
+        {...(minZoom !== undefined ? { minZoom } : {})}
+      >
         <SpiderfierManager />
 
         <ParentStationZoomController

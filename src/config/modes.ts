@@ -19,6 +19,16 @@ export interface GTFSModeConfig {
   loadingText: string;
   /** Variant passed to <OnboardingWizard>. */
   onboardingVariant: 'transit' | 'train';
+  /**
+   * When true, stops are always fully visible regardless of zoom level.
+   * Useful for train mode where stations are sparse and need to be seen at
+   * country-level zoom.
+   */
+  alwaysShowStops: boolean;
+  /** Initial map zoom on first load. Falls back to BaseMap default (13) when undefined. */
+  initialZoom?: number;
+  /** Minimum zoom allowed on the map. Falls back to BaseMap default (11) when undefined. */
+  minZoom?: number;
 }
 
 /** ZET bus / tram public transport (default mode). */
@@ -30,6 +40,7 @@ export const TRANSIT_MODE: GTFSModeConfig = {
   searchPlaceholder: 'Pretraži linije...',
   loadingText: 'Učitavanje podataka...',
   onboardingVariant: 'transit',
+  alwaysShowStops: false,
 };
 
 /** HŽ Passenger Transport regional / suburban trains. */
@@ -41,4 +52,7 @@ export const TRAIN_MODE: GTFSModeConfig = {
   searchPlaceholder: 'Pretraži vlakove...',
   loadingText: 'Učitavanje podataka o vlakovima...',
   onboardingVariant: 'train',
+  alwaysShowStops: true,
+  initialZoom: 9,
+  minZoom: 7,
 };
