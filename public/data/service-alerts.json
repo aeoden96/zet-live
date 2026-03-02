@@ -1,4 +1,277 @@
 {
-  "alerts": [],
-  "lastUpdate": "1970-01-01T00:00:00.000Z"
+  "alerts": [
+    {
+      "id": "af0712d9dcc3",
+      "guid": "http://www.zet.hr/default.aspx?id=9564",
+      "title": "Izmjene na noćnim tramvajskim linijama",
+      "lines": [
+        "31"
+      ],
+      "type": "cancellation",
+      "startDate": "2026-03-02",
+      "endDate": "2026-03-09",
+      "affectedStops": [],
+      "summary": "U noćima od 2. ožujka do 9. ožujka umjesto tramvaja linije 31 vozit će autobusi.",
+      "pubDate": "Mon, 02 Mar 2026 15:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9564",
+      "processedAt": "2026-03-02T23:34:04.443Z"
+    },
+    {
+      "id": "7248f804c03b",
+      "guid": "http://www.zet.hr/default.aspx?id=8371",
+      "title": "Izmjene na zadnjim polascima linija 6 i 7",
+      "lines": [
+        "6",
+        "7"
+      ],
+      "type": "route-change",
+      "startDate": "2026-03-02",
+      "endDate": "2026-03-07",
+      "affectedStops": [
+        "Zapruđe",
+        "Črnomerec",
+        "Savski gaj - rotor",
+        "Savski most",
+        "Dubrava"
+      ],
+      "summary": "Zbog radova na okretnici Zapruđe, zadnji polasci tramvajskih linija 6 i 7 prometovat će izmijenjenim trasama od 2. do 7. ožujka.",
+      "pubDate": "Mon, 02 Mar 2026 08:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=8371",
+      "processedAt": "2026-03-02T23:34:06.949Z"
+    },
+    {
+      "id": "d7aa07f2e3f1",
+      "guid": "http://www.zet.hr/default.aspx?id=9926",
+      "title": "Linije 224 i 283 voze obilazno prema Dupcu",
+      "lines": [
+        "224",
+        "283"
+      ],
+      "type": "route-change",
+      "startDate": "2026-03-02",
+      "endDate": null,
+      "affectedStops": [
+        "Novoselec",
+        "Sesvete",
+        "Brestje",
+        "Dupac"
+      ],
+      "summary": "Autobuske linije 224 i 283 prometovat će izmijenjenim trasama u smjeru Dupca zbog zatvaranja izlaza iz Brestovečke ceste na Zagrebačku cestu od ponedjeljka, 2. ožujka, u periodu od 9 do 14 sati.",
+      "pubDate": "Fri, 27 Feb 2026 11:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9926",
+      "processedAt": "2026-03-02T23:34:09.314Z"
+    },
+    {
+      "id": "d8a4a5ac5ce0",
+      "guid": "http://www.zet.hr/default.aspx?id=9922",
+      "title": "Linija 149 prometuje redovnom trasom",
+      "lines": [
+        "149",
+        "152"
+      ],
+      "type": "cancellation",
+      "startDate": "2026-02-26",
+      "endDate": null,
+      "affectedStops": [],
+      "summary": "Autobusna linija 149 ponovno prometuje redovnom trasom, a izvanredna linija 152 se ukida.",
+      "pubDate": "Wed, 25 Feb 2026 13:49:53 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9922",
+      "processedAt": "2026-03-02T23:34:10.966Z"
+    },
+    {
+      "id": "58b4b8c05a4d",
+      "guid": "http://www.zet.hr/default.aspx?id=9866",
+      "title": "Linija 107 odsad prometuje i nedjeljom",
+      "lines": [
+        "107"
+      ],
+      "type": "route-change",
+      "startDate": "2026-02-21",
+      "endDate": null,
+      "affectedStops": [
+        "Vjesnik"
+      ],
+      "summary": "Autobusna linija 107 (Jankomir - Žitnjak) od subote prometuje i nedjeljom te blagdanima. Autobusno stajalište Vjesnik u smjeru istoka je izmješteno na Zagrebačku aveniju.",
+      "pubDate": "Thu, 19 Feb 2026 15:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9866",
+      "processedAt": "2026-03-02T23:34:12.943Z"
+    },
+    {
+      "id": "eddfff04acdb",
+      "guid": "http://www.zet.hr/default.aspx?id=9917",
+      "title": "Izmješteno stajalište „Tomislavova“",
+      "lines": [
+        "134"
+      ],
+      "type": "stop-change",
+      "startDate": "2024-02-17",
+      "endDate": null,
+      "affectedStops": [
+        "Tomislavova"
+      ],
+      "summary": "Zbog radova na Zagrebačkoj cesti, autobusi linije 134 privremeno će se zaustavljati 50 metara južnije od stajališta Tomislavova.",
+      "pubDate": "Tue, 17 Feb 2026 13:34:25 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9917",
+      "processedAt": "2026-03-02T23:34:14.747Z"
+    },
+    {
+      "id": "1343ec070345",
+      "guid": "http://www.zet.hr/default.aspx?id=9912",
+      "title": "Linije 6, 8 i 14 mijenjaju trase prometovanja",
+      "lines": [
+        "6",
+        "8",
+        "14"
+      ],
+      "type": "route-change",
+      "startDate": "2026-02-16",
+      "endDate": null,
+      "affectedStops": [
+        "Zapruđe"
+      ],
+      "summary": "Zbog radova na okretištu Zapruđe, linije 6 i 8 produljuju svoje trase, a linija 14 prometuje skraćenom trasom.",
+      "pubDate": "Thu, 12 Feb 2026 08:08:02 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9912",
+      "processedAt": "2026-03-02T23:34:16.729Z"
+    },
+    {
+      "id": "653faface54b",
+      "guid": "http://www.zet.hr/default.aspx?id=9915",
+      "title": "Izmještanje stajališta na trasi linija 160 i 163",
+      "lines": [
+        "160",
+        "163"
+      ],
+      "type": "stop-change",
+      "startDate": "2026-02-16",
+      "endDate": null,
+      "affectedStops": [
+        "Društveni dom"
+      ],
+      "summary": "Zbog radova u zoni raskrižja Obreške i Dragonožečke ceste, stajalište Društveni dom je privremeno izmješteno na nove lokacije na Obreškoj i Dragonožečkoj cesti.",
+      "pubDate": "Thu, 12 Feb 2026 08:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9915",
+      "processedAt": "2026-03-02T23:34:18.641Z"
+    },
+    {
+      "id": "672de634df73",
+      "guid": "http://www.zet.hr/default.aspx?id=9913",
+      "title": "Produženje trase autobusne linije 101",
+      "lines": [
+        "101"
+      ],
+      "type": "route-change",
+      "startDate": "2026-02-16",
+      "endDate": null,
+      "affectedStops": [
+        "Ulica Šumski prečac"
+      ],
+      "summary": "Autobusna linija 101 produljuje se do Šestina i mijenja naziv u 101 (Britanski trg - Šestine). Linija neće koristiti stajalište u Ulici Šumski prečac.",
+      "pubDate": "Thu, 12 Feb 2026 08:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9913",
+      "processedAt": "2026-03-02T23:34:20.790Z"
+    },
+    {
+      "id": "6a42bcc221f1",
+      "guid": "http://www.zet.hr/default.aspx?id=9732",
+      "title": "Izmjena trasa linija 295, 307 i 308",
+      "lines": [
+        "295",
+        "307",
+        "308"
+      ],
+      "type": "route-change",
+      "startDate": "2023-09-08",
+      "endDate": null,
+      "affectedStops": [
+        "Sarajevska - Ukrajinska",
+        "Sarajevska - Vatikanska",
+        "Sarajevska - rotor",
+        "Sarajevska - Hrelić",
+        "Kamenarka 18",
+        "Gata 13",
+        "Sarajevska - Jakuševečka"
+      ],
+      "summary": "Zbog rekonstrukcije Sarajevske ceste, autobusne linije 295, 307 i 308 prometovat će izmijenjenim trasama od 8. rujna. Dio stajališta je zatvoren, a postavljena su privremena stajališta.",
+      "pubDate": "Thu, 04 Sep 2025 04:00:00 +0200",
+      "url": "https://www.zet.hr/default.aspx?id=9732",
+      "processedAt": "2026-03-02T23:34:23.654Z"
+    },
+    {
+      "id": "f5956c48d5ca",
+      "guid": "http://www.zet.hr/default.aspx?id=9880",
+      "title": "Linija 107 prometuje skraćenom trasom",
+      "lines": [
+        "107"
+      ],
+      "type": "route-change",
+      "startDate": "2024-08-04",
+      "endDate": null,
+      "affectedStops": [
+        "Robni terminali Jankomir",
+        "Savska Opatovina - sjever"
+      ],
+      "summary": "Zbog rekonstrukcije nadvožnjaka, autobusna linija 107 prometovat će skraćenom trasom do Savske Opatovine. Stajalište Robni terminali Jankomir je privremeno ukinuto.",
+      "pubDate": "Mon, 04 Aug 2025 08:39:00 +0200",
+      "url": "https://www.zet.hr/default.aspx?id=9880",
+      "processedAt": "2026-03-02T23:34:25.747Z"
+    },
+    {
+      "id": "5e67b64f90fa",
+      "guid": "http://www.zet.hr/default.aspx?id=9710",
+      "title": "Linija 222 vozi izmijenjenom trasom u smjeru Remetinca",
+      "lines": [
+        "222"
+      ],
+      "type": "route-change",
+      "startDate": "2024-06-23",
+      "endDate": "2024-08-25",
+      "affectedStops": [
+        "Žitnjak",
+        "Slavonska avenija",
+        "Avenija Marina Držića"
+      ],
+      "summary": "Zbog sanacije petlje na Slavonskoj aveniji, linija 222 prometovat će izmijenjenom trasom u smjeru Remetinca od 23. lipnja do 25. kolovoza. U smjeru Žitnjaka linija će prometovati redovnom trasom od 25. kolovoza.",
+      "pubDate": "Fri, 20 Jun 2025 05:30:00 +0200",
+      "url": "https://www.zet.hr/default.aspx?id=9710",
+      "processedAt": "2026-03-02T23:34:28.223Z"
+    },
+    {
+      "id": "a042c3d8dca0",
+      "guid": "http://www.zet.hr/default.aspx?id=9592",
+      "title": "Stajalište \"Trg Republike Hrvatske\" ispred Mimare",
+      "lines": [],
+      "type": "stop-change",
+      "startDate": null,
+      "endDate": null,
+      "affectedStops": [
+        "Trg Republike Hrvatske",
+        "Rooseveltov trg"
+      ],
+      "summary": "Tramvajsko stajalište Trg Republike Hrvatske premješteno je 75 metara južnije na Rooseveltov trg, ispred Muzeja Mimara.",
+      "pubDate": "Thu, 20 Feb 2025 07:00:00 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9592",
+      "processedAt": "2026-03-02T23:34:29.841Z"
+    },
+    {
+      "id": "4d91fe79fde1",
+      "guid": "http://www.zet.hr/default.aspx?id=8047",
+      "title": "Linije 139 i 141 voze obilazno zbog radova",
+      "lines": [
+        "139",
+        "141"
+      ],
+      "type": "route-change",
+      "startDate": "2023-03-11",
+      "endDate": null,
+      "affectedStops": [
+        "Vinogradska 3"
+      ],
+      "summary": "Autobusne linije 139 i 141 prometuju djelomično izmijenjenim trasama zbog radova na obnovi KBC &bdquo;Sestre Milosrdnice&ldquo;. Stajalište Vinogradska 3 je zatvoreno za vrijeme trajanja radova.",
+      "pubDate": "Fri, 10 Mar 2023 07:00:52 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=8047",
+      "processedAt": "2026-03-02T23:34:32.012Z"
+    }
+  ],
+  "lastUpdate": "2026-03-02T23:34:32.012Z"
 }
