@@ -1,6 +1,25 @@
 {
   "alerts": [
     {
+      "id": "01fe65bd83b3",
+      "guid": "http://www.zet.hr/default.aspx?id=9927",
+      "title": "Stajalište \"Trnsko\"  u smjeru istoka izvan funkcije",
+      "lines": [
+        "109",
+        "222"
+      ],
+      "type": "stop-change",
+      "startDate": "2026-03-04",
+      "endDate": null,
+      "affectedStops": [
+        "Trnsko"
+      ],
+      "summary": "Autobusno stajalište Trnsko na Aveniji Dubrovnik u smjeru istoka neće biti u funkciji zbog radova od 4. ožujka u 8 sati.",
+      "pubDate": "Tue, 03 Mar 2026 12:37:13 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9927",
+      "processedAt": "2026-03-03T13:17:37.712Z"
+    },
+    {
       "id": "af0712d9dcc3",
       "guid": "http://www.zet.hr/default.aspx?id=9564",
       "title": "Izmjene na noćnim tramvajskim linijama",
@@ -238,5 +257,5 @@
       "processedAt": "2026-03-02T23:34:32.012Z"
     }
   ],
-  "lastUpdate": "2026-03-03T11:55:58.731Z"
+  "lastUpdate": "2026-03-03T13:17:37.712Z"
 }
