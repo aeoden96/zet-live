@@ -1,6 +1,25 @@
 {
   "alerts": [
     {
+      "id": "01fe65bd83b3",
+      "guid": "http://www.zet.hr/default.aspx?id=9927",
+      "title": "Stajalište \"Trnsko\"  u smjeru istoka izvan funkcije",
+      "lines": [
+        "109",
+        "222"
+      ],
+      "type": "stop-change",
+      "startDate": "2026-03-04",
+      "endDate": null,
+      "affectedStops": [
+        "Trnsko"
+      ],
+      "summary": "Autobusno stajalište Trnsko na Aveniji Dubrovnik u smjeru istoka neće biti u funkciji zbog radova od 4. ožujka u 8 sati.",
+      "pubDate": "Tue, 03 Mar 2026 12:37:13 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9927",
+      "processedAt": "2026-03-03T13:17:37.712Z"
+    },
+    {
       "id": "af0712d9dcc3",
       "guid": "http://www.zet.hr/default.aspx?id=9564",
       "title": "Izmjene na noćnim tramvajskim linijama",
@@ -60,23 +79,6 @@
       "pubDate": "Fri, 27 Feb 2026 11:00:00 +0100",
       "url": "https://www.zet.hr/default.aspx?id=9926",
       "processedAt": "2026-03-02T23:34:09.314Z"
-    },
-    {
-      "id": "d8a4a5ac5ce0",
-      "guid": "http://www.zet.hr/default.aspx?id=9922",
-      "title": "Linija 149 prometuje redovnom trasom",
-      "lines": [
-        "149",
-        "152"
-      ],
-      "type": "cancellation",
-      "startDate": "2026-02-26",
-      "endDate": null,
-      "affectedStops": [],
-      "summary": "Autobusna linija 149 ponovno prometuje redovnom trasom, a izvanredna linija 152 se ukida.",
-      "pubDate": "Wed, 25 Feb 2026 13:49:53 +0100",
-      "url": "https://www.zet.hr/default.aspx?id=9922",
-      "processedAt": "2026-03-02T23:34:10.966Z"
     },
     {
       "id": "58b4b8c05a4d",
@@ -152,24 +154,6 @@
       "pubDate": "Thu, 12 Feb 2026 08:00:00 +0100",
       "url": "https://www.zet.hr/default.aspx?id=9915",
       "processedAt": "2026-03-02T23:34:18.641Z"
-    },
-    {
-      "id": "672de634df73",
-      "guid": "http://www.zet.hr/default.aspx?id=9913",
-      "title": "Produženje trase autobusne linije 101",
-      "lines": [
-        "101"
-      ],
-      "type": "route-change",
-      "startDate": "2026-02-16",
-      "endDate": null,
-      "affectedStops": [
-        "Ulica Šumski prečac"
-      ],
-      "summary": "Autobusna linija 101 produljuje se do Šestina i mijenja naziv u 101 (Britanski trg - Šestine). Linija neće koristiti stajalište u Ulici Šumski prečac.",
-      "pubDate": "Thu, 12 Feb 2026 08:00:00 +0100",
-      "url": "https://www.zet.hr/default.aspx?id=9913",
-      "processedAt": "2026-03-02T23:34:20.790Z"
     },
     {
       "id": "6a42bcc221f1",
@@ -273,5 +257,5 @@
       "processedAt": "2026-03-02T23:34:32.012Z"
     }
   ],
-  "lastUpdate": "2026-03-02T23:34:32.012Z"
+  "lastUpdate": "2026-03-04T10:46:22.110Z"
 }
