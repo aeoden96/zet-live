@@ -98,7 +98,7 @@ export function useRssServiceAlerts(routesById: Map<string, Route>): ParsedServi
       }
 
       try {
-        const res = await fetch('/data/service-alerts.json');
+        const res = await fetch(`${import.meta.env.BASE_URL}data/service-alerts.json`);
         if (!res.ok) return;
         const json: RssAlertsFile = await res.json();
 
