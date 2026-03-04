@@ -124,7 +124,7 @@ export function ServiceAlerts({ alerts, routesById, selectedRouteId, onRouteClic
 
       {/* ── Panel ── */}
       {open && (
-        <div className="fixed inset-0 z-[1150] flex items-start justify-center">
+        <div className="fixed inset-0 z-[3200] flex items-start justify-center">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -134,7 +134,7 @@ export function ServiceAlerts({ alerts, routesById, selectedRouteId, onRouteClic
 
           {/* Modal */}
           <div
-            className="relative w-full max-w-lg mx-2 mt-2 sm:mt-8 max-h-[90vh] bg-base-100 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full max-w-lg mx-2 mt-2 sm:mt-8 max-h-[90dvh] bg-base-100 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             style={{ animation: 'modal-fade-in 0.2s ease-out' }}
           >
             {/* Header */}
