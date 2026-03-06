@@ -4,14 +4,17 @@
 
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
+import L from 'leaflet';
 
 interface ParentStationZoomControllerProps {
   zoomTarget: { lat: number; lon: number; zoom?: number } | null;
+  panOffsetY?: number;
   onZoomComplete: () => void;
 }
 
 export function ParentStationZoomController({ 
-  zoomTarget, 
+  zoomTarget,
+  panOffsetY = 0,
   onZoomComplete 
 }: ParentStationZoomControllerProps) {
   const map = useMap();
@@ -20,10 +23,17 @@ export function ParentStationZoomController({
     if (zoomTarget) {
       // Zoom to provided level (fallback to 17)
       const targetZoom = zoomTarget.zoom ?? 17;
-      map.flyTo([zoomTarget.lat, zoomTarget.lon], targetZoom, {
-        duration: 0.8,
-        easeLinearity: 0.25
-      });
+      if (panOffsetY !== 0) {
+        // Pre-shift the fly target so the marker lands offset from screen centre.
+        const point = map.project([zoomTarget.lat, zoomTarget.lon], targetZoom);
+        const adjusted = map.unproject(L.point(point.x, point.y + panOffsetY), targetZoom);
+        map.flyTo(adjusted, targetZoom, { duration: 0.8, easeLinearity: 0.25 });
+      } else {
+        map.flyTo([zoomTarget.lat, zoomTarget.lon], targetZoom, {
+          duration: 0.8,
+          easeLinearity: 0.25
+        });
+      }
       
       // Clear the zoom target after animation completes
       const timer = setTimeout(() => {
@@ -32,7 +42,7 @@ export function ParentStationZoomController({
       
       return () => clearTimeout(timer);
     }
-  }, [zoomTarget, map, onZoomComplete]);
+  }, [zoomTarget, panOffsetY, map, onZoomComplete]);
 
   return null;
 }

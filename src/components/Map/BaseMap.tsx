@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import type { MapContainerProps } from 'react-leaflet';
 import L from 'leaflet';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /** Exposes the Leaflet map instance on window.__leafletMap for E2E tests. */
 function MapTestRef() {
@@ -42,19 +42,36 @@ const TILE_PROVIDERS = {
 interface BaseMapProps extends MapContainerProps {
     children?: React.ReactNode;
     userLocation?: { lat: number; lon: number } | null;
+    locationPanOffsetY?: number;
 }
 
-function MapLocater({ userLocation }: { userLocation?: { lat: number; lon: number } | null }) {
+function MapLocater({ userLocation, panOffsetY = 0 }: { userLocation?: { lat: number; lon: number } | null; panOffsetY?: number }) {
     const map = useMap();
+    // Keep panOffsetY in a ref so changes to it don't re-trigger the fly.
+    const panOffsetYRef = useRef(panOffsetY);
+    // Sync the ref after every render (outside of render body to satisfy lint).
+    useEffect(() => { panOffsetYRef.current = panOffsetY; });
+
     useEffect(() => {
         if (userLocation) {
-            map.flyTo([userLocation.lat, userLocation.lon], 16, { duration: 1.5 });
+            const zoom = 16;
+            const offsetY = panOffsetYRef.current;
+            if (offsetY !== 0) {
+                // Pre-shift the fly target so the location marker lands in the
+                // upper centre once the bottom sheet is visible — single animation.
+                const point = map.project([userLocation.lat, userLocation.lon], zoom);
+                const adjusted = map.unproject(L.point(point.x, point.y + offsetY), zoom);
+                map.flyTo(adjusted, zoom, { duration: 1.5 });
+            } else {
+                map.flyTo([userLocation.lat, userLocation.lon], zoom, { duration: 1.5 });
+            }
         }
+    // panOffsetY intentionally omitted from deps — read via ref to avoid re-flying when modal closes.
     }, [userLocation, map]);
     return null;
 }
 
-export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
+export function BaseMap({ children, userLocation, locationPanOffsetY = 0, ...mapProps }: BaseMapProps) {
     const theme = useSettingsStore((state) => state.theme);
     const detailedMap = useSettingsStore((state) => state.detailedMap);
     const providerId: keyof typeof TILE_PROVIDERS = detailedMap
@@ -91,7 +108,7 @@ export function BaseMap({ children, userLocation, ...mapProps }: BaseMapProps) {
                 />
             )}
 
-            <MapLocater userLocation={userLocation} />
+            <MapLocater userLocation={userLocation} panOffsetY={locationPanOffsetY} />
             <MapTestRef />
 
             {children}

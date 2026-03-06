@@ -148,7 +148,7 @@ export function ListApp() {
   return (
     <div className="h-svh flex flex-col bg-base-200">
       {/* Header */}
-      <header className="bg-base-100 border-b border-base-300 px-4 py-3 flex items-center gap-3 shrink-0">
+      <header className="relative z-[2100] bg-base-100 border-b border-base-300 px-4 py-3 flex items-center gap-3 shrink-0">
         <h1 className="text-lg font-bold flex-1">ZET Live</h1>
 
         {/* Realtime status */}
@@ -198,7 +198,7 @@ export function ListApp() {
       </main>
 
       {/* Bottom tab bar */}
-      <nav className="bg-base-100 border-t border-base-300 shrink-0 safe-area-bottom">
+      <nav className="relative z-[2100] bg-base-100 border-t border-base-300 shrink-0 safe-area-bottom">
         <div className="flex">
           {tabs.map(({ id, icon: Icon, label, badge }) => {
             const isActive = activeTab === id;

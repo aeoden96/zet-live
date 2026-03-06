@@ -4,7 +4,7 @@
 
 import { X, MapPin, Navigation } from 'lucide-react';
 import type { Stop } from '../../utils/gtfs';
-import { findNearestStops } from '../../utils/gtfs';
+import { findNearestStops, bearingToDirection } from '../../utils/gtfs';
 
 interface NearbyStopsModalProps {
   isOpen: boolean;
@@ -43,8 +43,8 @@ export function NearbyStopsModal({
   });
 
   return (
-    <div className="fixed top-16 sm:top-20 left-2 sm:left-4 w-[calc(100%-1rem)] sm:w-auto sm:max-w-sm z-[1050]">
-      {/* Compact card (no backdrop / no blur) */}
+    <div className="fixed top-14 left-2 right-2 sm:top-20 sm:left-4 sm:right-auto sm:w-auto sm:max-w-sm z-[1050]">
+      {/* Compact card — top overlay on mobile, top-left card on desktop */}
       <div
         className="relative w-full bg-base-100 rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[50vh]"
         style={{ animation: 'modal-fade-in 0.18s ease-out' }}
@@ -86,8 +86,8 @@ export function NearbyStopsModal({
                   <MapPin className="w-4 h-4 text-base-content/40 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{stop.name}</div>
-                    {stop.code && (
-                      <div className="text-xs text-base-content/50">Smjer {stop.code}</div>
+                    {stop.bearing !== undefined && (
+                      <div className="text-xs text-base-content/50">Smjer prema {bearingToDirection(stop.bearing)}</div>
                     )}
                   </div>
                   <div className="text-sm font-semibold text-primary shrink-0">

@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X, ChevronRight, Bus, MapPin, Ban, Plus, Info, Calendar, ArrowRight } from 'lucide-react';
 import type { ParsedServiceAlert } from '../../utils/realtime';
 import type { Route } from '../../utils/gtfs';
@@ -123,7 +124,7 @@ export function ServiceAlerts({ alerts, routesById, selectedRouteId, onRouteClic
       </button>
 
       {/* ── Panel ── */}
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-[3200] flex items-start justify-center">
           {/* Backdrop */}
           <div
@@ -225,7 +226,7 @@ export function ServiceAlerts({ alerts, routesById, selectedRouteId, onRouteClic
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }

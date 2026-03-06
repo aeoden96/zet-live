@@ -38,7 +38,8 @@ interface MapViewProps {
   routesById: Map<string, Route>;
   serviceId: string | null;
   userLocation?: { lat: number; lon: number } | null;
-  parentStationZoomTarget: { lat: number; lon: number; zoom?: number } | null;
+  locationPanOffsetY?: number;
+  parentStationZoomTarget: { lat: number; lon: number; zoom?: number; panOffsetY?: number } | null;
   onZoomComplete: () => void;
   /** Stop object for off-screen directional indicator */
   selectedStop?: Stop | null;
@@ -67,6 +68,7 @@ export function MapView({
   allVehicles = [],
   routesById,
   userLocation,
+  locationPanOffsetY = 0,
   // serviceId is declared in the interface for future use
   // but is not consumed by the map component directly
   parentStationZoomTarget,
@@ -84,6 +86,7 @@ export function MapView({
     <SpiderfierProvider>
       <BaseMap
         userLocation={userLocation}
+        locationPanOffsetY={locationPanOffsetY}
         {...(initialZoom !== undefined ? { zoom: initialZoom } : {})}
         {...(minZoom !== undefined ? { minZoom } : {})}
       >
@@ -91,6 +94,7 @@ export function MapView({
 
         <ParentStationZoomController
           zoomTarget={parentStationZoomTarget}
+          panOffsetY={parentStationZoomTarget?.panOffsetY ?? 0}
           onZoomComplete={onZoomComplete}
         />
 

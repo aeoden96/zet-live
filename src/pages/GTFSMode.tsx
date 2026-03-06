@@ -46,7 +46,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [timeAgoStr, setTimeAgoStr] = useState<string>('');
-  const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
+  const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number; panOffsetY?: number } | null>(null);
 
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
 
@@ -154,7 +154,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
     },
     [clearStop],
   );
-  const { userLocation, setUserLocation, locateError } = useGeolocation(onLocateSuccess);
+  const { userLocation, locateError } = useGeolocation(onLocateSuccess);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -245,6 +245,24 @@ export function GTFSMode({ config }: GTFSModeProps) {
     [selectStop, stopsById, addRecentStop, config.stopZoom],
   );
 
+  /** Same as handleSelectStop but offsets the map so the stop lands in the
+   *  bottom-half centre on mobile (where the top-half is occupied by the
+   *  nearby-stops list). */
+  const handleSelectStopFromNearby = useCallback(
+    (stopId: string) => {
+      setNearbyOpen(false);
+      const stop = stopsById.get(stopId);
+      selectStop(stopId);
+      addRecentStop(stopId);
+      if (stop) {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+        const panOffsetY = isMobile ? -Math.round(window.innerHeight / 4) : 0;
+        setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: config.stopZoom, panOffsetY });
+      }
+    },
+    [selectStop, stopsById, addRecentStop, config.stopZoom],
+  );
+
   // ── Derived ───────────────────────────────────────────────────────────────
 
   const nearbyHighlightedStops = useMemo(() => {
@@ -322,6 +340,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
           routesById={routesById}
           serviceId={serviceId}
           userLocation={userLocation}
+          locationPanOffsetY={nearbyOpen && typeof window !== 'undefined' && window.innerWidth < 640 ? -Math.round(window.innerHeight / 4) : 0}
           parentStationZoomTarget={parentStationZoomTarget}
           onZoomComplete={handleZoomComplete}
           selectedStop={selectedStop && !stopModalOpen ? selectedStop : null}
@@ -612,9 +631,8 @@ export function GTFSMode({ config }: GTFSModeProps) {
             stops={platformStops}
             onClose={() => {
               setNearbyOpen(false);
-              setUserLocation(null);
             }}
-            onSelectStop={handleSelectStop}
+            onSelectStop={handleSelectStopFromNearby}
           />
         )}
 
