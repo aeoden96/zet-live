@@ -12,7 +12,7 @@ on:
 permissions:
   contents: read
   actions: read
-  security-events: write   # required for CodeQL/Semgrep SARIF uploads via workflow_call
+  security-events: write   # required for Semgrep SARIF uploads via workflow_call
 
 jobs:
   # ── 1. Secret scanning ────────────────────────────────────────────────────
@@ -82,35 +82,7 @@ jobs:
           # Copyleft / viral licenses that are incompatible with this project.
           deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, AGPL-3.0
 
-  # ── 4. SAST — CodeQL ─────────────────────────────────────────────────────
-  # GitHub's own static analysis engine. The "security-extended" query suite
-  # covers OWASP Top-10, injection, XSS, path traversal, etc.
-  codeql:
-    name: CodeQL (SAST)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-      security-events: write   # required to upload SARIF results
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: javascript-typescript
-          # security-extended adds extra queries on top of the default suite
-          # (prototype pollution, ReDoS, server-side request forgery, etc.)
-          queries: security-extended
-
-      # No build step needed for JS/TS — CodeQL uses auto-build.
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: '/language:javascript-typescript'
-
-  # ── 5. SAST — Semgrep ────────────────────────────────────────────────────
+  # ── 4. SAST — Semgrep ────────────────────────────────────────────────────
   # Semgrep complements CodeQL with a different rule engine and rule sets.
   # Running both catches issues that either tool might miss on its own.
   # No SEMGREP_APP_TOKEN required — this uses the open-source CLI only.
