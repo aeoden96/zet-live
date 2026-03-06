@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   actions: read
+  security-events: write   # required for CodeQL/Semgrep SARIF uploads via workflow_call
 
 jobs:
   # ── 1. Secret scanning ────────────────────────────────────────────────────
