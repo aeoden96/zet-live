@@ -1,11 +1,8 @@
 name: Security
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
+  workflow_dispatch:
+  workflow_call:
   schedule:
     # Run every Monday at 06:00 UTC so new CVEs / leaked secrets are caught
     # even without a code push.
