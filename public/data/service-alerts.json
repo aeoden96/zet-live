@@ -1,6 +1,26 @@
 {
   "alerts": [
     {
+      "id": "d7192ec316db",
+      "guid": "http://www.zet.hr/default.aspx?id=9928",
+      "title": "Izmjena na liniji 274, uvodi se linija 274A",
+      "lines": [
+        "274",
+        "274A"
+      ],
+      "type": "route-change",
+      "startDate": "2026-03-09",
+      "endDate": null,
+      "affectedStops": [
+        "Ivana Granđe 6",
+        "Šašinovec"
+      ],
+      "summary": "Od 9. ožujka autobusna linija 274 prometovat će izmijenjenom trasom zbog rekonstrukcije Ulice Ivana Granđe, a uspostavlja se nova linija 274A (Cerje - Šašinovec) s odgovarajućom trasom i stajalištima.",
+      "pubDate": "Fri, 06 Mar 2026 09:09:03 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9928",
+      "processedAt": "2026-03-06T09:50:08.460Z"
+    },
+    {
       "id": "af0712d9dcc3",
       "guid": "http://www.zet.hr/default.aspx?id=9564",
       "title": "Izmjene na noćnim tramvajskim linijama",
@@ -238,5 +258,5 @@
       "processedAt": "2026-03-02T23:34:32.012Z"
     }
   ],
-  "lastUpdate": "2026-03-06T08:53:39.623Z"
+  "lastUpdate": "2026-03-06T09:50:08.460Z"
 }
