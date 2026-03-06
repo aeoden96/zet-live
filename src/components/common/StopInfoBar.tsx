@@ -3,12 +3,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Maximize2, Clock, X, Star, ArrowRight } from 'lucide-react';
+import { Maximize2, Clock, X, Star, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
+import { useStopRoutes } from '../../hooks/useStopRoutes';
+import { useStopTermini } from '../../hooks/useStopTermini';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useGTFSMode } from '../../contexts/GTFSModeContext';
 import { StopTabSelector, type StopTab } from './StopTabSelector';
@@ -16,7 +18,7 @@ import { TimetableDepartureCard } from './TimetableDepartureCard';
 
 /** Format distance: metres below 1000, km above */
 function formatDist(meters: number): string {
-  if (meters < 1000) return `${meters} m`;
+  if (meters < 1000) return `${meters} metara`;
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
@@ -60,12 +62,30 @@ export function StopInfoBar({
     nowMs
   );
 
-  // Sibling platforms at the same parent station (for the terminus redirect banner)
-  const siblingPlatforms = stop.parentStation !== null
-    ? Array.from(stopsById.values()).filter(
-        s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id
-      )
-    : [];
+  // Sibling platforms — stops at the same parent station, or (fallback) same-named stops
+  // when no parent station is set (common for bus stop pairs without GTFS grouping).
+  // Deduplicated by bearing direction so multiple platform IDs in the same direction
+  // don't produce repeated buttons.
+  const siblingPlatforms: Stop[] = (() => {
+    const raw = stop.parentStation !== null
+      ? Array.from(stopsById.values()).filter(
+          s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id,
+        )
+      : Array.from(stopsById.values()).filter(
+          s =>
+            s.locationType === 0 &&
+            s.id !== stop.id &&
+            s.name === stop.name &&
+            (stop.routeType === undefined || s.routeType === undefined || s.routeType === stop.routeType),
+        );
+    const seen = new Set<string>();
+    return raw.filter(s => {
+      const key = s.bearing !== undefined ? bearingToDirection(s.bearing) : (s.code ?? s.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
   const terminusBanner = isAllTerminus ? (
     <div className="rounded-lg bg-warning/10 border border-warning/30 p-3 mt-1">
@@ -108,6 +128,9 @@ export function StopInfoBar({
   );
   const topDepartures = timetableDepartures.slice(0, 4);
 
+  const { routes: stopRoutes } = useStopRoutes(stop.id, routesById);
+  const { termini } = useStopTermini(stop.id, stopsById);
+
   return (
     <div
       data-testid="stop-info-panel"
@@ -126,9 +149,47 @@ export function StopInfoBar({
               <div className="text-xs text-base-content/60 flex items-center gap-1">
                 <span>
                   {stop.bearing !== undefined
-                    ? `Smjer prema ${bearingToDirection(stop.bearing)}`
+                    ? termini.length > 0
+                      ? `Smjer prema ${termini.join(', ')}`
+                      : `Smjer prema ${bearingToDirection(stop.bearing)}`
                     : `Smjer ${stop.code}`}
                 </span>
+              </div>
+            )}
+            {stopRoutes.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {stopRoutes.map((route) => (
+                  <span
+                    key={route.id}
+                    className={`badge badge-sm font-bold ${
+                      route.type === 0 ? 'badge-primary' : 'badge-accent'
+                    }`}
+                  >
+                    {route.shortName}
+                  </span>
+                ))}
+              </div>
+            )}
+            {siblingPlatforms.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {siblingPlatforms.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onStopSelect?.(s.id)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-base-300 hover:bg-base-200 active:bg-base-300 text-[11px] text-base-content/60 transition-colors"
+                    title={`Prebaci na: ${s.name}${
+                      s.bearing !== undefined ? ` (${bearingToDirection(s.bearing)})` : ''
+                    }`}
+                  >
+                    <ArrowLeftRight className="w-2.5 h-2.5 shrink-0" />
+                    <span>
+                      {s.bearing !== undefined
+                        ? `Smjer prema ${bearingToDirection(s.bearing)}`
+                        : (s.code ?? s.name)}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
           </div>

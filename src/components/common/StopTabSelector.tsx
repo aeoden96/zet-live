@@ -38,7 +38,7 @@ export function StopTabSelector({
           onClick={() => onTabChange('vehicles')}
         >
           <Bus className={iconSize} />
-          <span>Vozila</span>
+          <span>Vozila u blizini</span>
           {liveVehicleCount !== undefined && liveVehicleCount > 0 && (
             <span className={`badge badge-success badge-xs font-bold tabular-nums`}>
               {liveVehicleCount}

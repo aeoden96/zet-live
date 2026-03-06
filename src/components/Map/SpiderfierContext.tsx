@@ -94,6 +94,26 @@ function circlePositions(count: number, center: L.Point, map: L.Map): L.LatLng[]
   });
 }
 
+/**
+ * Pan the map to [lat, lon], shifting the target downward on mobile so the
+ * selected stop marker ends up in the lower half of the viewport — below the
+ * StopInfoBar that appears at the top of the screen.
+ */
+function panToWithOffset(map: L.Map, lat: number, lon: number): void {
+  const offsetPx =
+    typeof window !== 'undefined' && window.innerWidth < 640
+      ? -Math.round(window.innerHeight / 4)
+      : 0;
+  if (offsetPx !== 0) {
+    const zoom = map.getZoom();
+    const pt = map.project([lat, lon] as [number, number], zoom);
+    const adjusted = map.unproject(L.point(pt.x, pt.y + offsetPx), zoom);
+    map.panTo(adjusted);
+  } else {
+    map.panTo([lat, lon]);
+  }
+}
+
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -133,8 +153,9 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
 
       const clickedPx = map.latLngToContainerPoint([clicked.lat, clicked.lon]);
 
-      // Auto-center the map on the spider origin
-      map.panTo([clicked.lat, clicked.lon]);
+      // Auto-center the map on the spider origin, offset downward on mobile
+      // so the stop marker sits below the StopInfoBar overlay.
+      panToWithOffset(map, clicked.lat, clicked.lon);
 
       // Gather all entries within OVERLAP_PX of the clicked position
       const nearby: SpiderfierEntry[] = [];
@@ -155,7 +176,18 @@ export function SpiderfierProvider({ children }: { children: ReactNode }) {
 
       // Large cluster – zoom in instead of spiderfying
       if (nearby.length > MAX_SPIDER_FAN) {
-        map.setView([clicked.lat, clicked.lon], map.getZoom() + 1);
+        const targetZoom = map.getZoom() + 1;
+        const offsetPx =
+          typeof window !== 'undefined' && window.innerWidth < 640
+            ? -Math.round(window.innerHeight / 4)
+            : 0;
+        if (offsetPx !== 0) {
+          const pt = map.project([clicked.lat, clicked.lon] as [number, number], targetZoom);
+          const adjusted = map.unproject(L.point(pt.x, pt.y + offsetPx), targetZoom);
+          map.setView(adjusted, targetZoom);
+        } else {
+          map.setView([clicked.lat, clicked.lon], targetZoom);
+        }
         return;
       }
 

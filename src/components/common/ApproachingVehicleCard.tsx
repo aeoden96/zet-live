@@ -19,7 +19,7 @@ const WINDOW_SECONDS = 30 * 60;
 
 /** Format distance: metres below 1000, km above */
 function formatDistance(meters: number): string {
-  if (meters < 1000) return `${meters} m`;
+  if (meters < 1000) return `${meters} metara`;
   return `${(meters / 1000).toFixed(1)} km`;
 }
 

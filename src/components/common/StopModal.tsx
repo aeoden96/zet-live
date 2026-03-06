@@ -4,12 +4,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, Clock, Star, ArrowRight } from 'lucide-react';
+import { X, Clock, Star, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
 import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
+import { useStopRoutes } from '../../hooks/useStopRoutes';
+import { useStopTermini } from '../../hooks/useStopTermini';
 import { ApproachingVehicleCard } from './ApproachingVehicleCard';
 import { TimetableDepartureCard } from './TimetableDepartureCard';
 import { StopTabSelector, type StopTab } from './StopTabSelector';
@@ -57,12 +59,30 @@ export function StopModal({
     nowMs
   );
 
-  // Sibling platforms at the same parent station (for the terminus redirect banner)
-  const siblingPlatforms = stop.parentStation !== null
-    ? Array.from(stopsById.values()).filter(
-        s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id
-      )
-    : [];
+  // Sibling platforms — stops at the same parent station, or (fallback) same-named stops
+  // when no parent station is set (common for bus stop pairs without GTFS grouping).
+  // Deduplicated by bearing direction so multiple platform IDs in the same direction
+  // don't produce repeated buttons.
+  const siblingPlatforms: Stop[] = (() => {
+    const raw = stop.parentStation !== null
+      ? Array.from(stopsById.values()).filter(
+          s => s.locationType === 0 && s.parentStation === stop.parentStation && s.id !== stop.id,
+        )
+      : Array.from(stopsById.values()).filter(
+          s =>
+            s.locationType === 0 &&
+            s.id !== stop.id &&
+            s.name === stop.name &&
+            (stop.routeType === undefined || s.routeType === undefined || s.routeType === stop.routeType),
+        );
+    const seen = new Set<string>();
+    return raw.filter(s => {
+      const key = s.bearing !== undefined ? bearingToDirection(s.bearing) : (s.code ?? s.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
   const terminusBanner = isAllTerminus ? (
     <div className="rounded-xl bg-warning/10 border border-warning/30 p-4 m-4">
@@ -104,6 +124,9 @@ export function StopModal({
     { dataDir }
   );
 
+  const { routes: stopRoutes } = useStopRoutes(isOpen ? stop.id : null, routesById);
+  const { termini } = useStopTermini(isOpen ? stop.id : null, stopsById);
+
   if (!isOpen) return null;
 
   return (
@@ -134,13 +157,58 @@ export function StopModal({
           </div>
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-base-content/60">
-              {stop.code && <span>Smjer {stop.code}</span>}
+              {(stop.bearing !== undefined || stop.code) && (
+                <span>
+                  {stop.bearing !== undefined
+                    ? termini.length > 0
+                      ? `Smjer prema ${termini.join(', ')}`
+                      : `Smjer prema ${bearingToDirection(stop.bearing)}`
+                    : `Smjer ${stop.code}`}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-base-content/70">
               <Clock className="w-4 h-4" />
               <span>{minutesToTime(currentTime)}</span>
             </div>
           </div>
+          {/* Tab selector */}
+          {stopRoutes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {stopRoutes.map((route) => (
+                <span
+                  key={route.id}
+                  className={`badge badge-sm font-bold ${
+                    route.type === 0 ? 'badge-primary' : 'badge-accent'
+                  }`}
+                >
+                  {route.shortName}
+                </span>
+              ))}
+            </div>
+          )}
+          {siblingPlatforms.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {siblingPlatforms.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onStopSelect?.(s.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-base-300 hover:bg-base-200 active:bg-base-300 text-xs text-base-content/60 transition-colors"
+                  title={`Prebaci na: ${s.name}${
+                    s.bearing !== undefined ? ` (${bearingToDirection(s.bearing)})` : ''
+                  }`}
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {s.bearing !== undefined
+                      ? `Smjer prema ${bearingToDirection(s.bearing)}`
+                      : (s.code ?? s.name)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           {/* Tab selector */}
           <StopTabSelector
             activeTab={activeTab}

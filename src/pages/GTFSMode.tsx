@@ -34,6 +34,12 @@ import { GTFSModeProvider } from '../contexts/GTFSModeContext';
 import { useRssServiceAlerts } from '../hooks/useRssServiceAlerts';
 import type { GTFSModeConfig } from '../config/modes';
 
+/** Vertical pixel offset to shift a stop marker below the top StopInfoBar overlay on mobile. */
+function stopSelectPanOffsetY(): number {
+  if (typeof window === 'undefined' || window.innerWidth >= 640) return 0;
+  return -Math.round(window.innerHeight / 4);
+}
+
 interface GTFSModeProps {
   config: GTFSModeConfig;
 }
@@ -175,7 +181,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
     if (stopId.startsWith('group-')) {
       const group = (groupedParentStations || []).find((g) => g.id === stopId);
       if (group) {
-        setParentStationZoomTarget({ lat: group.lat, lon: group.lon, zoom: 15 });
+        setParentStationZoomTarget({ lat: group.lat, lon: group.lon, zoom: 15, panOffsetY: stopSelectPanOffsetY() });
         const firstParentId = group.childIds[0];
         const childPlatform = stops.find(
           (s) => s.parentStation === firstParentId && s.locationType === 0,
@@ -186,7 +192,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
     }
     const stop = stopsById.get(stopId);
     if (stop && stop.locationType === 1) {
-      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: config.stopZoom });
+      setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: config.stopZoom, panOffsetY: stopSelectPanOffsetY() });
       const childPlatform = stops.find(
         (s) => s.parentStation === stopId && s.locationType === 0,
       );
@@ -240,7 +246,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
       selectStop(stopId);
       addRecentStop(stopId);
       if (stop)
-        setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: config.stopZoom });
+        setParentStationZoomTarget({ lat: stop.lat, lon: stop.lon, zoom: config.stopZoom, panOffsetY: stopSelectPanOffsetY() });
     },
     [selectStop, stopsById, addRecentStop, config.stopZoom],
   );
@@ -351,6 +357,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
                     lat: selectedStop.lat,
                     lon: selectedStop.lon,
                     zoom: config.stopZoom,
+                    panOffsetY: stopSelectPanOffsetY(),
                   })
               : undefined
           }

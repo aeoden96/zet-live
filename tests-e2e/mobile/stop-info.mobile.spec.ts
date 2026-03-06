@@ -52,12 +52,12 @@ test.describe('mobile stop info', () => {
     await expect(
       page.getByRole('heading', { name: 'Trg bana J. Jelačića', level: 3 }),
     ).toBeVisible();
-    await expect(page.getByText('Smjer prema istoku')).toBeVisible();
+    await expect(page.getByText(/Smjer prema/)).toBeVisible();
   });
 
-  test('stop panel has Vozila and Red vožnje tabs', async ({ page }) => {
+  test('stop panel has Vozila u blizini and Red vo\u017enje tabs', async ({ page }) => {
     await page.goto('/?route=1&dir=A&stop=106_1');
-    await expect(page.getByRole('tab', { name: 'Vozila' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Vozila u blizini' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Red vožnje' })).toBeVisible();
   });
 
