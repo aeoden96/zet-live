@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   workflow_call:
   schedule:
-    # Run every Monday at 06:00 UTC so new CVEs / leaked secrets are caught
+    # Run every Monday at 06:00 UTC so new CVEs are caught
     # even without a code push.
     - cron: '0 6 * * 1'
 
@@ -15,24 +15,7 @@ permissions:
   security-events: write   # required for Semgrep SARIF uploads via workflow_call
 
 jobs:
-  # ── 1. Secret scanning ────────────────────────────────────────────────────
-  # Gitleaks scans the full git history so secrets committed and later
-  # "deleted" are still caught.
-  secret-scan:
-    name: Secret scanning (Gitleaks)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout (full history)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ── 2. Dependency vulnerability audit ────────────────────────────────────
+  # ── 1. Dependency vulnerability audit ────────────────────────────────────
   # `yarn audit` queries the npm advisory database for known CVEs.
   # Two thresholds:
   #   • "high" (and above) → hard failure, blocks merge
@@ -62,7 +45,7 @@ jobs:
         run: yarn audit --level moderate
         continue-on-error: true
 
-  # ── 3. Dependency review (pull requests only) ─────────────────────────────
+  # ── 2. Dependency review (pull requests only) ─────────────────────────────
   # Compares dependency changes introduced by a PR against the GitHub
   # Advisory Database and a license allow-list. Blocks PRs that add
   # packages with known high/critical CVEs or disallowed licenses.
@@ -82,12 +65,11 @@ jobs:
           # Copyleft / viral licenses that are incompatible with this project.
           deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, AGPL-3.0
 
-  # ── 4. SAST — Semgrep ────────────────────────────────────────────────────
+  # ── 3. SAST — Semgrep ────────────────────────────────────────────────────
   # Semgrep complements CodeQL with a different rule engine and rule sets.
-  # Running both catches issues that either tool might miss on its own.
   # No SEMGREP_APP_TOKEN required — this uses the open-source CLI only.
   semgrep:
-    name: Semgrep (SAST + secrets)
+    name: Semgrep (SAST)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -104,13 +86,12 @@ jobs:
 
       - name: Run Semgrep
         # p/typescript  — TypeScript-specific security rules
-        # p/secrets     — hard-coded credentials, API keys, tokens
         # p/owasp-top-ten — OWASP Top-10 coverage
         # p/react       — React-specific issues (dangerouslySetInnerHTML etc.)
+        # Secret scanning is handled by GitHub Secret Protection
         run: |
           semgrep scan \
             --config "p/typescript" \
-            --config "p/secrets" \
             --config "p/owasp-top-ten" \
             --config "p/react" \
             --error \
