@@ -1,6 +1,28 @@
 {
   "alerts": [
     {
+      "id": "423c15d23888",
+      "guid": "http://www.zet.hr/default.aspx?id=9931",
+      "title": "Linija 159 vozi obilazno prema Saskom mostu",
+      "lines": [
+        "159"
+      ],
+      "type": "route-change",
+      "startDate": "2026-03-09",
+      "endDate": null,
+      "affectedStops": [
+        "Celići",
+        "Buhini",
+        "Strmec centar",
+        "Novoselci",
+        "Obrež škola"
+      ],
+      "summary": "Autobusna linija 159 prometovat će izmijenjenom trasom u smjeru Savskog mosta zbog sanacije kolnika na Strmeckoj cesti. Privremeno će biti postavljena nova stajališta, a neka postojeća su zatvorena.",
+      "pubDate": "Fri, 06 Mar 2026 10:14:41 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9931",
+      "processedAt": "2026-03-06T10:44:54.009Z"
+    },
+    {
       "id": "d7192ec316db",
       "guid": "http://www.zet.hr/default.aspx?id=9928",
       "title": "Izmjena na liniji 274, uvodi se linija 274A",
@@ -258,5 +280,5 @@
       "processedAt": "2026-03-02T23:34:32.012Z"
     }
   ],
-  "lastUpdate": "2026-03-06T09:50:08.460Z"
+  "lastUpdate": "2026-03-06T10:44:54.009Z"
 }
