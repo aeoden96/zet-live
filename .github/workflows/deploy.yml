@@ -27,16 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'yarn'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -50,7 +50,7 @@ jobs:
       - name: Restore processed GTFS cache
         id: gtfs-cache
         if: ${{ !inputs.force_gtfs }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: public/data
           key: gtfs-processed-${{ steps.gtfs-hash.outputs.hash }}
@@ -73,7 +73,7 @@ jobs:
       - name: Restore processed train GTFS cache
         id: gtfs-train-cache
         if: ${{ !inputs.force_gtfs }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: public/data-train
           key: gtfs-train-processed-${{ steps.gtfs-train-hash.outputs.hash }}
@@ -98,10 +98,10 @@ jobs:
         run: yarn build
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: './dist'
 
