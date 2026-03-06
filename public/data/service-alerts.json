@@ -1,23 +1,46 @@
 {
   "alerts": [
     {
-      "id": "01fe65bd83b3",
-      "guid": "http://www.zet.hr/default.aspx?id=9927",
-      "title": "Stajalište \"Trnsko\"  u smjeru istoka izvan funkcije",
+      "id": "423c15d23888",
+      "guid": "http://www.zet.hr/default.aspx?id=9931",
+      "title": "Linija 159 vozi obilazno prema Saskom mostu",
       "lines": [
-        "109",
-        "222"
+        "159"
       ],
-      "type": "stop-change",
-      "startDate": "2026-03-04",
+      "type": "route-change",
+      "startDate": "2026-03-09",
       "endDate": null,
       "affectedStops": [
-        "Trnsko"
+        "Celići",
+        "Buhini",
+        "Strmec centar",
+        "Novoselci",
+        "Obrež škola"
       ],
-      "summary": "Autobusno stajalište Trnsko na Aveniji Dubrovnik u smjeru istoka neće biti u funkciji zbog radova od 4. ožujka u 8 sati.",
-      "pubDate": "Tue, 03 Mar 2026 12:37:13 +0100",
-      "url": "https://www.zet.hr/default.aspx?id=9927",
-      "processedAt": "2026-03-03T13:17:37.712Z"
+      "summary": "Autobusna linija 159 prometovat će izmijenjenom trasom u smjeru Savskog mosta zbog sanacije kolnika na Strmeckoj cesti. Privremeno će biti postavljena nova stajališta, a neka postojeća su zatvorena.",
+      "pubDate": "Fri, 06 Mar 2026 10:14:41 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9931",
+      "processedAt": "2026-03-06T10:44:54.009Z"
+    },
+    {
+      "id": "d7192ec316db",
+      "guid": "http://www.zet.hr/default.aspx?id=9928",
+      "title": "Izmjena na liniji 274, uvodi se linija 274A",
+      "lines": [
+        "274",
+        "274A"
+      ],
+      "type": "route-change",
+      "startDate": "2026-03-09",
+      "endDate": null,
+      "affectedStops": [
+        "Ivana Granđe 6",
+        "Šašinovec"
+      ],
+      "summary": "Od 9. ožujka autobusna linija 274 prometovat će izmijenjenom trasom zbog rekonstrukcije Ulice Ivana Granđe, a uspostavlja se nova linija 274A (Cerje - Šašinovec) s odgovarajućom trasom i stajalištima.",
+      "pubDate": "Fri, 06 Mar 2026 09:09:03 +0100",
+      "url": "https://www.zet.hr/default.aspx?id=9928",
+      "processedAt": "2026-03-06T09:50:08.460Z"
     },
     {
       "id": "af0712d9dcc3",
@@ -257,5 +280,5 @@
       "processedAt": "2026-03-02T23:34:32.012Z"
     }
   ],
-  "lastUpdate": "2026-03-04T13:13:01.990Z"
+  "lastUpdate": "2026-03-06T15:06:09.194Z"
 }
