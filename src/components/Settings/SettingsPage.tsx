@@ -30,7 +30,20 @@ export function SettingsPage() {
   const cacheStats = getCacheStats();
 
   const handleClearCache = () => {
-    if (window.confirm('Clear cached data? The app will reload to fetch fresh data.')) {
+    if (window.confirm('Obrisati GTFS predmemoriju? Aplikacija će se ponovo učitati i dohvatiti svježe podatke.')) {
+      clearCache();
+      window.location.reload();
+    }
+  };
+
+  const handleDeleteAll = () => {
+    if (window.confirm('Obrisati sve podatke aplikacije? Ovo će obrisati sve postavke, favorite i predmemoriju. Aplikacija će se ponovo učitati.')) {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('zet-live-')) keysToRemove.push(key);
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
       clearCache();
       window.location.reload();
     }
@@ -170,7 +183,14 @@ export function SettingsPage() {
                 className="btn btn-outline btn-error btn-sm w-full mt-2"
               >
                 <Trash2 className="w-4 h-4" />
-                Obriši predmemoriju
+                Obriši GTFS predmemoriju
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                className="btn btn-error btn-sm w-full"
+              >
+                <Trash2 className="w-4 h-4" />
+                Obriši sve podatke
               </button>
             </div>
           </div>
