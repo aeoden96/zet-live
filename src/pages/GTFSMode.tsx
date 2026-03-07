@@ -16,6 +16,7 @@ import { RouteModal } from '../components/common/RouteModal';
 import { StopModal } from '../components/common/StopModal';
 import { StopInfoBar } from '../components/common/StopInfoBar';
 import { RouteInfoBar } from '../components/common/RouteInfoBar';
+import { VehicleFollowBar } from '../components/common/VehicleFollowBar';
 import { DebugPanel } from '../components/common/DebugPanel';
 import { OnboardingWizard } from '../components/common/OnboardingWizard';
 import { NearbyStopsModal } from '../components/common/NearbyStopsModal';
@@ -53,6 +54,11 @@ export function GTFSMode({ config }: GTFSModeProps) {
   const [legendOpen, setLegendOpen] = useState(false);
   const [timeAgoStr, setTimeAgoStr] = useState<string>('');
   const [parentStationZoomTarget, setParentStationZoomTarget] = useState<{ lat: number; lon: number; zoom?: number; panOffsetY?: number } | null>(null);
+  /** Last vehicle the user clicked — carries both routeId and tripId so the follow button
+   *  can be gated by matching routeId without being wiped by the route-change effect. */
+  const [lastClickedVehicle, setLastClickedVehicle] = useState<{ routeId: string; tripId: string } | null>(null);
+  /** tripId of the vehicle currently being followed (auto-centers map) */
+  const [followedVehicleTripId, setFollowedVehicleTripId] = useState<string | null>(null);
 
   const handleZoomComplete = useCallback(() => setParentStationZoomTarget(null), []);
 
@@ -118,6 +124,8 @@ export function GTFSMode({ config }: GTFSModeProps) {
   );
   const gtfsRtAlerts = useRealtimeStore((s) => s.serviceAlerts);
   const lastUpdate = useRealtimeStore((s) => s.lastUpdate);
+  const vehiclePositions = useRealtimeStore((s) => s.vehiclePositions);
+  const tripUpdates = useRealtimeStore((s) => s.tripUpdates);
 
   // RSS-parsed ZET service alerts (polled by GitHub Actions cron every 30 min)
   const rssAlerts = useRssServiceAlerts(routesById);
@@ -152,6 +160,28 @@ export function GTFSMode({ config }: GTFSModeProps) {
     return () => clearInterval(interval);
   }, [config.hasRealtime, lastUpdate]);
 
+  // Clear follow mode when route changes.
+  // lastClickedVehicle is intentionally NOT cleared here — it's already gated
+  // by routeId === selectedRouteId in the render, and clearing it here creates
+  // a race condition that wipes it before the RouteInfoBar can display the follow button.
+  useEffect(() => {
+    setFollowedVehicleTripId(null);
+  }, [selectedRouteId]);
+
+  // Derive followed vehicle GPS position from realtime store
+  const followedRawPos = followedVehicleTripId
+    ? vehiclePositions.get(followedVehicleTripId) ?? null
+    : null;
+  const followedVehiclePos = followedRawPos
+    ? { lat: followedRawPos.latitude, lon: followedRawPos.longitude }
+    : null;
+  const followedVehicleParsedPos = followedVehicleTripId
+    ? vehiclePositions.get(followedVehicleTripId) ?? null
+    : null;
+  const followedTripUpdate = followedVehicleTripId
+    ? tripUpdates.get(followedVehicleTripId) ?? null
+    : null;
+
   // Geolocation
   const onLocateSuccess = useCallback(
     (_lat: number, _lon: number) => {
@@ -168,11 +198,13 @@ export function GTFSMode({ config }: GTFSModeProps) {
     routeId: string,
     _routeType: number,
     df?: DirectionFilter | 'all',
+    tripId?: string,
   ) => {
     const dir: DirectionFilter = df === 'A' || df === 'B' ? df : 'A';
     selectRoute(routeId, { dir });
     setSearchModalOpen(false);
     addRecentRoute(routeId);
+    if (tripId) setLastClickedVehicle({ routeId, tripId });
     setRouteModalOpen(false);
     setStopModalOpen(false);
   };
@@ -231,6 +263,22 @@ export function GTFSMode({ config }: GTFSModeProps) {
   const handleExpandRoute = () => setRouteModalOpen(true);
   const handleCloseRoute = () => setRouteModalOpen(false);
   const handleClearRoute = () => clearRoute();
+
+  const handleVehicleSelect = useCallback((tripId: string) => {
+    if (selectedRouteId) setLastClickedVehicle({ routeId: selectedRouteId, tripId });
+  }, [selectedRouteId]);
+
+  const handleFollowStart = useCallback((tripId: string) => {
+    setFollowedVehicleTripId(tripId);
+  }, []);
+
+  const handleFollowDisengage = useCallback(() => {
+    setFollowedVehicleTripId(null);
+  }, []);
+
+  const handleUnfollow = useCallback(() => {
+    setFollowedVehicleTripId(null);
+  }, []);
 
   const handleCloseStop = () => {
     setStopModalOpen(false);
@@ -335,7 +383,7 @@ export function GTFSMode({ config }: GTFSModeProps) {
           routeType={selectedRouteType}
           routeShortName={selectedRoute?.shortName}
           onStopClick={handleStopClickFromMap}
-          onVehicleClick={(routeId, routeType) => handleSelectRoute(routeId, routeType)}
+          onVehicleClick={(routeId, routeType, tripId) => handleSelectRoute(routeId, routeType, undefined, tripId)}
           showAllVehicles={showAllVehicles}
           showRoadClosures={showRoadClosures}
           allVehicles={
@@ -363,6 +411,9 @@ export function GTFSMode({ config }: GTFSModeProps) {
           }
           highlightStopIds={activeHighlightStopIds}
           nearbyStopIds={nearbyHighlightedStops}
+          onVehicleSelect={handleVehicleSelect}
+          followedVehiclePos={followedVehiclePos}
+          onFollowDisengage={handleFollowDisengage}
         />
 
         {/* Route loading indicator */}
@@ -510,16 +561,29 @@ export function GTFSMode({ config }: GTFSModeProps) {
           </div>
         )}
 
-        {/* Route Info Bar */}
+        {/* Route Info Bar / Vehicle Follow Bar */}
         {selectedRoute && !routeModalOpen && !stopModalOpen && (
-          <RouteInfoBar
-            route={selectedRoute}
-            vehicles={vehicles}
-            orderedStops={orderedStops}
-            stopsById={stopsById}
-            onExpand={handleExpandRoute}
-            onClose={handleClearRoute}
-          />
+          followedVehicleTripId ? (
+            <VehicleFollowBar
+              route={selectedRoute}
+              vehiclePos={followedVehicleParsedPos}
+              tripUpdate={followedTripUpdate}
+              stopsById={stopsById}
+              onUnfollow={handleUnfollow}
+              onExpand={handleExpandRoute}
+            />
+          ) : (
+            <RouteInfoBar
+              route={selectedRoute}
+              vehicles={vehicles}
+              orderedStops={orderedStops}
+              stopsById={stopsById}
+              onExpand={handleExpandRoute}
+              onClose={handleClearRoute}
+              followCandidateTripId={lastClickedVehicle?.routeId === selectedRouteId ? lastClickedVehicle.tripId : null}
+              onFollowStart={handleFollowStart}
+            />
+          )
         )}
 
         {/* Stop Info Bar */}

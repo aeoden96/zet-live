@@ -4,7 +4,7 @@
  * can be expanded into the full RouteModal via the Maximize2 button.
  */
 
-import { Maximize2, X, Train, Bus, Star } from 'lucide-react';
+import { Maximize2, X, Train, Bus, Star, Navigation } from 'lucide-react';
 import type { Route, Stop } from '../../utils/gtfs';
 import type { VehiclePosition } from '../../utils/vehicles';
 import { getDirectionColor } from '../Map/directionColors';
@@ -17,12 +17,16 @@ interface RouteInfoBarProps {
   onClose: () => void;
   orderedStops?: Record<string, string[]>;
   stopsById?: Map<string, Stop>;
+  /** tripId of the last-clicked vehicle — enables the follow button */
+  followCandidateTripId?: string | null;
+  /** Called with the tripId to activate follow mode */
+  onFollowStart?: (tripId: string) => void;
 }
 
 const TRAM_COLOR = '#2563eb'; // blue-600
 const BUS_COLOR  = '#ea580c'; // orange-600
 
-export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops, stopsById }: RouteInfoBarProps) {
+export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops, stopsById, followCandidateTripId, onFollowStart }: RouteInfoBarProps) {
   const color = route.type === 0 ? TRAM_COLOR : BUS_COLOR;
   const isTram = route.type === 0;
   const { favouriteRouteIds, toggleFavouriteRoute } = useSettingsStore();
@@ -71,6 +75,15 @@ export function RouteInfoBar({ route, vehicles, onExpand, onClose, orderedStops,
                 color={isFav ? '#f59e0b' : 'currentColor'}
               />
             </button>
+            {followCandidateTripId && onFollowStart && (
+              <button
+                onClick={() => onFollowStart(followCandidateTripId)}
+                className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+                title="Prati ovo vozilo"
+              >
+                <Navigation className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={onExpand}
               className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"

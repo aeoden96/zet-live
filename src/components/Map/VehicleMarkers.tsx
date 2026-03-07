@@ -18,6 +18,7 @@ interface SpiderfiedVehicleMarkerProps {
   color: string;
   routeShortName: string;
   theme: string;
+  onVehicleSelect?: (tripId: string) => void;
 }
 
 function SpiderfiedVehicleMarker({
@@ -25,6 +26,7 @@ function SpiderfiedVehicleMarker({
   color,
   routeShortName,
   theme,
+  onVehicleSelect,
 }: SpiderfiedVehicleMarkerProps) {
   const map = useMap();
   const ctx = useSpiderfierContext();
@@ -44,12 +46,12 @@ function SpiderfiedVehicleMarker({
       lat: vehicle.lat,
       lon: vehicle.lon,
       label,
-      onClick: () => { }, // route already selected; spiderfy just separates overlapping vehicles
+      onClick: () => onVehicleSelect?.(vehicle.tripId), // allow follow mode on specific vehicle
       getIcon: () => iconRef.current,
       hideLabel: true, // icon already shows the route number; no need for a text bubble
     });
     return () => ctx.unregister(vehicle.tripId);
-  }, [vehicle.tripId, vehicle.lat, vehicle.lon, label, ctx]);
+  }, [vehicle.tripId, vehicle.lat, vehicle.lon, label, onVehicleSelect, ctx]);
 
   if (ctx?.isHidden(vehicle.tripId)) return null;
 
@@ -71,9 +73,10 @@ interface VehicleMarkersProps {
   vehicles: VehiclePosition[];
   routeType: number | null;
   routeShortName?: string;
+  onVehicleSelect?: (tripId: string) => void;
 }
 
-export function VehicleMarkers({ vehicles, routeType, routeShortName = '' }: VehicleMarkersProps) {
+export function VehicleMarkers({ vehicles, routeType, routeShortName = '', onVehicleSelect }: VehicleMarkersProps) {
   // Color by direction if available, else fallback to routeType color
   const theme = useSettingsStore((s) => s.theme);
   const bounds = useMapBounds();
@@ -90,6 +93,7 @@ export function VehicleMarkers({ vehicles, routeType, routeShortName = '' }: Veh
             color={color}
             routeShortName={routeShortName}
             theme={theme}
+            onVehicleSelect={onVehicleSelect}
           />
         );
       })}

@@ -14,6 +14,7 @@ import { OffScreenStopIndicator } from './OffScreenStopIndicator';
 import { SpiderfierProvider } from './SpiderfierContext';
 import { SpiderfierManager } from './SpiderfierManager';
 import { RoadClosures } from './RoadClosures';
+import { VehicleFollower } from './VehicleFollower';
 import { useRoadClosures } from '../../hooks/useRoadClosures';
 import { useGTFSMode } from '../../contexts/GTFSModeContext';
 
@@ -31,7 +32,9 @@ interface MapViewProps {
   routeType: number | null;
   routeShortName?: string;
   onStopClick: (stopId: string) => void;
-  onVehicleClick?: (routeId: string, routeType: number) => void;
+  onVehicleClick?: (routeId: string, routeType: number, tripId: string) => void;
+  /** Called when a vehicle in the selected-route view is clicked (selects the trip for follow mode) */
+  onVehicleSelect?: (tripId: string) => void;
   showAllVehicles?: boolean;
   showRoadClosures?: boolean;
   allVehicles?: AllVehiclePosition[];
@@ -46,6 +49,10 @@ interface MapViewProps {
   onFlyToStop?: () => void;
   highlightStopIds?: string[];
   nearbyStopIds?: string[];
+  /** GPS position of the currently followed vehicle (enables auto-pan) */
+  followedVehiclePos?: { lat: number; lon: number } | null;
+  /** Called when user drags the map while following — parent should clear follow state */
+  onFollowDisengage?: () => void;
 }
 
 
@@ -63,6 +70,7 @@ export function MapView({
   routeShortName,
   onStopClick,
   onVehicleClick,
+  onVehicleSelect,
   showAllVehicles = false,
   showRoadClosures = false,
   allVehicles = [],
@@ -76,7 +84,9 @@ export function MapView({
   selectedStop,
   onFlyToStop,
   highlightStopIds,
-  nearbyStopIds
+  nearbyStopIds,
+  followedVehiclePos,
+  onFollowDisengage,
 }: MapViewProps) {
   // Fetch road closures if enabled
   const { closures } = useRoadClosures(showRoadClosures);
@@ -134,8 +144,13 @@ export function MapView({
               vehicles={vehicles}
               routeType={routeType}
               routeShortName={routeShortName}
+              onVehicleSelect={onVehicleSelect}
             />
           </>
+        )}
+
+        {followedVehiclePos && onFollowDisengage && (
+          <VehicleFollower position={followedVehiclePos} onDisengage={onFollowDisengage} />
         )}
       </BaseMap>
     </SpiderfierProvider>

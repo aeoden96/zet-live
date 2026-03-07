@@ -15,7 +15,7 @@ import { useSpiderfierContext } from './SpiderfierContext';
 interface SpiderfiedAllVehicleMarkerProps {
   vehicle: AllVehiclePosition;
   theme: string;
-  onVehicleClick?: (routeId: string, routeType: number) => void;
+  onVehicleClick?: (routeId: string, routeType: number, tripId: string) => void;
 }
 
 function SpiderfiedAllVehicleMarker({
@@ -42,7 +42,7 @@ function SpiderfiedAllVehicleMarker({
       lat: vehicle.lat,
       lon: vehicle.lon,
       label,
-      onClick: () => onVehicleClick?.(vehicle.routeId, vehicle.routeType),
+      onClick: () => onVehicleClick?.(vehicle.routeId, vehicle.routeType, vehicle.tripId),
       getIcon: () => iconRef.current,
       hideLabel: true, // icon already shows the route number; no need for a text bubble
     });
@@ -67,7 +67,7 @@ function SpiderfiedAllVehicleMarker({
 
 interface AllVehicleMarkersProps {
   vehicles: AllVehiclePosition[];
-  onVehicleClick?: (routeId: string, routeType: number) => void;
+  onVehicleClick?: (routeId: string, routeType: number, tripId: string) => void;
 }
 
 export function AllVehicleMarkers({ vehicles, onVehicleClick }: AllVehicleMarkersProps) {
