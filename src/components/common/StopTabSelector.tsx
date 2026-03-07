@@ -25,7 +25,7 @@ export function StopTabSelector({
   hideVehicles = false,
 }: StopTabSelectorProps) {
   // reduce overall padding/size so tabs take less space
-  const tabClass = compact ? 'tab text-xs px-2 py-1' : 'tab text-xs px-3 py-1';
+  const tabClass = compact ? 'tab text-xs px-2 py-0.5' : 'tab text-xs px-3 py-0.5';
   const activeClass = 'tab-active font-semibold';
   const iconSize = compact ? 'w-3 h-3' : 'w-4 h-4';
 

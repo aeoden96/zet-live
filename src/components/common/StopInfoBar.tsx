@@ -3,10 +3,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Maximize2, Clock, X, Star, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { Maximize2, X, Star, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import type { Stop, Route } from '../../utils/gtfs';
-import { minutesToTime, bearingToDirection } from '../../utils/gtfs';
-import { useCurrentTime } from '../../hooks/useCurrentTime';
+import { bearingToDirection } from '../../utils/gtfs';
 import { useApproachingVehicles } from '../../hooks/useApproachingVehicles';
 import { useTimetableDepartures } from '../../hooks/useTimetableDepartures';
 import { useStopRoutes } from '../../hooks/useStopRoutes';
@@ -43,7 +42,6 @@ export function StopInfoBar({
   stackBelow = false,
 }: StopInfoBarProps) {
   const { dataDir, hasRealtime } = useGTFSMode();
-  const currentTime = useCurrentTime();
   const { favouriteStopIds, toggleFavouriteStop } = useSettingsStore();
   const isFav = favouriteStopIds.includes(stop.id);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -140,94 +138,84 @@ export function StopInfoBar({
     >
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base leading-tight text-base-content mb-1">
+        <div className="mb-2">
+          <div className="flex items-center gap-1 mb-1">
+            <h3 className="font-bold text-base leading-tight text-base-content flex-1 min-w-0 truncate">
               {stop.name}
             </h3>
-            {(stop.bearing !== undefined || stop.code) && (
-              <div className="text-xs text-base-content/60 flex items-center gap-1">
-                <span>
-                  {stop.bearing !== undefined
-                    ? termini.length > 0
-                      ? `Smjer prema ${termini.join(', ')}`
-                      : `Smjer prema ${bearingToDirection(stop.bearing)}`
-                    : `Smjer ${stop.code}`}
-                </span>
-              </div>
-            )}
-            {stopRoutes.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {stopRoutes.map((route) => (
-                  <span
-                    key={route.id}
-                    className={`badge badge-sm font-bold ${
-                      route.type === 0 ? 'badge-primary' : 'badge-accent'
-                    }`}
-                  >
-                    {route.shortName}
-                  </span>
-                ))}
-              </div>
-            )}
-            {siblingPlatforms.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {siblingPlatforms.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => onStopSelect?.(s.id)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-base-300 hover:bg-base-200 active:bg-base-300 text-[11px] text-base-content/60 transition-colors"
-                    title={`Prebaci na: ${s.name}${
-                      s.bearing !== undefined ? ` (${bearingToDirection(s.bearing)})` : ''
-                    }`}
-                  >
-                    <ArrowLeftRight className="w-2.5 h-2.5 shrink-0" />
-                    <span>
-                      {s.bearing !== undefined
-                        ? `Smjer prema ${bearingToDirection(s.bearing)}`
-                        : (s.code ?? s.name)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
             <button
               onClick={() => toggleFavouriteStop(stop.id)}
-              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              className="btn btn-ghost btn-circle btn-xs shrink-0"
               title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
             >
               <Star
                 className="w-4 h-4"
-                fill={isFav ? 'currentColor' : 'none'}
+                fill={isFav ? '#f59e0b' : 'none'}
                 color={isFav ? '#f59e0b' : 'currentColor'}
               />
             </button>
             <button
               onClick={() => onExpand(stop.id)}
-              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              className="btn btn-ghost btn-circle btn-xs shrink-0"
               title="Prikaži detalje"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="btn btn-ghost btn-circle btn-xs min-h-[32px] min-w-[32px]"
+              className="btn btn-ghost btn-circle btn-xs shrink-0"
               title="Zatvori"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-        </div>
-
-        {/* Current time */}
-        <div className="flex items-center justify-end mb-2 pb-2 border-b border-base-300">
-          <div className="flex items-center gap-1.5 text-xs text-base-content/60">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{minutesToTime(currentTime)}</span>
-          </div>
+          {(stop.bearing !== undefined || stop.code) && (
+            <div className="text-xs text-base-content/60 flex items-center gap-1">
+              <span>
+                {stop.bearing !== undefined
+                  ? termini.length > 0
+                    ? `Smjer prema ${termini.join(', ')}`
+                    : `Smjer prema ${bearingToDirection(stop.bearing)}`
+                  : `Smjer ${stop.code}`}
+              </span>
+            </div>
+          )}
+          {stopRoutes.length > 0 && (
+            <div className="flex flex-nowrap gap-1 mt-1.5 overflow-x-auto">
+              {stopRoutes.map((route) => (
+                <span
+                  key={route.id}
+                  className={`badge badge-sm font-bold ${
+                    route.type === 0 ? 'badge-primary' : 'badge-accent'
+                  }`}
+                >
+                  {route.shortName}
+                </span>
+              ))}
+            </div>
+          )}
+          {siblingPlatforms.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {siblingPlatforms.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onStopSelect?.(s.id)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-base-300 hover:bg-base-200 active:bg-base-300 text-[11px] text-base-content/60 transition-colors"
+                  title={`Prebaci na: ${s.name}${
+                    s.bearing !== undefined ? ` (${bearingToDirection(s.bearing)})` : ''
+                  }`}
+                >
+                  <ArrowLeftRight className="w-2.5 h-2.5 shrink-0" />
+                  <span>
+                    {s.bearing !== undefined
+                      ? `Smjer prema ${bearingToDirection(s.bearing)}`
+                      : (s.code ?? s.name)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tab selector */}
@@ -317,9 +305,9 @@ export function StopInfoBar({
                         <span>
                           {vehicle.passedStop
                             ? 'Prošao stajalište'
-                            : vehicle.stopsAway !== null && vehicle.stopsAway > 0
-                              ? `${vehicle.stopsAway} stajališta`
-                              : 'GPS uživo'}
+                            : vehicle.stopsAway !== null && vehicle.stopsAway > 1
+                              ? `${vehicle.stopsAway - 1} stajališta`
+                              : 'iduće stajalište'}
                         </span>
                       </div>
                     </div>

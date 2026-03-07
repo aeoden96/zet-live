@@ -150,9 +150,9 @@ export function ApproachingVehicleCard({ vehicle, onRouteClick }: ApproachingVeh
                   <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0 animate-pulse" />
                   {vehicle.stopsAway !== null ? (
                     <span>
-                      {vehicle.stopsAway === 0
+                      {vehicle.stopsAway <= 1
                         ? 'na stajalištu'
-                        : `${vehicle.stopsAway} ${vehicle.stopsAway === 1 ? 'stajalište' : 'stajališta'}`}
+                        : `${vehicle.stopsAway - 1} ${vehicle.stopsAway - 1 === 1 ? 'stajalište' : 'stajališta'}`}
                     </span>
                   ) : (
                     <span>GPS uživo</span>

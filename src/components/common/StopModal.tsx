@@ -142,7 +142,7 @@ export function StopModal({
             <h2 className="text-xl font-bold flex-1">{stop.name}</h2>
             <button
               onClick={() => toggleFavouriteStop(stop.id)}
-              className="btn btn-ghost btn-circle btn-sm min-h-[44px] min-w-[44px]"
+              className="btn btn-ghost btn-circle btn-sm"
               title={isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
             >
               <Star
@@ -151,7 +151,7 @@ export function StopModal({
                 color={isFav ? '#f59e0b' : 'currentColor'}
               />
             </button>
-            <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm min-h-[44px] min-w-[44px]">
+            <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -174,7 +174,7 @@ export function StopModal({
           </div>
           {/* Tab selector */}
           {stopRoutes.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="flex flex-nowrap gap-1 mb-3 overflow-x-auto">
               {stopRoutes.map((route) => (
                 <span
                   key={route.id}
