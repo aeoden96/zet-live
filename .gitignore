@@ -30,6 +30,8 @@ dist-ssr
 
 dev-dist/
 
+__pycache__/
+
 
 data/
 data-train/
