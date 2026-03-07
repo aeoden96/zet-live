@@ -1,240 +1,212 @@
-# ZET Live — Zagreb Public Transit Tracker
+# ZET Live
 
-A frontend-only web application for tracking Zagreb's public transport in real-time. Built with React, TypeScript, and optimized GTFS data processing.
+Zagreb public transit tracker — static frontend app, no backend. All GTFS data pre-processed into JSON chunks served from a CDN.
 
-**Geographic Center:** 45.789586°N, 15.976114°E (Zagreb, Croatia)
+**Stack:** React 19, TypeScript, Vite 7, Tailwind CSS v4 + DaisyUI 5, Vitest
 
-## 🎯 Project Overview
+---
 
-ZET Live displays Zagreb's public transport network (trams and buses) on an interactive map, providing:
-- Real-time stop locations and route information
-- Schedule data and departure times
-- Route visualization with geographic paths
-- Nearest stop finder based on user location
+## Quick Start
 
-This is a **static, frontend-only application** — all transit data is pre-processed into optimized JSON chunks and served from a CDN, requiring no backend server.
-
-## 📊 Data Source
-
-Transit data from **ZET (Zagrebački Električni Tramvaj)**:
-- **Source:** https://www.zet.hr/gtfs-scheduled/latest
-- **Format:** GTFS (General Transit Feed Specification)
-- **Coverage:** 155 routes (20 trams, 136 buses), 3,829 stops, 93K+ trips
-- **Raw size:** 114 MB → **Processed:** 131.4 MB (5,862 files, ~30 MB gzipped)
-
-> **See [DATA_INDEX.md](DATA_INDEX.md) for complete data structure reference.**
-
-## ✨ Features
-
-### Data Processing
-- ⚡ **Optimized chunking** — 9 specialized indexes for different use cases
-- 📦 **Smart compression** — Time encoding, deduplication, format optimization
-- 🎯 **Access-pattern-based** — By route, by stop, by function
-- 🚀 **Fast loading** — 456 KB initial, 320B-72KB per interaction
-
-### Tech Stack
-- ⚡ **Vite 7** - Lightning-fast build tool
-- ⚛️ **React 19** - Latest React with TypeScript
-- 🎨 **Tailwind CSS v4** + **DaisyUI 5** - Styled components
-- 🧪 **Vitest 4** - Comprehensive testing
-- 🗺️ **GTFS Processing** - Python-based data pipeline (no external dependencies)
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js 20+** and **Yarn** (for frontend)
-- **Python 3.7+** (for data processing, stdlib only)
-
-### Installation
+Requires Node 20+ and Python 3.7+.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/zet-live
-cd zet-live
-
-# Install frontend dependencies
 yarn install
-
-# Process GTFS data (first time only)
-./scripts/run.sh
-
-# Start development server
+./scripts/run.sh   # process GTFS data (first time only)
 yarn dev
 ```
 
-### Available Scripts
-
 ```bash
-# Frontend
-yarn dev              # Start dev server at http://localhost:5173
-yarn build            # Build for production
-yarn preview          # Preview production build
-yarn lint             # Run ESLint
-yarn test             # Run tests
-
-# Data Processing
-./scripts/run.sh                # Process GTFS data (recommended)
-python3 scripts/process_gtfs.py # Run processor directly
-
-# Testing
-python3 tests/test_functional_requirements.py  # Test all optimizations
+yarn build         # production build
+yarn lint
+yarn test          # unit tests
+yarn tsc           # type check
+python3 tests/test_functional_requirements.py  # validate data indexes
 ```
-
-## 🧪 Testing
-
-Validate functional requirements and measure data fetch sizes:
-
-```bash
-python3 tests/test_functional_requirements.py
-```
-
-Tests all 5 requirements (A1-A3, B1-B2) and confirms optimizations:
-- **A1:** Routes at stop → ~10 KB ✅
-- **A2:** Timetables at stop → ~100 KB (82% reduction) ✅
-- **A3:** Draw routes → ~90 KB ✅
-- **B1:** Vehicle positions → ~252 KB (79% reduction) ✅
-- **B2:** Stops on route → ~650 bytes (99.7% reduction) ✅
-
-See [tests/README.md](tests/README.md) for details.
-
-## 📁 Project Structure
-
-```
-zet-live/
-├── data/                # Raw GTFS (114 MB)
-├── public/data/         # Processed JSON (131.4 MB, 5,862 files)
-│   ├── initial.json     # Bootstrap data (456 KB)
-│   ├── routes/          # Per-route metadata (155 files)
-│   ├── timetables/      # Per-route schedules (155 files)
-│   ├── shapes/          # Geographic paths (150 files)
-│   ├── stops/           # Per-stop departures (2,545 files)
-│   ├── route_stops/     # Optimized stop lists (155 files)
-│   ├── stop_timetables/ # Optimized stop schedules (2,545 files)
-│   ├── route_active_trips/ # Optimized vehicle data (155 files)
-│   └── manifest.json
-├── scripts/
-│   ├── process_gtfs.py  # Data processor
-│   ├── run.sh           # Runner script
-│   └── README.md
-├── src/
-│   ├── utils/gtfs.ts    # TypeScript utilities
-│   ├── App.tsx
-│   └── components/
-├── DATA_INDEX.md        # 📋 Data structure reference (START HERE)
-├── DATA_ANALYSIS.md     # Analysis report
-├── FUNCTIONAL_REQUIREMENTS.md # Requirements analysis
-├── USAGE_EXAMPLES.md    # Code examples
-└── README.md
-```
-
-## 📋 Functional Requirements
-
-**See [FUNCTIONAL_REQUIREMENTS.md](FUNCTIONAL_REQUIREMENTS.md) for detailed feasibility analysis.**
-
-### Quick Summary
-
-**For Selected Stop:**
-- A1: Show route numbers → 🟢 Easy (3 KB, ready)
-- A2: Show timetables → 🟢 Easy (~30 KB, ✅ optimized with `stop_timetables/`)
-- A3: Draw route paths → 🟡 Moderate (30 KB, acceptable)
-
-**For Selected Route:**
-- B1: Vehicle locations → 🟢 Easy (~72 KB, ✅ optimized with `route_active_trips/`)
-- B2: List all stops → � Easy (~320 bytes, ✅ optimized with `route_stops/`)
 
 ---
 
-## 📖 Documentation
+## Project Structure
 
-**📋 [DATA_INDEX.md](DATA_INDEX.md)** — Start here: Complete data structure reference  
-**📊 [DATA_ANALYSIS.md](DATA_ANALYSIS.md)** — Analysis & compression techniques  
-**✅ [FUNCTIONAL_REQUIREMENTS.md](FUNCTIONAL_REQUIREMENTS.md)** — Requirements & feasibility  
-**💻 [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** — Code examples  
-**🔧 [scripts/README.md](scripts/README.md)** — Data processing pipeline
+```
+data/                   raw GTFS input (114 MB)
+public/data/            processed JSON (131 MB, ~30 MB gzipped)
+  initial.json          startup data: all stops + routes (456 KB)
+  routes/{id}.json      trip metadata per route (60 KB avg)
+  timetables/{id}.json  full schedules per route (190 KB avg)
+  shapes/{id}.json      geographic paths per route (10 KB avg)
+  stops/{id}.json       routes + departures at stop (3 KB avg)
+  route_stops/{id}.json ordered stop list for route (320 B avg)
+  stop_timetables/{id}.json  departures at stop, pre-filtered (30 KB avg)
+  route_active_trips/{id}.json  trips + shapes for vehicle estimation (72 KB avg)
+  manifest.json         file catalog
+scripts/
+  process_gtfs.py       GTFS processor (see scripts/README.md)
+src/
+  utils/gtfs.ts         data fetch utilities
+```
 
-## 🎨 Data Loading
+---
 
-**See [DATA_INDEX.md](DATA_INDEX.md)** for complete loading strategy and all 9 indexes.
+## Data Schemas
 
-**Quick reference:**
-- **Startup:** `initial.json` (456 KB) — all stops + routes
-- **Route click:** 3 files (~260 KB) — or use `route_active_trips/` (72 KB)
-- **Stop click:** `stops/{id}.json` (3 KB) — or use `stop_timetables/` (30 KB)
-- **Cache:** Store fetched data in memory to avoid re-downloading
+### `initial.json`
 
-## 📊 Performance Metrics
+```json
+{
+  "feedVersion": "000384",
+  "feedStartDate": "20260216",
+  "feedEndDate": "20301231",
+  "stops": [
+    { "id": "264_2", "name": "Savski most", "lat": 45.79397, "lon": 15.96766,
+      "locationType": 0, "parentStation": "264" }
+  ],
+  "routes": [
+    { "id": "6", "shortName": "6", "longName": "Črnomerec - Sopot", "type": 0 }
+  ],
+  "calendar": { "20260216": "0_20", "20260217": "0_20" }
+}
+```
 
-| Metric | Value |
-|--------|-------|
-| **Initial load** | 456 KB |
-| **Route interaction** | 72-260 KB (optimized/baseline) |
-| **Stop interaction** | 3-30 KB (simple/timetable) |
-| **Total processed** | 131.4 MB uncompressed |
-| **With gzip** | ~30 MB (estimated) |
-| **Processing time** | ~30 seconds |
-| **Total files** | 5,862 JSON files |
-| **Optimizations** | 22% additional savings |
+`locationType`: 0 = platform, 1 = parent station. `type`: 0 = tram, 3 = bus.  
+Calendar maps `YYYYMMDD` → `service_id`. Service IDs: `0_20` weekdays, `0_21` Sat, `0_22` Sun.
 
-## 🚢 Deployment
+### `routes/{id}.json`
 
-### GitHub Pages
+```json
+{
+  "trips": [
+    { "id": "0_20_601_6_10001", "serviceId": "0_20",
+      "headsign": "Savski gaj-rotor", "direction": 0, "shapeId": "6_2" }
+  ]
+}
+```
 
-1. Enable GitHub Pages in repository settings
-2. Update `package.json` with your repository name
-3. Push to main branch — automatic deployment via GitHub Actions
+### `timetables/{id}.json`
 
-### CDN Deployment
+```json
+{
+  "0_20_601_6_10001": [
+    ["264_2", 1, 236],
+    ["222_2", 2, 238]
+  ]
+}
+```
+
+Each row: `[stopId, sequence, minutesSinceMidnight]`. Times can exceed 1440 (trips past midnight).
+
+### `shapes/{id}.json`
+
+```json
+{
+  "6_2": [[45.77769, 15.98681], [45.7777, 15.98697]]
+}
+```
+
+Shape ID format: `{routeId}_{variant}`. Coordinates at 5 decimal places (~1 m precision).
+
+### `stops/{id}.json`
+
+```json
+{
+  "routes": ["6", "11", "31"],
+  "departures": {
+    "0_20": { "6": [284, 297, 310], "11": [278, 299, 321] },
+    "0_21": { "6": [300, 330, 360] }
+  }
+}
+```
+
+### `stop_timetables/{id}.json`
+
+```json
+{
+  "6": {
+    "0_20_601_6_10001": { "time": 284, "sequence": 15 }
+  }
+}
+```
+
+Pre-filtered timetable per stop — 82% smaller than fetching full route timetables (100 KB vs 570 KB).
+
+### `route_stops/{id}.json`
+
+```json
+{ "stops": ["264_2", "222_2", "197_2"] }
+```
+
+Ordered stop list. 320 B average vs 190 KB for the full timetable.
+
+### `route_active_trips/{id}.json`
+
+```json
+{
+  "trips": [
+    { "id": "0_20_601_6_10001", "headsign": "Savski gaj-rotor",
+      "direction": 0, "shapeId": "6_2", "start": 236, "end": 277 }
+  ],
+  "shapes": { "6_2": [[45.77769, 15.98681]] }
+}
+```
+
+`start`/`end` are minutes since midnight. Combined trips + shapes in one file — 76% smaller than fetching separately.
+
+---
+
+## Code Examples
+
+### Load initial data
+
+```typescript
+const { stops, routes, calendar } = await fetch('/data/initial.json').then(r => r.json());
+```
+
+### Get today's service ID
+
+```typescript
+const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // "20260307"
+const serviceId = calendar[today]; // "0_20"
+```
+
+### Departures at a stop
+
+```typescript
+const { routes, departures } = await fetch(`/data/stops/${stopId}.json`).then(r => r.json());
+const times = departures[serviceId]?.['6'] ?? []; // minutes since midnight
+```
+
+### Estimate vehicle positions
+
+```typescript
+const { trips, shapes } = await fetch(`/data/route_active_trips/${routeId}.json`).then(r => r.json());
+const now = new Date().getHours() * 60 + new Date().getMinutes();
+
+const active = trips
+  .filter(t => now >= t.start && now <= t.end)
+  .map(t => {
+    const path = shapes[t.shapeId];
+    const progress = (now - t.start) / (t.end - t.start);
+    return { ...t, position: path[Math.floor(progress * (path.length - 1))] };
+  });
+```
+
+This is schedule-based only — no real GPS. Positions are interpolated along the shape.
+
+### Convert minutes to time string
+
+```typescript
+const minutesToTime = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+// minutesToTime(284) → "04:44"
+```
+
+---
+
+## Deployment
 
 ```bash
-# Build for production
 yarn build
-
-# Deploy dist/ folder to your CDN
-# Ensure gzip compression is enabled
-# Set long cache headers (data valid for 4 years)
+# deploy dist/ to CDN with:
+# Cache-Control: public, max-age=31536000
+# Content-Encoding: gzip
 ```
-
-**Recommended headers:**
-```
-Cache-Control: public, max-age=31536000
-Content-Encoding: gzip
-```
-
-## 🔧 Development
-
-### Adding New Features
-
-1. **Fetch data** using utilities from [src/utils/gtfs.ts](src/utils/gtfs.ts)
-2. **See examples** in [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
-3. **Test** with Vitest
-4. **Cache** fetched data to avoid redundant requests
-
-### Modifying Data Processing
-
-1. Edit [scripts/process_gtfs.py](scripts/process_gtfs.py)
-2. Run `./scripts/run.sh` to regenerate data
-3. Check output in `public/data/`
-4. See [scripts/README.md](scripts/README.md) for details
-
-## 🤝 Contributing
-
-Improvements welcome! Areas of interest:
-- UI/UX enhancements
-- Performance optimizations
-- Additional data transformations
-- GTFS-Realtime integration (if ZET provides API)
-
-## 📄 License
-
-MIT — Feel free to use and modify.
-
-## 🙏 Acknowledgments
-
-- **ZET Zagreb** for providing GTFS data
-- **GTFS specification** by Google Transit
-- Built with modern web technologies and ❤️
-
----
-
-**Status:** Data processing complete ✅ | Frontend implementation in progress 🚧
